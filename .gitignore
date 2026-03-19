@@ -1,0 +1,6 @@
+Gemfile.lock
+coverage/
+pkg/
+*.gem
+.bundle/
+vendor/
