@@ -107,5 +107,35 @@ RSpec.describe Legion::MCP::Tools::DoAction do
         expect(data[:error]).to include('compile error')
       end
     end
+
+    describe 'Tier 0 routing' do
+      before do
+        require 'legion/mcp/tier_router'
+        Legion::MCP::PatternStore.reset!
+        Legion::MCP::ContextGuard.reset!
+      end
+
+      context 'when tier 0 is enabled and pattern matches' do
+        it 'returns tier 0 response without calling ContextCompiler' do
+          allow(Legion::MCP::TierRouter).to receive(:route)
+            .and_return({ tier: 0, response: { status: 'ok' }, latency_ms: 2.1, pattern_confidence: 0.92 })
+
+          result = described_class.call(intent: 'check status')
+          expect(result).to be_a(::MCP::Tool::Response)
+        end
+      end
+
+      context 'when tier router returns tier 2 (no pattern)' do
+        it 'falls back to ContextCompiler matching' do
+          allow(Legion::MCP::TierRouter).to receive(:route)
+            .and_return({ tier: 2, response: nil, reason: 'no pattern' })
+
+          allow(Legion::MCP::ContextCompiler).to receive(:match_tool).and_return(nil)
+
+          result = described_class.call(intent: 'unknown thing')
+          expect(result).to be_a(::MCP::Tool::Response)
+        end
+      end
+    end
   end
 end
