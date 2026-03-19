@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'concurrent-ruby'
+require 'digest'
 
 module Legion
   module MCP
@@ -43,6 +44,30 @@ module Legion
           intent_buffer << { intent: intent, matched_tool: matched_tool_name, recorded_at: Time.now }
           intent_buffer.shift if intent_buffer.size > INTENT_BUFFER_MAX
         end
+      end
+
+      def record_intent_with_result(intent:, tool_name:, success:)
+        record_intent(intent, tool_name)
+        return unless success
+        return unless defined?(Legion::MCP::PatternStore)
+
+        normalized  = intent.to_s.strip.downcase.gsub(/\s+/, ' ')
+        intent_hash = Digest::SHA256.hexdigest(normalized)
+
+        promotion = Legion::MCP::PatternStore.record_candidate(
+          intent_hash: intent_hash,
+          tool_chain:  [tool_name],
+          intent_text: intent
+        )
+
+        return unless promotion&.dig(:promote)
+
+        Legion::MCP::PatternStore.promote_candidate(
+          intent_hash:  promotion[:intent_hash],
+          tool_chain:   promotion[:tool_chain],
+          intent_text:  promotion[:intent_text],
+          intent_vector: try_embed(normalized)
+        )
       end
 
       def tool_stats(tool_name)
@@ -129,6 +154,17 @@ module Legion
 
       def started_at
         @started_at ||= Time.now
+      end
+
+      def try_embed(text)
+        return nil unless defined?(Legion::MCP::EmbeddingIndex)
+
+        embedder = Legion::MCP::EmbeddingIndex.instance_variable_get(:@embedder)
+        return nil unless embedder
+
+        embedder.call(text)
+      rescue StandardError
+        nil
       end
     end
   end
