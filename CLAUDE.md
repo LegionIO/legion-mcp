@@ -56,8 +56,40 @@ All optional dependencies use `defined?()` guards:
 
 - **Graceful degradation**: PatternStore works with any combination of L0/L1/L2 available
 - **Tier routing**: Tier 0 (>= 0.8 confidence, cached), Tier 1 (0.6-0.8, local/fleet), Tier 2 (< 0.6, cloud)
-- **Pattern promotion**: Observer records intent+tool pairs; after 3 successful observations, promotes to PatternStore
+- **Pattern promotion**: Observer records intent+tool pairs; after 3 successful observations, promotes to PatternStore with seeded confidence 0.5
 - **Context guards**: Staleness (1hr), rapid-fire (5 in 10min), anomaly (2 consecutive misses) prevent stale Tier 0
+
+## File Map
+
+| Path | Purpose |
+|------|---------|
+| `lib/legion/mcp.rb` | Entry point: `Legion::MCP.server` singleton factory |
+| `lib/legion/mcp/version.rb` | `Legion::MCP::VERSION` constant |
+| `lib/legion/mcp/server.rb` | MCP::Server builder, TOOL_CLASSES array, governance-aware build |
+| `lib/legion/mcp/auth.rb` | JWT + API key authentication |
+| `lib/legion/mcp/tool_governance.rb` | Risk-tier tool filtering + invocation audit |
+| `lib/legion/mcp/context_compiler.rb` | Keyword + semantic tool matching (60/40 blend) |
+| `lib/legion/mcp/embedding_index.rb` | In-memory vector cache for semantic matching |
+| `lib/legion/mcp/observer.rb` | Instrumentation: counters, ring buffer, pattern promotion |
+| `lib/legion/mcp/usage_filter.rb` | Frequency/recency/keyword scoring for dynamic tool filtering |
+| `lib/legion/mcp/pattern_store.rb` | 4-layer degrading storage (L0/L1/L2) with thread-safe access |
+| `lib/legion/mcp/tier_router.rb` | Confidence-gated tier selection, tool chain execution |
+| `lib/legion/mcp/context_guard.rb` | Staleness, rapid-fire, anomaly detection |
+| `lib/legion/mcp/tools/` | 35 MCP::Tool subclasses (legion.* namespace) |
+| `lib/legion/mcp/tools/do_action.rb` | Natural language intent routing with Tier 0 fast path |
+| `lib/legion/mcp/tools/discover_tools.rb` | Dynamic tool discovery with context |
+| `lib/legion/mcp/tools/run_task.rb` | Execute runner function via dot notation |
+| `lib/legion/mcp/resources/runner_catalog.rb` | `legion://runners` resource |
+| `lib/legion/mcp/resources/extension_info.rb` | `legion://extensions/{name}` resource template |
+
+## Development
+
+```bash
+bundle install
+bundle exec rspec       # 278 examples, 0 failures
+bundle exec rubocop -A  # auto-fix
+bundle exec rubocop     # lint check
+```
 
 ## Pre-Push Pipeline
 
