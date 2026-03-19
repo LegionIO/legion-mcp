@@ -29,8 +29,6 @@ module Legion
         mutex.synchronize { requests.clear }
       end
 
-      # --- Guards ---
-
       def stale?(pattern)
         last_hit = pattern[:last_hit_at]
         return false unless last_hit
@@ -57,8 +55,6 @@ module Legion
         count > rapid_fire_threshold
       end
 
-      # --- Config ---
-
       def max_stale_seconds
         setting(:max_stale_seconds) || DEFAULT_MAX_STALE_SECONDS
       end
@@ -82,8 +78,6 @@ module Legion
       rescue StandardError
         nil
       end
-
-      # --- Failures ---
 
       def staleness_failure(pattern)
         age = pattern[:last_hit_at] ? (Time.now - pattern[:last_hit_at]).round(0) : 0
