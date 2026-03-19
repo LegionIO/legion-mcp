@@ -58,7 +58,7 @@ module Legion
       def execute_tool_chain(tool_chain, params)
         tool_chain.map do |tool_name|
           tool_class = find_tool_class(tool_name)
-          next { error: "unknown tool: #{tool_name}" } unless tool_class
+          raise ArgumentError, "unknown tool: #{tool_name}" unless tool_class
 
           if params.empty?
             tool_class.call
