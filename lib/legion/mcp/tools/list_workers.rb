@@ -11,7 +11,8 @@ module Legion
           properties: {
             team:            { type: 'string',  description: 'Filter by team name' },
             owner_msid:      { type: 'string',  description: 'Filter by owner MSID' },
-            lifecycle_state: { type: 'string',  description: 'Filter by lifecycle state (bootstrap, active, paused, retired, terminated)' },
+            lifecycle_state: { type:        'string',
+                               description: 'Filter by lifecycle state (bootstrap, active, paused, retired, terminated)' },
             limit:           { type: 'integer', description: 'Max results (default 20, max 100)' }
           }
         )

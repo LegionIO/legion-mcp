@@ -5,7 +5,8 @@ module Legion
     module Tools
       class DoAction < ::MCP::Tool
         tool_name 'legion.do'
-        description 'Execute a Legion action by describing what you want to do in natural language. Routes to the best matching tool automatically.'
+        description 'Execute a Legion action by describing what you want to do in natural language. ' \
+                    'Routes to the best matching tool automatically.'
 
         input_schema(
           properties: {

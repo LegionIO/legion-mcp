@@ -23,7 +23,8 @@ module Legion
             return error_response('legion-rbac not installed') unless defined?(Legion::Rbac)
 
             p = Legion::Rbac::Principal.new(id: principal, roles: roles, team: team)
-            result = Legion::Rbac::PolicyEngine.evaluate(principal: p, action: action, resource: resource, enforce: false)
+            result = Legion::Rbac::PolicyEngine.evaluate(principal: p, action: action, resource: resource,
+                                                         enforce: false)
             text_response(result)
           rescue StandardError => e
             error_response("RBAC check failed: #{e.message}")

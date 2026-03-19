@@ -6,6 +6,7 @@ SimpleCov.start do
   enable_coverage :branch
 end
 
+require 'legion/settings'
 require 'legion/mcp'
 
 RSpec.configure do |config|
@@ -27,5 +28,13 @@ end
 unless defined?(Legion::VERSION)
   module Legion
     VERSION = '0.0.0-test'
+  end
+end
+
+unless defined?(Legion::Ingress)
+  module Legion
+    module Ingress
+      def self.run(**_args); end
+    end
   end
 end

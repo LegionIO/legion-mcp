@@ -25,7 +25,9 @@ module Legion
                             team:             team,
                             total:            workers.size,
                             lifecycle_states: breakdown,
-                            workers:          workers.map { |w| w.values.slice(:worker_id, :name, :lifecycle_state, :owner_msid, :business_role) }
+                            workers:          workers.map do |w|
+                              w.values.slice(:worker_id, :name, :lifecycle_state, :owner_msid, :business_role)
+                            end
                           })
           rescue StandardError => e
             error_response("Failed to fetch team summary: #{e.message}")

@@ -145,7 +145,11 @@ module Legion
         def build_filtered_tool_list(keywords: [])
           tool_names = TOOL_CLASSES.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
           ranked     = UsageFilter.ranked_tools(tool_names, keywords: keywords)
-          ranked.filter_map { |name| TOOL_CLASSES.find { |tc| (tc.respond_to?(:tool_name) ? tc.tool_name : tc.name) == name } }
+          ranked.filter_map do |name|
+            TOOL_CLASSES.find do |tc|
+              (tc.respond_to?(:tool_name) ? tc.tool_name : tc.name) == name
+            end
+          end
         end
 
         private
