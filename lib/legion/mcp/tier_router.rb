@@ -99,7 +99,7 @@ module Legion
       end
 
       def find_tool_class(tool_name)
-        return nil unless defined?(Legion::MCP::Server) && defined?(Legion::MCP::Server::TOOL_CLASSES)
+        return nil unless defined?(Legion::MCP::Server::TOOL_CLASSES)
 
         Legion::MCP::Server::TOOL_CLASSES.find do |klass|
           klass.respond_to?(:tool_name) && klass.tool_name == tool_name

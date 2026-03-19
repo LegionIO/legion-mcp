@@ -136,8 +136,8 @@ module Legion
 
         mutex.synchronize do
           patterns_l0.each_value do |p|
-            total_hits += (p[:hit_count] || 0)
-            total_conf += (p[:confidence] || 0.0)
+            total_hits += p[:hit_count] || 0
+            total_conf += p[:confidence] || 0.0
             count += 1
           end
         end

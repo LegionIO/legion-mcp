@@ -26,14 +26,14 @@ module Legion
               additionalProperties: true
             }
           },
-          required: ['intent']
+          required:   ['intent']
         )
 
         class << self
           def call(intent:, params: {}, context: {})
             # Try Tier 0 first (learned patterns)
             tier_result = try_tier0(intent, params, context)
-            if tier_result && tier_result[:tier] == 0
+            if tier_result && tier_result[:tier].zero?
               return text_response(tier_result[:response].merge(
                                      _meta: { tier:       0,
                                               latency_ms: tier_result[:latency_ms],
@@ -62,12 +62,11 @@ module Legion
           def try_tier0(intent, params, context)
             return nil unless defined?(Legion::MCP::TierRouter)
 
-            result = Legion::MCP::TierRouter.route(
+            Legion::MCP::TierRouter.route(
               intent:  intent,
               params:  params.transform_keys(&:to_sym),
               context: context.transform_keys(&:to_sym)
             )
-            result
           rescue StandardError
             nil
           end

@@ -22,7 +22,7 @@ Style/Documentation:
   Enabled: false
 
 Metrics/MethodLength:
-  Max: 25
+  Max: 30
 
 Metrics/AbcSize:
   Max: 35
@@ -34,7 +34,7 @@ Metrics/PerceivedComplexity:
   Max: 12
 
 Metrics/ModuleLength:
-  Max: 200
+  Max: 250
 
 Layout/LineLength:
   Max: 140

@@ -63,9 +63,9 @@ module Legion
         return unless promotion&.dig(:promote)
 
         Legion::MCP::PatternStore.promote_candidate(
-          intent_hash:  promotion[:intent_hash],
-          tool_chain:   promotion[:tool_chain],
-          intent_text:  promotion[:intent_text],
+          intent_hash:   promotion[:intent_hash],
+          tool_chain:    promotion[:tool_chain],
+          intent_text:   promotion[:intent_text],
           intent_vector: try_embed(normalized)
         )
       end

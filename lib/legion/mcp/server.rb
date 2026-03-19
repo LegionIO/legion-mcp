@@ -142,13 +142,13 @@ module Legion
           )
 
           # Wire pattern promotion feedback loop for do_action calls
-          if data[:tool_name] == 'legion.do' && data[:tool_arguments]&.dig(:intent)
-            Observer.record_intent_with_result(
-              intent:    data[:tool_arguments][:intent],
-              tool_name: data[:tool_name],
-              success:   success
-            )
-          end
+          return unless data[:tool_name] == 'legion.do' && data[:tool_arguments]&.dig(:intent)
+
+          Observer.record_intent_with_result(
+            intent:    data[:tool_arguments][:intent],
+            tool_name: data[:tool_name],
+            success:   success
+          )
         end
 
         def build_filtered_tool_list(keywords: [])
