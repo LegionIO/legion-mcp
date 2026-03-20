@@ -38,7 +38,7 @@ module Legion
         props = if schema.is_a?(Hash)
                   schema[:properties] || schema['properties']
                 elsif schema.respond_to?(:to_h)
-                  schema.to_h.dig(:properties)
+                  schema.to_h[:properties]
                 end
         return [] unless props
 

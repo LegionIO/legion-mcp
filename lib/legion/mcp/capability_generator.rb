@@ -74,8 +74,8 @@ module Legion
 
         prompt = "Generate a Ruby module for a LegionIO runner named '#{name}'. " \
                  "Description: #{description}. " \
-                 "Follow the pattern: module with module_function methods returning hashes. " \
-                 "Include proper error handling. Return ONLY the Ruby code."
+                 'Follow the pattern: module with module_function methods returning hashes. ' \
+                 'Include proper error handling. Return ONLY the Ruby code.'
 
         Legion::LLM.ask(prompt)
       rescue StandardError
@@ -87,7 +87,7 @@ module Legion
 
         prompt = "Generate RSpec tests for a Ruby module named '#{name}'. " \
                  "Description: #{description}. " \
-                 "Use described_class pattern. Return ONLY the Ruby code."
+                 'Use described_class pattern. Return ONLY the Ruby code.'
 
         Legion::LLM.ask(prompt)
       rescue StandardError

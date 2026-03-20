@@ -40,6 +40,7 @@ module Legion
 
         chains.filter_map do |chain, count|
           next if count < CHAIN_THRESHOLD
+
           { type: :repeated_chain, chain: chain.split('->'), count: count }
         end
       end

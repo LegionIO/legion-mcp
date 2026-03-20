@@ -1,5 +1,13 @@
 # legion-mcp Changelog
 
+## [0.3.0] - 2026-03-20
+
+### Added
+- GapDetector: analyzes observations for repeated manual patterns and frequent unpatched intents
+- PatternCompiler: generates compressed tool definitions and compiled workflows from promoted patterns
+- CapabilityGenerator: autonomous function generation from detected gaps with LLM code generation
+- Validation pipeline with Ruby syntax check and optional lex-eval integration
+
 ## [0.2.0] - 2026-03-20
 
 ### Fixed
