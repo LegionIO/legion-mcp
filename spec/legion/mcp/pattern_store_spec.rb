@@ -204,6 +204,57 @@ RSpec.describe Legion::MCP::PatternStore do
     end
   end
 
+  describe '.learn_response_template' do
+    before do
+      described_class.store(
+        intent_hash: 'tmpl_test', intent_text: 'check status',
+        intent_vector: nil, tool_chain: ['legion.get_status'],
+        response_template: nil, confidence: 0.9,
+        hit_count: 5, miss_count: 0, last_hit_at: Time.now,
+        created_at: Time.now, context_requirements: nil
+      )
+    end
+
+    it 'sets response_template after observing consistent outputs' do
+      3.times do
+        described_class.learn_response_template(
+          'tmpl_test',
+          { status: 'healthy', service: 'auth', deployed_ago: '2h' }
+        )
+      end
+
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).not_to be_nil
+      expect(pattern[:response_template]).to include('status')
+    end
+
+    it 'does not set template before threshold' do
+      2.times do
+        described_class.learn_response_template(
+          'tmpl_test',
+          { status: 'healthy' }
+        )
+      end
+
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).to be_nil
+    end
+
+    it 'does not set template for non-hash results' do
+      3.times { described_class.learn_response_template('tmpl_test', 'plain string') }
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).to be_nil
+    end
+
+    it 'does not set template when output structures vary' do
+      described_class.learn_response_template('tmpl_test', { a: 1, b: 2 })
+      described_class.learn_response_template('tmpl_test', { c: 3 })
+      described_class.learn_response_template('tmpl_test', { d: 4, e: 5 })
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).to be_nil
+    end
+  end
+
   describe '.candidates' do
     it 'returns the candidate buffer' do
       expect(described_class.candidates).to be_a(Hash)

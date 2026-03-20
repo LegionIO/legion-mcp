@@ -150,6 +150,28 @@ module Legion
         }
       end
 
+      def learn_response_template(intent_hash, result_data, threshold: 3)
+        return unless result_data.is_a?(Hash)
+
+        template_mutex.synchronize do
+          buffer = template_observations[intent_hash] ||= []
+          buffer << result_data.keys.sort
+          buffer.shift if buffer.size > 10
+
+          return unless buffer.size >= threshold
+
+          if buffer.last(threshold).uniq.size == 1
+            keys = buffer.last.sort
+            template = keys.map { |k| "#{k}: {{#{k}}}" }.join(', ')
+            mutex.synchronize do
+              pattern = patterns_l0[intent_hash]
+              pattern[:response_template] = template if pattern
+            end
+            sync_to_persistence(intent_hash)
+          end
+        end
+      end
+
       def decay_all(factor: 0.998)
         archived = []
         mutex.synchronize do
@@ -180,6 +202,7 @@ module Legion
       def reset!
         mutex.synchronize { patterns_l0.clear }
         candidates_mutex.synchronize { candidates_buffer.clear }
+        template_mutex.synchronize { template_observations.clear }
       end
 
       # --- Private helpers ---
@@ -338,6 +361,14 @@ module Legion
 
       def candidates_mutex
         @candidates_mutex ||= Mutex.new
+      end
+
+      def template_observations
+        @template_observations ||= {}
+      end
+
+      def template_mutex
+        @template_mutex ||= Mutex.new
       end
     end
   end
