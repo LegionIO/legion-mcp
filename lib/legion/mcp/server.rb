@@ -141,8 +141,11 @@ module Legion
             error:       data[:error]
           )
 
-          # Wire pattern promotion feedback loop for do_action calls
-          return unless data[:tool_name] == 'legion.do' && data[:tool_arguments]&.dig(:intent)
+          # Pattern promotion for legion.do is handled inside DoAction itself
+          # (which knows the actual resolved tool name). For other tools called
+          # directly, we record the intent+result here if an intent is present.
+          return if data[:tool_name] == 'legion.do'
+          return unless data[:tool_arguments]&.dig(:intent)
 
           Observer.record_intent_with_result(
             intent:    data[:tool_arguments][:intent],

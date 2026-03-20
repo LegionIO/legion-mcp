@@ -108,6 +108,43 @@ RSpec.describe Legion::MCP::Tools::DoAction do
       end
     end
 
+    describe 'observer feedback' do
+      before do
+        Legion::MCP::Observer.reset!
+      end
+
+      it 'records the actual matched tool name in observer, not legion.do' do
+        stub_tool = Class.new(::MCP::Tool) do
+          tool_name 'legion.list_tasks'
+          description 'stub'
+        end
+        allow(Legion::MCP::ContextCompiler).to receive(:match_tool).and_return(stub_tool)
+        allow(stub_tool).to receive(:call).and_return(
+          MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+        )
+
+        described_class.call(intent: 'fetch api data')
+
+        recent = Legion::MCP::Observer.recent_intents(1).last
+        expect(recent[:matched_tool]).to eq('legion.list_tasks')
+      end
+
+      it 'records tool name even when tool does not respond to tool_name' do
+        stub_tool = Class.new do
+          def self.call(**_args)
+            MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+          end
+        end
+        allow(Legion::MCP::ContextCompiler).to receive(:match_tool).and_return(stub_tool)
+
+        described_class.call(intent: 'run something')
+
+        recent = Legion::MCP::Observer.recent_intents(1).last
+        expect(recent[:matched_tool]).to be_a(String)
+        expect(recent[:matched_tool]).not_to be_empty
+      end
+    end
+
     describe 'Tier 0 routing' do
       before do
         require 'legion/mcp/tier_router'

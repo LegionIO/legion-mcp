@@ -45,19 +45,29 @@ module Legion
             matched = ContextCompiler.match_tool(intent)
             return error_response("No matching tool found for intent: #{intent}") if matched.nil?
 
-            Legion::MCP::Observer.record_intent(intent, matched) if defined?(Legion::MCP::Observer)
+            matched_name = matched.respond_to?(:tool_name) ? matched.tool_name : matched.to_s
 
             tool_params = params.transform_keys(&:to_sym)
-            if tool_params.empty?
-              matched.call
-            else
-              matched.call(**tool_params)
-            end
+            result = tool_params.empty? ? matched.call : matched.call(**tool_params)
+
+            record_feedback(intent, matched_name, success: true)
+            result
           rescue StandardError => e
+            record_feedback(intent, matched_name, success: false) if defined?(matched_name)
             error_response("Failed: #{e.message}")
           end
 
           private
+
+          def record_feedback(intent, tool_name, success:)
+            return unless defined?(Legion::MCP::Observer)
+
+            Legion::MCP::Observer.record_intent_with_result(
+              intent:    intent,
+              tool_name: tool_name,
+              success:   success
+            )
+          end
 
           def try_tier0(intent, params, context)
             return nil unless defined?(Legion::MCP::TierRouter)

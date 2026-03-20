@@ -42,6 +42,28 @@ RSpec.describe Legion::MCP::Server do
       expect(server.instructions).to include('async job engine')
     end
 
+    describe '.wire_observer' do
+      before { Legion::MCP::Observer.reset! }
+
+      it 'skips record_intent_with_result for legion.do calls' do
+        expect(Legion::MCP::Observer).not_to receive(:record_intent_with_result)
+        described_class.wire_observer(
+          method: 'tools/call', tool_name: 'legion.do',
+          duration: 0.01, tool_arguments: { intent: 'hello' }, error: nil
+        )
+      end
+
+      it 'records intent_with_result for non-legion.do tools with intent' do
+        expect(Legion::MCP::Observer).to receive(:record_intent_with_result).with(
+          intent: 'check status', tool_name: 'legion.get_status', success: true
+        )
+        described_class.wire_observer(
+          method: 'tools/call', tool_name: 'legion.get_status',
+          duration: 0.01, tool_arguments: { intent: 'check status' }, error: nil
+        )
+      end
+    end
+
     context 'with governance enabled' do
       before do
         allow(Legion::Settings).to receive(:dig).and_return(nil)
