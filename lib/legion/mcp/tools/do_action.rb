@@ -30,7 +30,7 @@ module Legion
         )
 
         class << self
-          def call(intent:, params: {}, context: {}) # rubocop:disable Metrics/MethodLength
+          def call(intent:, params: {}, context: {}) # rubocop:disable Metrics/CyclomaticComplexity
             tier_result = try_tier0(intent, params, context)
 
             case tier_result&.dig(:tier)
@@ -42,8 +42,10 @@ module Legion
                                    ))
             when 1
               llm_result = try_tier1(intent, tier_result[:pattern])
-              return text_response({ result: llm_result,
-                                     _meta: { tier: 1, pattern_hint: tier_result[:pattern][:intent_text] } }) if llm_result
+              if llm_result
+                return text_response({ result: llm_result,
+                                       _meta:  { tier: 1, pattern_hint: tier_result[:pattern][:intent_text] } })
+              end
             when 2
               llm_result = try_tier2(intent)
               return text_response({ result: llm_result, _meta: { tier: 2 } }) if llm_result

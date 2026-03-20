@@ -12,7 +12,7 @@ module Legion
             goal:    { type: 'string', description: 'Natural language description of the goal' },
             context: { type: 'object', description: 'Additional context', additionalProperties: true }
           },
-          required: ['goal']
+          required:   ['goal']
         )
 
         class << self

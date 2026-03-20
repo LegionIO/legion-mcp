@@ -1,6 +1,20 @@
 # legion-mcp Changelog
 
-## v0.1.0
+## [0.2.0] - 2026-03-20
+
+### Fixed
+- Observer feedback bug: records actual matched tool name instead of 'legion.do'
+- wire_observer skips legion.do calls (feedback handled inside DoAction with correct tool name)
+
+### Added
+- Boot-time L2 → L0 pattern hydration (`PatternStore.hydrate_from_l2`)
+- Pattern confidence decay with archive threshold (`PatternStore.decay_all`)
+- Tier 1 execution: pattern-hinted local/fleet LLM routing in DoAction
+- Tier 2 execution: cloud LLM with compressed catalog context in DoAction
+- `legion.plan` meta-tool for multi-step workflow planning (36 tools total)
+- Response template learning from observed Tier 0 outputs (`PatternStore.learn_response_template`)
+
+## [0.1.0]
 
 ### Added
 - Initial extraction from LegionIO

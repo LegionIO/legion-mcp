@@ -4,7 +4,7 @@ require 'json'
 
 module Legion
   module MCP
-    module PatternStore
+    module PatternStore # rubocop:disable Metrics/ModuleLength
       CONFIDENCE_SUCCESS_DELTA = 0.02
       CONFIDENCE_FAILURE_DELTA = -0.05
       SEEDED_CONFIDENCE        = 0.5
