@@ -110,6 +110,9 @@ module Legion
             build_filtered_tool_list.map(&:to_h)
           end
 
+          # Hydrate pattern store from L2 persistence (SQLite) on boot
+          PatternStore.hydrate_from_l2 if defined?(PatternStore)
+
           # Populate embedding index for semantic tool matching (lazy — no-op if LLM unavailable)
           populate_embedding_index
 

@@ -149,6 +149,19 @@ module Legion
         }
       end
 
+      def hydrate_from_l2
+        return unless local_db_available?
+
+        table = ensure_local_table
+        table.each do |row|
+          pattern = deserialize_pattern(row)
+          mutex.synchronize { patterns_l0[pattern[:intent_hash]] = pattern }
+          persist_l1(pattern[:intent_hash], pattern)
+        end
+      rescue StandardError
+        nil
+      end
+
       def reset!
         mutex.synchronize { patterns_l0.clear }
         candidates_mutex.synchronize { candidates_buffer.clear }

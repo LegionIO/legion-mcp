@@ -149,6 +149,33 @@ RSpec.describe Legion::MCP::PatternStore do
     end
   end
 
+  describe '.hydrate_from_l2' do
+    it 'returns nil when L2 is unavailable' do
+      expect(described_class.hydrate_from_l2).to be_nil
+    end
+
+    it 'loads all L2 patterns into L0 when available' do
+      mock_table = []
+      serialized = {
+        intent_hash: 'hydrate1', intent_text: 'hydrate me',
+        intent_vector: nil, tool_chain: '["test.tool"]',
+        response_template: nil, confidence: 0.75,
+        hit_count: 10, miss_count: 0, last_hit_at: nil,
+        created_at: Time.now, context_requirements: nil
+      }
+      mock_table << serialized
+
+      allow(described_class).to receive(:local_db_available?).and_return(true)
+      allow(described_class).to receive(:ensure_local_table).and_return(mock_table)
+
+      described_class.hydrate_from_l2
+      expect(described_class.size).to eq(1)
+      pattern = described_class.lookup('hydrate1')
+      expect(pattern[:confidence]).to eq(0.75)
+      expect(pattern[:tool_chain]).to eq(['test.tool'])
+    end
+  end
+
   describe '.candidates' do
     it 'returns the candidate buffer' do
       expect(described_class.candidates).to be_a(Hash)
