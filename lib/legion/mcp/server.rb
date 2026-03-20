@@ -37,6 +37,7 @@ require_relative 'tools/rbac_assignments'
 require_relative 'tools/rbac_grants'
 require_relative 'context_compiler'
 require_relative 'embedding_index'
+require_relative 'cold_start'
 require_relative 'tools/do_action'
 require_relative 'tools/plan_action'
 require_relative 'tools/discover_tools'
@@ -114,6 +115,9 @@ module Legion
 
           # Hydrate pattern store from L2 persistence (SQLite) on boot
           PatternStore.hydrate_from_l2 if defined?(PatternStore)
+
+          # Cold-start: load community patterns if store is still empty after hydration
+          ColdStart.load_community_patterns if defined?(ColdStart)
 
           # Populate embedding index for semantic tool matching (lazy — no-op if LLM unavailable)
           populate_embedding_index
