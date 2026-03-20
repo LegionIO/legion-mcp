@@ -8,6 +8,7 @@ module Legion
       CONFIDENCE_SUCCESS_DELTA = 0.02
       CONFIDENCE_FAILURE_DELTA = -0.05
       SEEDED_CONFIDENCE        = 0.5
+      DECAY_ARCHIVE_THRESHOLD  = 0.1
 
       module_function
 
@@ -149,6 +150,20 @@ module Legion
         }
       end
 
+      def decay_all(factor: 0.998)
+        archived = []
+        mutex.synchronize do
+          patterns_l0.each do |hash, pattern|
+            pattern[:confidence] = (pattern[:confidence] * factor).clamp(0.0, 1.0)
+            archived << hash if pattern[:confidence] < DECAY_ARCHIVE_THRESHOLD
+          end
+          archived.each { |hash| patterns_l0.delete(hash) }
+        end
+
+        archived.each { |hash| archive_l2(hash) }
+        sync_all_to_persistence unless archived.empty?
+      end
+
       def hydrate_from_l2
         return unless local_db_available?
 
@@ -235,6 +250,19 @@ module Legion
 
         persist_l1(intent_hash, pattern)
         persist_l2(intent_hash, pattern)
+      end
+
+      def archive_l2(intent_hash)
+        return unless local_db_available?
+
+        table = ensure_local_table
+        table.where(intent_hash: intent_hash).delete
+      rescue StandardError
+        nil
+      end
+
+      def sync_all_to_persistence
+        mutex.synchronize { patterns_l0.keys.dup }.each { |h| sync_to_persistence(h) }
       end
 
       def local_db_available?

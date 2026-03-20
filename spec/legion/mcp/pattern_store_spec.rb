@@ -176,6 +176,34 @@ RSpec.describe Legion::MCP::PatternStore do
     end
   end
 
+  describe '.decay_all' do
+    before do
+      described_class.store(
+        intent_hash: 'decay_test', intent_text: 'test decay',
+        intent_vector: nil, tool_chain: ['test.tool'],
+        response_template: nil, confidence: 0.9,
+        hit_count: 5, miss_count: 0, last_hit_at: Time.now,
+        created_at: Time.now, context_requirements: nil
+      )
+    end
+
+    it 'reduces confidence by decay factor' do
+      described_class.decay_all(factor: 0.998)
+      pattern = described_class.lookup('decay_test')
+      expect(pattern[:confidence]).to be_within(0.001).of(0.9 * 0.998)
+    end
+
+    it 'archives patterns below threshold' do
+      described_class.decay_all(factor: 0.01)
+      expect(described_class.lookup('decay_test')).to be_nil
+    end
+
+    it 'does not archive patterns above threshold' do
+      described_class.decay_all(factor: 0.998)
+      expect(described_class.lookup('decay_test')).not_to be_nil
+    end
+  end
+
   describe '.candidates' do
     it 'returns the candidate buffer' do
       expect(described_class.candidates).to be_a(Hash)
