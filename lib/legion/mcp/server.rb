@@ -37,7 +37,9 @@ require_relative 'tools/rbac_assignments'
 require_relative 'tools/rbac_grants'
 require_relative 'context_compiler'
 require_relative 'embedding_index'
+require_relative 'cold_start'
 require_relative 'tools/do_action'
+require_relative 'tools/plan_action'
 require_relative 'tools/discover_tools'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
@@ -80,6 +82,7 @@ module Legion
         Tools::RbacAssignments,
         Tools::RbacGrants,
         Tools::DoAction,
+        Tools::PlanAction,
         Tools::DiscoverTools
       ].freeze
 
@@ -109,6 +112,12 @@ module Legion
           server.tools_list_handler do |_params|
             build_filtered_tool_list.map(&:to_h)
           end
+
+          # Hydrate pattern store from L2 persistence (SQLite) on boot
+          PatternStore.hydrate_from_l2 if defined?(PatternStore)
+
+          # Cold-start: load community patterns if store is still empty after hydration
+          ColdStart.load_community_patterns if defined?(ColdStart)
 
           # Populate embedding index for semantic tool matching (lazy — no-op if LLM unavailable)
           populate_embedding_index
@@ -141,8 +150,11 @@ module Legion
             error:       data[:error]
           )
 
-          # Wire pattern promotion feedback loop for do_action calls
-          return unless data[:tool_name] == 'legion.do' && data[:tool_arguments]&.dig(:intent)
+          # Pattern promotion for legion.do is handled inside DoAction itself
+          # (which knows the actual resolved tool name). For other tools called
+          # directly, we record the intent+result here if an intent is present.
+          return if data[:tool_name] == 'legion.do'
+          return unless data[:tool_arguments]&.dig(:intent)
 
           Observer.record_intent_with_result(
             intent:    data[:tool_arguments][:intent],

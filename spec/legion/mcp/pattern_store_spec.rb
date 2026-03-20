@@ -149,6 +149,112 @@ RSpec.describe Legion::MCP::PatternStore do
     end
   end
 
+  describe '.hydrate_from_l2' do
+    it 'returns nil when L2 is unavailable' do
+      expect(described_class.hydrate_from_l2).to be_nil
+    end
+
+    it 'loads all L2 patterns into L0 when available' do
+      mock_table = []
+      serialized = {
+        intent_hash: 'hydrate1', intent_text: 'hydrate me',
+        intent_vector: nil, tool_chain: '["test.tool"]',
+        response_template: nil, confidence: 0.75,
+        hit_count: 10, miss_count: 0, last_hit_at: nil,
+        created_at: Time.now, context_requirements: nil
+      }
+      mock_table << serialized
+
+      allow(described_class).to receive(:local_db_available?).and_return(true)
+      allow(described_class).to receive(:ensure_local_table).and_return(mock_table)
+
+      described_class.hydrate_from_l2
+      expect(described_class.size).to eq(1)
+      pattern = described_class.lookup('hydrate1')
+      expect(pattern[:confidence]).to eq(0.75)
+      expect(pattern[:tool_chain]).to eq(['test.tool'])
+    end
+  end
+
+  describe '.decay_all' do
+    before do
+      described_class.store(
+        intent_hash: 'decay_test', intent_text: 'test decay',
+        intent_vector: nil, tool_chain: ['test.tool'],
+        response_template: nil, confidence: 0.9,
+        hit_count: 5, miss_count: 0, last_hit_at: Time.now,
+        created_at: Time.now, context_requirements: nil
+      )
+    end
+
+    it 'reduces confidence by decay factor' do
+      described_class.decay_all(factor: 0.998)
+      pattern = described_class.lookup('decay_test')
+      expect(pattern[:confidence]).to be_within(0.001).of(0.9 * 0.998)
+    end
+
+    it 'archives patterns below threshold' do
+      described_class.decay_all(factor: 0.01)
+      expect(described_class.lookup('decay_test')).to be_nil
+    end
+
+    it 'does not archive patterns above threshold' do
+      described_class.decay_all(factor: 0.998)
+      expect(described_class.lookup('decay_test')).not_to be_nil
+    end
+  end
+
+  describe '.learn_response_template' do
+    before do
+      described_class.store(
+        intent_hash: 'tmpl_test', intent_text: 'check status',
+        intent_vector: nil, tool_chain: ['legion.get_status'],
+        response_template: nil, confidence: 0.9,
+        hit_count: 5, miss_count: 0, last_hit_at: Time.now,
+        created_at: Time.now, context_requirements: nil
+      )
+    end
+
+    it 'sets response_template after observing consistent outputs' do
+      3.times do
+        described_class.learn_response_template(
+          'tmpl_test',
+          { status: 'healthy', service: 'auth', deployed_ago: '2h' }
+        )
+      end
+
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).not_to be_nil
+      expect(pattern[:response_template]).to include('status')
+    end
+
+    it 'does not set template before threshold' do
+      2.times do
+        described_class.learn_response_template(
+          'tmpl_test',
+          { status: 'healthy' }
+        )
+      end
+
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).to be_nil
+    end
+
+    it 'does not set template for non-hash results' do
+      3.times { described_class.learn_response_template('tmpl_test', 'plain string') }
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).to be_nil
+    end
+
+    it 'does not set template when output structures vary' do
+      described_class.learn_response_template('tmpl_test', { a: 1, b: 2 })
+      described_class.learn_response_template('tmpl_test', { c: 3 })
+      described_class.learn_response_template('tmpl_test', { d: 4, e: 5 })
+      pattern = described_class.lookup('tmpl_test')
+      expect(pattern[:response_template]).to be_nil
+    end
+  end
+
   describe '.candidates' do
     it 'returns the candidate buffer' do
       expect(described_class.candidates).to be_a(Hash)

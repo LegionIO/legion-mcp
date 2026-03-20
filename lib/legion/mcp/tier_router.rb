@@ -37,6 +37,7 @@ module Legion
           results = execute_tool_chain(pattern[:tool_chain], params)
           response = generate_response(results, pattern)
           PatternStore.record_hit(intent_hash)
+          PatternStore.learn_response_template(intent_hash, results.first) if results.size == 1
 
           elapsed_ms = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(2)
           {

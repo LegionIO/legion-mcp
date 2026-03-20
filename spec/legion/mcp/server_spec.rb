@@ -34,12 +34,34 @@ RSpec.describe Legion::MCP::Server do
       expect(server.tools.keys).to include(*expected)
     end
 
-    it 'registers exactly 35 tools' do
-      expect(server.tools.size).to eq(35)
+    it 'registers exactly 36 tools' do
+      expect(server.tools.size).to eq(36)
     end
 
     it 'includes instructions' do
       expect(server.instructions).to include('async job engine')
+    end
+
+    describe '.wire_observer' do
+      before { Legion::MCP::Observer.reset! }
+
+      it 'skips record_intent_with_result for legion.do calls' do
+        expect(Legion::MCP::Observer).not_to receive(:record_intent_with_result)
+        described_class.wire_observer(
+          method: 'tools/call', tool_name: 'legion.do',
+          duration: 0.01, tool_arguments: { intent: 'hello' }, error: nil
+        )
+      end
+
+      it 'records intent_with_result for non-legion.do tools with intent' do
+        expect(Legion::MCP::Observer).to receive(:record_intent_with_result).with(
+          intent: 'check status', tool_name: 'legion.get_status', success: true
+        )
+        described_class.wire_observer(
+          method: 'tools/call', tool_name: 'legion.get_status',
+          duration: 0.01, tool_arguments: { intent: 'check status' }, error: nil
+        )
+      end
     end
 
     context 'with governance enabled' do

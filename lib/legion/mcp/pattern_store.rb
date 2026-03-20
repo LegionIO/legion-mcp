@@ -4,10 +4,11 @@ require 'json'
 
 module Legion
   module MCP
-    module PatternStore
+    module PatternStore # rubocop:disable Metrics/ModuleLength
       CONFIDENCE_SUCCESS_DELTA = 0.02
       CONFIDENCE_FAILURE_DELTA = -0.05
       SEEDED_CONFIDENCE        = 0.5
+      DECAY_ARCHIVE_THRESHOLD  = 0.1
 
       module_function
 
@@ -129,6 +130,10 @@ module Legion
         mutex.synchronize { patterns_l0.size }
       end
 
+      def empty?
+        size.zero?
+      end
+
       def stats
         total_hits = 0
         total_conf = 0.0
@@ -149,9 +154,59 @@ module Legion
         }
       end
 
+      def learn_response_template(intent_hash, result_data, threshold: 3)
+        return unless result_data.is_a?(Hash)
+
+        template_mutex.synchronize do
+          buffer = template_observations[intent_hash] ||= []
+          buffer << result_data.keys.sort
+          buffer.shift if buffer.size > 10
+
+          return unless buffer.size >= threshold
+
+          if buffer.last(threshold).uniq.size == 1
+            keys = buffer.last.sort
+            template = keys.map { |k| "#{k}: {{#{k}}}" }.join(', ')
+            mutex.synchronize do
+              pattern = patterns_l0[intent_hash]
+              pattern[:response_template] = template if pattern
+            end
+            sync_to_persistence(intent_hash)
+          end
+        end
+      end
+
+      def decay_all(factor: 0.998)
+        archived = []
+        mutex.synchronize do
+          patterns_l0.each do |hash, pattern|
+            pattern[:confidence] = (pattern[:confidence] * factor).clamp(0.0, 1.0)
+            archived << hash if pattern[:confidence] < DECAY_ARCHIVE_THRESHOLD
+          end
+          archived.each { |hash| patterns_l0.delete(hash) }
+        end
+
+        archived.each { |hash| archive_l2(hash) }
+        sync_all_to_persistence unless archived.empty?
+      end
+
+      def hydrate_from_l2
+        return unless local_db_available?
+
+        table = ensure_local_table
+        table.each do |row|
+          pattern = deserialize_pattern(row)
+          mutex.synchronize { patterns_l0[pattern[:intent_hash]] = pattern }
+          persist_l1(pattern[:intent_hash], pattern)
+        end
+      rescue StandardError
+        nil
+      end
+
       def reset!
         mutex.synchronize { patterns_l0.clear }
         candidates_mutex.synchronize { candidates_buffer.clear }
+        template_mutex.synchronize { template_observations.clear }
       end
 
       # --- Private helpers ---
@@ -222,6 +277,19 @@ module Legion
 
         persist_l1(intent_hash, pattern)
         persist_l2(intent_hash, pattern)
+      end
+
+      def archive_l2(intent_hash)
+        return unless local_db_available?
+
+        table = ensure_local_table
+        table.where(intent_hash: intent_hash).delete
+      rescue StandardError
+        nil
+      end
+
+      def sync_all_to_persistence
+        mutex.synchronize { patterns_l0.keys.dup }.each { |h| sync_to_persistence(h) }
       end
 
       def local_db_available?
@@ -297,6 +365,14 @@ module Legion
 
       def candidates_mutex
         @candidates_mutex ||= Mutex.new
+      end
+
+      def template_observations
+        @template_observations ||= {}
+      end
+
+      def template_mutex
+        @template_mutex ||= Mutex.new
       end
     end
   end

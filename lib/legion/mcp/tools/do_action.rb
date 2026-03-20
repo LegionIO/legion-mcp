@@ -30,34 +30,73 @@ module Legion
         )
 
         class << self
-          def call(intent:, params: {}, context: {})
-            # Try Tier 0 first (learned patterns)
+          def call(intent:, params: {}, context: {}) # rubocop:disable Metrics/CyclomaticComplexity
             tier_result = try_tier0(intent, params, context)
-            if tier_result && tier_result[:tier].zero?
+
+            case tier_result&.dig(:tier)
+            when 0
               return text_response(tier_result[:response].merge(
                                      _meta: { tier:       0,
                                               latency_ms: tier_result[:latency_ms],
                                               confidence: tier_result[:pattern_confidence] }
                                    ))
+            when 1
+              llm_result = try_tier1(intent, tier_result[:pattern])
+              if llm_result
+                return text_response({ result: llm_result,
+                                       _meta:  { tier: 1, pattern_hint: tier_result[:pattern][:intent_text] } })
+              end
+            when 2
+              llm_result = try_tier2(intent)
+              return text_response({ result: llm_result, _meta: { tier: 2 } }) if llm_result
             end
 
-            # Fall back to ContextCompiler tool matching (original behavior)
+            # Fall back to ContextCompiler tool matching
             matched = ContextCompiler.match_tool(intent)
             return error_response("No matching tool found for intent: #{intent}") if matched.nil?
 
-            Legion::MCP::Observer.record_intent(intent, matched) if defined?(Legion::MCP::Observer)
+            matched_name = matched.respond_to?(:tool_name) ? matched.tool_name : matched.to_s
 
             tool_params = params.transform_keys(&:to_sym)
-            if tool_params.empty?
-              matched.call
-            else
-              matched.call(**tool_params)
-            end
+            result = tool_params.empty? ? matched.call : matched.call(**tool_params)
+
+            record_feedback(intent, matched_name, success: true)
+            result
           rescue StandardError => e
+            record_feedback(intent, matched_name, success: false) if defined?(matched_name)
             error_response("Failed: #{e.message}")
           end
 
           private
+
+          def record_feedback(intent, tool_name, success:)
+            return unless defined?(Legion::MCP::Observer)
+
+            Legion::MCP::Observer.record_intent_with_result(
+              intent:    intent,
+              tool_name: tool_name,
+              success:   success
+            )
+          end
+
+          def try_tier1(intent, pattern)
+            return nil unless defined?(Legion::LLM) && Legion::LLM.started?
+
+            hint = "Known pattern: #{pattern[:intent_text]}. Tools: #{Array(pattern[:tool_chain]).join(', ')}. "
+            Legion::LLM.ask("#{hint}User intent: #{intent}")
+          rescue StandardError
+            nil
+          end
+
+          def try_tier2(intent)
+            return nil unless defined?(Legion::LLM) && Legion::LLM.started?
+
+            catalog = ContextCompiler.respond_to?(:compressed_catalog) ? ContextCompiler.compressed_catalog : []
+            context_str = catalog.any? ? "Available tools: #{Legion::JSON.dump(catalog)}. " : ''
+            Legion::LLM.ask("#{context_str}User intent: #{intent}")
+          rescue StandardError
+            nil
+          end
 
           def try_tier0(intent, params, context)
             return nil unless defined?(Legion::MCP::TierRouter)
