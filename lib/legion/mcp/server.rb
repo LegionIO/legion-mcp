@@ -38,6 +38,7 @@ require_relative 'tools/rbac_grants'
 require_relative 'context_compiler'
 require_relative 'embedding_index'
 require_relative 'tools/do_action'
+require_relative 'tools/plan_action'
 require_relative 'tools/discover_tools'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
@@ -80,6 +81,7 @@ module Legion
         Tools::RbacAssignments,
         Tools::RbacGrants,
         Tools::DoAction,
+        Tools::PlanAction,
         Tools::DiscoverTools
       ].freeze
 
