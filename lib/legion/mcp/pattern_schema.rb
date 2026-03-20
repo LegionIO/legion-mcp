@@ -18,20 +18,20 @@ module Legion
 
       def export(pattern)
         {
-          schema_version:   SCHEMA_VERSION,
-          pattern_id:       pattern[:intent_hash],
-          intent:           {
+          schema_version:    SCHEMA_VERSION,
+          pattern_id:        pattern[:intent_hash],
+          intent:            {
             description: pattern[:intent_text],
             keywords:    extract_keywords(pattern[:intent_text])
           },
-          capability_chain: Array(pattern[:tool_chain]).map { |t| { tool: t, params_template: {} } },
+          capability_chain:  Array(pattern[:tool_chain]).map { |t| { tool: t, params_template: {} } },
           response_template: pattern[:response_template] ? { engine: 'mustache', template: pattern[:response_template] } : nil,
-          confidence:       {
+          confidence:        {
             suggested_initial: [pattern[:confidence], 0.5].min,
             source_hits:       pattern[:hit_count] || 0,
             source_misses:     pattern[:miss_count] || 0
           },
-          metadata:         {
+          metadata:          {
             source:      'local',
             sensitivity: 'public',
             created_at:  pattern[:created_at]&.iso8601
@@ -50,16 +50,16 @@ module Legion
         template = external.dig(:response_template, :template)
 
         {
-          intent_hash:       intent_hash,
-          intent_text:       intent_text,
-          intent_vector:     nil,
-          tool_chain:        tool_chain,
-          response_template: template,
-          confidence:        confidence,
-          hit_count:         0,
-          miss_count:        0,
-          last_hit_at:       nil,
-          created_at:        Time.now,
+          intent_hash:          intent_hash,
+          intent_text:          intent_text,
+          intent_vector:        nil,
+          tool_chain:           tool_chain,
+          response_template:    template,
+          confidence:           confidence,
+          hit_count:            0,
+          miss_count:           0,
+          last_hit_at:          nil,
+          created_at:           Time.now,
           context_requirements: nil
         }
       end

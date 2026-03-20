@@ -1,5 +1,13 @@
 # legion-mcp Changelog
 
+## [0.4.0] - 2026-03-20
+
+### Added
+- PatternSchema v1: portable pattern format with trust-level confidence capping on import/export
+- PatternExchange: bulk import/export of patterns via JSON files with deduplication
+- PatternGossip: AMQP-based pattern sharing between instances (org trust level)
+- ColdStart: community pattern loading on first boot when PatternStore is empty
+
 ## [0.3.0] - 2026-03-20
 
 ### Added

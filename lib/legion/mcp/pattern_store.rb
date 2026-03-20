@@ -130,6 +130,10 @@ module Legion
         mutex.synchronize { patterns_l0.size }
       end
 
+      def empty?
+        size.zero?
+      end
+
       def stats
         total_hits = 0
         total_conf = 0.0
