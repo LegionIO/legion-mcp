@@ -35,6 +35,15 @@ require_relative 'tools/routing_stats'
 require_relative 'tools/rbac_check'
 require_relative 'tools/rbac_assignments'
 require_relative 'tools/rbac_grants'
+require_relative 'tools/prompt_list'
+require_relative 'tools/prompt_show'
+require_relative 'tools/prompt_run'
+require_relative 'tools/dataset_list'
+require_relative 'tools/dataset_show'
+require_relative 'tools/experiment_results'
+require_relative 'tools/eval_list'
+require_relative 'tools/eval_run'
+require_relative 'tools/eval_results'
 require_relative 'context_compiler'
 require_relative 'embedding_index'
 require_relative 'cold_start'
@@ -81,6 +90,15 @@ module Legion
         Tools::RbacCheck,
         Tools::RbacAssignments,
         Tools::RbacGrants,
+        Tools::PromptList,
+        Tools::PromptShow,
+        Tools::PromptRun,
+        Tools::DatasetList,
+        Tools::DatasetShow,
+        Tools::ExperimentResults,
+        Tools::EvalList,
+        Tools::EvalRun,
+        Tools::EvalResults,
         Tools::DoAction,
         Tools::PlanAction,
         Tools::DiscoverTools

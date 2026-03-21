@@ -34,8 +34,8 @@ RSpec.describe Legion::MCP::Server do
       expect(server.tools.keys).to include(*expected)
     end
 
-    it 'registers exactly 36 tools' do
-      expect(server.tools.size).to eq(36)
+    it 'registers exactly 45 tools' do
+      expect(server.tools.size).to eq(45)
     end
 
     it 'includes instructions' do

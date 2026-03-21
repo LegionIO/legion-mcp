@@ -1,5 +1,20 @@
 # legion-mcp Changelog
 
+## [0.4.1] - 2026-03-19
+
+### Added
+- `legion.prompt_list` — list all stored prompt templates via lex-prompt Client
+- `legion.prompt_show` — fetch a prompt by name, version, or tag via lex-prompt Client
+- `legion.prompt_run` — render a prompt template with ERB variable substitution via lex-prompt Client
+- `legion.dataset_list` — list all stored datasets via lex-dataset Client
+- `legion.dataset_show` — fetch a dataset with all rows, optionally version-pinned, via lex-dataset Client
+- `legion.experiment_results` — retrieve per-row results and summary for a named experiment from lex-dataset
+- `legion.eval_list` — list available evaluator templates via lex-eval Client
+- `legion.eval_run` — run a single input/output pair through a named evaluator via lex-eval Client
+- `legion.eval_results` — retrieve stored experiment results via lex-dataset experiment store
+- All 9 tools registered in `TOOL_CLASSES`; total tool count raised from 36 to 45
+- Specs for all 9 new tools
+
 ## [0.4.0] - 2026-03-20
 
 ### Added
