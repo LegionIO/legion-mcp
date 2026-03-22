@@ -1,5 +1,10 @@
 # legion-mcp Changelog
 
+## [0.4.5] - 2026-03-22
+
+### Fixed
+- Corrected dependency version constraints in gemspec: legion-data >= 1.4.15, legion-logging >= 1.2.8, legion-settings >= 1.3.12
+
 ## [0.4.4] - 2026-03-22
 
 ### Changed
