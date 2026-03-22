@@ -1,1 +1,39 @@
+# Default owner — all files
 * @Esity
+
+# Core library code
+# lib/ @Esity @future-ai-team
+
+# MCP tools (35 tool subclasses)
+# lib/legion/mcp/tools/ @Esity @future-ai-team
+
+# MCP resources
+# lib/legion/mcp/resources/ @Esity @future-ai-team
+
+# Tiered Behavioral Intelligence (TBI) — pattern store, tier router, context guard
+# lib/legion/mcp/pattern_store.rb @Esity @future-ai-team
+# lib/legion/mcp/tier_router.rb @Esity @future-ai-team
+# lib/legion/mcp/context_guard.rb @Esity @future-ai-team
+
+# Semantic matching and embeddings
+# lib/legion/mcp/context_compiler.rb @Esity @future-ai-team
+# lib/legion/mcp/embedding_index.rb @Esity @future-ai-team
+
+# Observer pipeline and usage filter
+# lib/legion/mcp/observer.rb @Esity @future-ai-team
+# lib/legion/mcp/usage_filter.rb @Esity @future-ai-team
+
+# Tool governance
+# lib/legion/mcp/tool_governance.rb @Esity @future-security-team
+
+# Authentication
+# lib/legion/mcp/auth.rb @Esity @future-security-team
+
+# Specs
+# spec/ @Esity @future-contributors
+
+# Documentation
+# *.md @Esity @future-docs-team
+
+# CI/CD
+# .github/ @Esity
