@@ -23,6 +23,7 @@ module Legion
             result = fetch_experiment(client, name)
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("ExperimentResults#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to fetch experiment results: #{e.message}")
           end
 
@@ -43,7 +44,8 @@ module Legion
 
             summary = begin
               ::JSON.parse(exp[:summary], symbolize_names: true)
-            rescue StandardError
+            rescue StandardError => e
+              Legion::Logging.debug("ExperimentResults#fetch_experiment summary parse failed: #{e.message}") if defined?(Legion::Logging)
               {}
             end
 
@@ -55,7 +57,8 @@ module Legion
           def extension_loaded?(name)
             require "legion/extensions/#{name}"
             true
-          rescue LoadError
+          rescue LoadError => e
+            Legion::Logging.debug("ExperimentResults#extension_loaded? #{name} not available: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

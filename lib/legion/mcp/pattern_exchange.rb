@@ -49,6 +49,7 @@ module Legion
         patterns = [patterns] if patterns.is_a?(Hash)
         import_all(patterns, trust_level: trust_level)
       rescue StandardError => e
+        Legion::Logging.error("PatternExchange#import_from_file failed: #{e.message}") if defined?(Legion::Logging)
         { error: e.message, imported: 0 }
       end
     end

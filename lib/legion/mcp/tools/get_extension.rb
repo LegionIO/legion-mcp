@@ -31,6 +31,7 @@ module Legion
 
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("GetExtension#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to get extension: #{e.message}")
           end
 
@@ -38,7 +39,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("GetExtension#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

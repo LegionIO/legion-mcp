@@ -43,7 +43,8 @@ module Legion
         return [] unless props
 
         props.keys.map(&:to_s)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternCompiler#extract_params failed: #{e.message}") if defined?(Legion::Logging)
         []
       end
     end

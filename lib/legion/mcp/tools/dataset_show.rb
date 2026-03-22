@@ -24,6 +24,7 @@ module Legion
             result = client.get_dataset(name: name, version: version)
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("DatasetShow#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to fetch dataset: #{e.message}")
           end
 
@@ -32,7 +33,8 @@ module Legion
           def extension_loaded?(name)
             require "legion/extensions/#{name}"
             true
-          rescue LoadError
+          rescue LoadError => e
+            Legion::Logging.debug("DatasetShow#extension_loaded? #{name} not available: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

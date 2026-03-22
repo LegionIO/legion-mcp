@@ -25,6 +25,7 @@ module Legion
             result = client.get_prompt(name: name, version: version, tag: tag)
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("PromptShow#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to fetch prompt: #{e.message}")
           end
 
@@ -33,7 +34,8 @@ module Legion
           def extension_loaded?(name)
             require "legion/extensions/#{name}"
             true
-          rescue LoadError
+          rescue LoadError => e
+            Legion::Logging.debug("PromptShow#extension_loaded? #{name} not available: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

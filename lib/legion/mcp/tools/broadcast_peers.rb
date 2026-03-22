@@ -28,6 +28,7 @@ module Legion
             )
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("BroadcastPeers#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to broadcast: #{e.message}")
           end
 

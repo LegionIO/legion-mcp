@@ -26,6 +26,7 @@ module Legion
             ds = ds.where(principal_id: principal) if principal
             text_response(ds.all.map(&:values))
           rescue StandardError => e
+            Legion::Logging.warn("RbacAssignments#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to list assignments: #{e.message}")
           end
 

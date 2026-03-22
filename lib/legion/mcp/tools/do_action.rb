@@ -63,6 +63,7 @@ module Legion
             record_feedback(intent, matched_name, success: true)
             result
           rescue StandardError => e
+            Legion::Logging.warn("DoAction#call failed: #{e.message}") if defined?(Legion::Logging)
             record_feedback(intent, matched_name, success: false) if defined?(matched_name)
             error_response("Failed: #{e.message}")
           end
@@ -84,7 +85,8 @@ module Legion
 
             hint = "Known pattern: #{pattern[:intent_text]}. Tools: #{Array(pattern[:tool_chain]).join(', ')}. "
             Legion::LLM.ask("#{hint}User intent: #{intent}")
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.debug("DoAction#try_tier1 failed: #{e.message}") if defined?(Legion::Logging)
             nil
           end
 
@@ -94,7 +96,8 @@ module Legion
             catalog = ContextCompiler.respond_to?(:compressed_catalog) ? ContextCompiler.compressed_catalog : []
             context_str = catalog.any? ? "Available tools: #{Legion::JSON.dump(catalog)}. " : ''
             Legion::LLM.ask("#{context_str}User intent: #{intent}")
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.debug("DoAction#try_tier2 failed: #{e.message}") if defined?(Legion::Logging)
             nil
           end
 
@@ -106,7 +109,8 @@ module Legion
               params:  params.transform_keys(&:to_sym),
               context: context.transform_keys(&:to_sym)
             )
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.debug("DoAction#try_tier0 failed: #{e.message}") if defined?(Legion::Logging)
             nil
           end
 

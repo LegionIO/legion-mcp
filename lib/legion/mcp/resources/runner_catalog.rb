@@ -48,12 +48,14 @@ module Legion
 
             Legion::JSON.dump(catalog)
           rescue StandardError => e
+            Legion::Logging.warn("RunnerCatalog#catalog_json failed: #{e.message}") if defined?(Legion::Logging)
             Legion::JSON.dump({ error: "Failed to build catalog: #{e.message}" })
           end
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("RunnerCatalog#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
         end

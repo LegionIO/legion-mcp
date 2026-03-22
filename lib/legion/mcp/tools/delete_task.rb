@@ -24,6 +24,7 @@ module Legion
             task.delete
             text_response({ deleted: true, id: id })
           rescue StandardError => e
+            Legion::Logging.warn("DeleteTask#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to delete task: #{e.message}")
           end
 
@@ -31,7 +32,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("DeleteTask#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

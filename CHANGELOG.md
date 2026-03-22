@@ -1,5 +1,10 @@
 # legion-mcp Changelog
 
+## [0.4.3] - 2026-03-22
+
+### Changed
+- Added `Legion::Logging.debug`/`.warn` calls to all previously silent rescue blocks across lib/legion/mcp/ and all tool files; silent rescues now surface failures through the logging subsystem when available
+
 ## [0.4.2] - 2026-03-22
 
 ### Added

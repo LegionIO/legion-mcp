@@ -37,6 +37,7 @@ module Legion
             record = Legion::Extensions::Scheduler::Data::Model::Schedule[id]
             text_response(record.values)
           rescue StandardError => e
+            Legion::Logging.warn("CreateSchedule#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to create schedule: #{e.message}")
           end
 
@@ -44,7 +45,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("CreateSchedule#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

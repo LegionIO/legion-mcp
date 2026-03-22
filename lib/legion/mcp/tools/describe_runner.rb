@@ -22,6 +22,7 @@ module Legion
 
             runner ? describe_single(runner) : describe_all
           rescue StandardError => e
+            Legion::Logging.warn("DescribeRunner#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to describe runners: #{e.message}")
           end
 
@@ -29,7 +30,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("DescribeRunner#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

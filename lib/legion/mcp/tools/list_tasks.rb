@@ -25,6 +25,7 @@ module Legion
             dataset = dataset.where(function_id: function_id.to_i) if function_id
             text_response(dataset.limit(limit).all.map(&:values))
           rescue StandardError => e
+            Legion::Logging.warn("ListTasks#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to list tasks: #{e.message}")
           end
 
@@ -32,7 +33,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("ListTasks#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

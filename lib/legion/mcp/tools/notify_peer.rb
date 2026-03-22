@@ -27,6 +27,7 @@ module Legion
             )
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("NotifyPeer#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to notify peer: #{e.message}")
           end
 

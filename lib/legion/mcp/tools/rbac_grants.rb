@@ -22,6 +22,7 @@ module Legion
             ds = ds.where(team: team) if team
             text_response(ds.all.map(&:values))
           rescue StandardError => e
+            Legion::Logging.warn("RbacGrants#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to list grants: #{e.message}")
           end
 

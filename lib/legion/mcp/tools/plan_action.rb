@@ -29,6 +29,7 @@ module Legion
 
             text_response(plan)
           rescue StandardError => e
+            Legion::Logging.warn("PlanAction#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Plan failed: #{e.message}")
           end
 
@@ -37,7 +38,8 @@ module Legion
           def generate_narrative(goal, steps)
             tool_list = steps.map { |s| s[:tool] }.join(', ')
             Legion::LLM.ask("Create a brief execution plan for: #{goal}. Available tools: #{tool_list}")
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.debug("PlanAction#generate_narrative failed: #{e.message}") if defined?(Legion::Logging)
             nil
           end
 

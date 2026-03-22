@@ -15,22 +15,26 @@ module Legion
               version:    Legion::VERSION,
               ready:      begin
                 Legion::Readiness.ready?
-              rescue StandardError
+              rescue StandardError => e
+                Legion::Logging.debug("GetStatus#call Readiness.ready? failed: #{e.message}") if defined?(Legion::Logging)
                 false
               end,
               components: begin
                 Legion::Readiness.to_h
-              rescue StandardError
+              rescue StandardError => e
+                Legion::Logging.debug("GetStatus#call Readiness.to_h failed: #{e.message}") if defined?(Legion::Logging)
                 {}
               end,
               node:       begin
                 Legion::Settings[:client][:name]
-              rescue StandardError
+              rescue StandardError => e
+                Legion::Logging.debug("GetStatus#call Settings[:client][:name] failed: #{e.message}") if defined?(Legion::Logging)
                 'unknown'
               end
             }
             text_response(status)
           rescue StandardError => e
+            Legion::Logging.warn("GetStatus#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to get status: #{e.message}")
           end
 

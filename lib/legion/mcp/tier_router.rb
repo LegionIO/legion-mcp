@@ -12,7 +12,7 @@ module Legion
 
       module_function
 
-      def route(intent:, params: {}, context: {})
+      def route(intent:, params: {}, context: {}) # rubocop:disable Metrics/AbcSize
         start_time = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
         normalized = normalize_intent(intent)
         intent_hash = Digest::SHA256.hexdigest(normalized)
@@ -47,6 +47,7 @@ module Legion
             pattern_confidence: pattern[:confidence]
           }
         rescue StandardError => e
+          Legion::Logging.warn("TierRouter#route tool chain failed: #{e.message}") if defined?(Legion::Logging)
           PatternStore.record_miss(intent_hash)
           tier1_response(pattern, "tool chain failed: #{e.message}")
         end
@@ -77,8 +78,8 @@ module Legion
             client = Legion::Extensions::Transformer::Client.new
             rendered = client.transform(transformation: template, payload: { results: results })
             return rendered[:result] if rendered[:success]
-          rescue StandardError
-            # Fall through to raw results
+          rescue StandardError => e
+            Legion::Logging.debug("TierRouter#generate_response transformer failed: #{e.message}") if defined?(Legion::Logging)
           end
         end
 
@@ -95,7 +96,8 @@ module Legion
         return nil unless intent_vector
 
         PatternStore.lookup_semantic(intent_vector)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.debug("TierRouter#try_semantic_lookup failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 

@@ -27,6 +27,7 @@ module Legion
                                                          enforce: false)
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("RbacCheck#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("RBAC check failed: #{e.message}")
           end
 

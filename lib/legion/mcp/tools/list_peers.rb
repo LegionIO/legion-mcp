@@ -20,6 +20,7 @@ module Legion
             result = mesh_client.find_agents(capability: capability)
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("ListPeers#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to list peers: #{e.message}")
           end
 

@@ -21,6 +21,7 @@ module Legion
             dataset = dataset.where(active: true) if active == true
             text_response(dataset.all.map(&:values))
           rescue StandardError => e
+            Legion::Logging.warn("ListExtensions#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to list extensions: #{e.message}")
           end
 
@@ -28,7 +29,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("ListExtensions#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

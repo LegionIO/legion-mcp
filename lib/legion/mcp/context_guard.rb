@@ -75,7 +75,8 @@ module Legion
         return nil unless defined?(Legion::Settings)
 
         Legion::Settings.dig(:mcp, :tier0, :guards, key)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("ContextGuard#setting failed for key #{key}: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 

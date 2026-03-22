@@ -28,6 +28,7 @@ module Legion
             record.refresh
             text_response(record.values)
           rescue StandardError => e
+            Legion::Logging.warn("UpdateRelationship#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to update relationship: #{e.message}")
           end
 
@@ -35,7 +36,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("UpdateRelationship#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

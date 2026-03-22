@@ -16,6 +16,7 @@ module Legion
             result = mesh_client.mesh_status
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("MeshStatus#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to get mesh status: #{e.message}")
           end
 

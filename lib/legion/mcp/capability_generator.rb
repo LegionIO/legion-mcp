@@ -26,6 +26,7 @@ module Legion
 
         proposal
       rescue StandardError => e
+        Legion::Logging.warn("CapabilityGenerator#generate_from_gap failed: #{e.message}") if defined?(Legion::Logging)
         { error: e.message, source_gap: gap }
       end
 
@@ -39,7 +40,8 @@ module Legion
             client = Legion::Extensions::Eval::Client.new
             eval_result = client.evaluate(code: runner_code, criteria: 'code_quality')
             result[:eval_score] = eval_result[:score] if eval_result[:success]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("CapabilityGenerator#validate eval failed: #{e.message}") if defined?(Legion::Logging)
             nil
           end
         end
@@ -78,7 +80,8 @@ module Legion
                  'Include proper error handling. Return ONLY the Ruby code.'
 
         Legion::LLM.ask(prompt)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("CapabilityGenerator#generate_runner failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -90,14 +93,16 @@ module Legion
                  'Use described_class pattern. Return ONLY the Ruby code.'
 
         Legion::LLM.ask(prompt)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("CapabilityGenerator#generate_spec failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
       def syntax_valid?(code)
         RubyVM::InstructionSequence.compile(code)
         true
-      rescue SyntaxError
+      rescue SyntaxError => e
+        Legion::Logging.debug("CapabilityGenerator#syntax_valid? syntax error: #{e.message}") if defined?(Legion::Logging)
         false
       end
 

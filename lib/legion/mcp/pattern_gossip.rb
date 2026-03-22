@@ -30,7 +30,8 @@ module Legion
         ).publish
 
         { published: true, pattern_id: exported[:pattern_id] }
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternGossip#announce failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -38,7 +39,8 @@ module Legion
         return nil unless message.is_a?(Hash) && message[:pattern]
 
         PatternSchema.import(message[:pattern], trust_level: :org)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternGossip#receive failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 

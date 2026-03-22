@@ -163,7 +163,8 @@ module Legion
         return nil unless embedder
 
         embedder.call(text)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.debug("Observer#try_embed failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
     end

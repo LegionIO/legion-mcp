@@ -16,6 +16,7 @@ module Legion
 
         PatternExchange.import_from_file(path, trust_level: :community)
       rescue StandardError => e
+        Legion::Logging.error("ColdStart#load_community_patterns failed: #{e.message}") if defined?(Legion::Logging)
         { error: e.message, imported: 0 }
       end
 
@@ -23,7 +24,8 @@ module Legion
         return nil unless defined?(Legion::Settings)
 
         Legion::Settings.dig(:mcp, :cold_start, :patterns_path)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("ColdStart#configured_path failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
     end

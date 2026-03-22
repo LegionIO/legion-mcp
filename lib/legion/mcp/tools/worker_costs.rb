@@ -30,6 +30,7 @@ module Legion
                             worker_name: worker.values[:name]
                           })
           rescue StandardError => e
+            Legion::Logging.warn("WorkerCosts#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to fetch worker costs: #{e.message}")
           end
 
@@ -37,7 +38,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("WorkerCosts#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

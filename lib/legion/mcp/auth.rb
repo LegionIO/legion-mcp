@@ -34,6 +34,7 @@ module Legion
         { authenticated: true, identity: { user_id: claims[:sub], risk_tier: claims[:risk_tier]&.to_sym,
                                             tenant_id: claims[:tenant_id], worker_id: claims[:worker_id] } }
       rescue StandardError => e
+        Legion::Logging.warn("Auth#verify_jwt failed: #{e.message}") if defined?(Legion::Logging)
         { authenticated: false, error: e.message }
       end
 

@@ -20,7 +20,7 @@ module Legion
         )
 
         class << self
-          def call(id:, **attrs)
+          def call(id:, **attrs) # rubocop:disable Metrics/AbcSize
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('lex-scheduler is not loaded') unless scheduler_loaded?
 
@@ -38,6 +38,7 @@ module Legion
             record.refresh
             text_response(record.values)
           rescue StandardError => e
+            Legion::Logging.warn("UpdateSchedule#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to update schedule: #{e.message}")
           end
 
@@ -45,7 +46,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("UpdateSchedule#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

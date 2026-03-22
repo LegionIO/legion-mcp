@@ -18,6 +18,7 @@ module Legion
             result = client.list_datasets
             text_response(result)
           rescue StandardError => e
+            Legion::Logging.warn("DatasetList#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to list datasets: #{e.message}")
           end
 
@@ -26,7 +27,8 @@ module Legion
           def extension_loaded?(name)
             require "legion/extensions/#{name}"
             true
-          rescue LoadError
+          rescue LoadError => e
+            Legion::Logging.debug("DatasetList#extension_loaded? #{name} not available: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

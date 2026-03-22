@@ -199,7 +199,8 @@ module Legion
           mutex.synchronize { patterns_l0[pattern[:intent_hash]] = pattern }
           persist_l1(pattern[:intent_hash], pattern)
         end
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternStore#hydrate_from_l2 failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -232,7 +233,8 @@ module Legion
         return unless defined?(Legion::Cache) && Legion::Cache.respond_to?(:connected?) && Legion::Cache.connected?
 
         Legion::Cache.set("tbi:pattern:#{intent_hash}", Legion::JSON.dump(pattern), 3600)
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternStore#persist_l1 failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -241,7 +243,8 @@ module Legion
 
         raw = Legion::Cache.get("tbi:pattern:#{intent_hash}")
         raw ? Legion::JSON.load(raw) : nil
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternStore#lookup_l1 failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -257,7 +260,8 @@ module Legion
         else
           table.insert(data)
         end
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternStore#persist_l2 failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -267,7 +271,8 @@ module Legion
         table = ensure_local_table
         row = table.where(intent_hash: intent_hash).first
         row ? deserialize_pattern(row) : nil
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternStore#lookup_l2 failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -284,7 +289,8 @@ module Legion
 
         table = ensure_local_table
         table.where(intent_hash: intent_hash).delete
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("PatternStore#archive_l2 failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 

@@ -22,6 +22,7 @@ module Legion
             stats = runner.routing_stats(worker_id: worker_id)
             text_response(stats)
           rescue StandardError => e
+            Legion::Logging.warn("RoutingStats#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to fetch routing stats: #{e.message}")
           end
 
@@ -29,7 +30,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("RoutingStats#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

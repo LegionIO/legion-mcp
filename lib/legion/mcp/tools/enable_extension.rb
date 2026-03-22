@@ -25,6 +25,7 @@ module Legion
             ext.refresh
             text_response(ext.values)
           rescue StandardError => e
+            Legion::Logging.warn("EnableExtension#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to enable extension: #{e.message}")
           end
 
@@ -32,7 +33,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("EnableExtension#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

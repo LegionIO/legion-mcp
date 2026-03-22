@@ -23,6 +23,7 @@ module Legion
             record = Legion::Data::Model::Chain[id]
             text_response(record.values)
           rescue StandardError => e
+            Legion::Logging.warn("CreateChain#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to create chain: #{e.message}")
           end
 
@@ -30,7 +31,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("CreateChain#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

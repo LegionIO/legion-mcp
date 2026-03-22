@@ -97,7 +97,8 @@ module Legion
         return nil unless result.is_a?(Array) && !result.empty?
 
         result
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.debug("EmbeddingIndex#safe_embed failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
@@ -105,7 +106,8 @@ module Legion
         return nil unless defined?(Legion::LLM) && Legion::LLM.respond_to?(:started?) && Legion::LLM.started?
 
         ->(text) { Legion::LLM.embed(text)[:vector] }
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.debug("EmbeddingIndex#default_embedder failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
     end

@@ -20,6 +20,7 @@ module Legion
             limit = limit.to_i.clamp(1, 100)
             text_response(Legion::Data::Model::Relationship.order(:id).limit(limit).all.map(&:values))
           rescue StandardError => e
+            Legion::Logging.warn("ListRelationships#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to list relationships: #{e.message}")
           end
 
@@ -27,7 +28,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("ListRelationships#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

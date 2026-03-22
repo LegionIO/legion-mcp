@@ -30,6 +30,7 @@ module Legion
               text_response(redact_hash(settings))
             end
           rescue StandardError => e
+            Legion::Logging.warn("GetConfig#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to get config: #{e.message}")
           end
 

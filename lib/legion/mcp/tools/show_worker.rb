@@ -23,6 +23,7 @@ module Legion
 
             text_response(worker.values)
           rescue StandardError => e
+            Legion::Logging.warn("ShowWorker#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed to fetch worker: #{e.message}")
           end
 
@@ -30,7 +31,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("ShowWorker#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 

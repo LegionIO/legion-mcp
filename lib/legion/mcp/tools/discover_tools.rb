@@ -34,6 +34,7 @@ module Legion
               text_response(ContextCompiler.compressed_catalog)
             end
           rescue StandardError => e
+            Legion::Logging.warn("DiscoverTools#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Failed: #{e.message}")
           end
 

@@ -27,8 +27,10 @@ module Legion
             updated = Legion::DigitalWorker::Lifecycle.transition!(worker, to_state: to_state, by: by, reason: reason)
             text_response(updated.values)
           rescue Legion::DigitalWorker::Lifecycle::InvalidTransition => e
+            Legion::Logging.warn("WorkerLifecycle#call invalid transition: #{e.message}") if defined?(Legion::Logging)
             error_response("Invalid transition: #{e.message}")
           rescue StandardError => e
+            Legion::Logging.warn("WorkerLifecycle#call failed: #{e.message}") if defined?(Legion::Logging)
             error_response("Lifecycle transition failed: #{e.message}")
           end
 
@@ -36,7 +38,8 @@ module Legion
 
           def data_connected?
             Legion::Settings[:data][:connected]
-          rescue StandardError
+          rescue StandardError => e
+            Legion::Logging.warn("WorkerLifecycle#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
             false
           end
 
