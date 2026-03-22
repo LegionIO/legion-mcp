@@ -28,8 +28,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'concurrent-ruby', '>= 1.2'
   spec.add_dependency 'mcp', '~> 0.8'
-  spec.add_dependency 'legion-data', '>= 1.4'
-  spec.add_dependency 'legion-json', '>= 1.2'
-  spec.add_dependency 'legion-logging', '>= 0.3'
-  spec.add_dependency 'legion-settings', '>= 0.3'
+  spec.add_dependency 'legion-data', '>= 1.4.4'
+  spec.add_dependency 'legion-json', '>= 1.2.0'
+  spec.add_dependency 'legion-logging', '>= 1.2.5'
+  spec.add_dependency 'legion-settings', '>= 1.3.9'
 end

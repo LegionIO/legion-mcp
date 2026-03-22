@@ -2,6 +2,8 @@
 
 MCP (Model Context Protocol) server for the LegionIO framework. Provides semantic tool matching, observation pipeline, context compilation, and tiered behavioral intelligence (Tier 0/1/2 routing).
 
+**Version**: 0.4.1
+
 Extracted from [LegionIO](https://github.com/LegionIO/LegionIO) for independent versioning and reuse.
 
 ## Installation
@@ -13,7 +15,7 @@ gem 'legion-mcp'
 Or in a Gemfile:
 
 ```ruby
-gem 'legion-mcp', '~> 0.1'
+gem 'legion-mcp', '~> 0.4'
 ```
 
 ## Architecture
