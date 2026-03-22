@@ -1,5 +1,17 @@
 # legion-mcp Changelog
 
+## [0.4.2] - 2026-03-22
+
+### Added
+- `legion.ask_peer` — synchronous RPC query to a specific mesh peer via `lex-mesh` `request_task`
+- `legion.list_peers` — list all registered mesh agents, with optional capability filter via `find_agents`
+- `legion.notify_peer` — fire-and-forget unicast notification to a specific mesh agent via `send_message`
+- `legion.broadcast_peers` — broadcast to all agents or multicast to a capability group via `send_message`
+- `legion.mesh_status` — retrieve current mesh network state via `mesh_status`
+- All 5 tools registered in `TOOL_CLASSES`; total tool count raised from 45 to 50
+- Specs for all 5 new tools (25 examples)
+- Updated `server_spec.rb` tool count assertion from 45 to 50
+
 ## [0.4.1] - 2026-03-19
 
 ### Added

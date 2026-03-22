@@ -50,6 +50,11 @@ require_relative 'cold_start'
 require_relative 'tools/do_action'
 require_relative 'tools/plan_action'
 require_relative 'tools/discover_tools'
+require_relative 'tools/ask_peer'
+require_relative 'tools/list_peers'
+require_relative 'tools/notify_peer'
+require_relative 'tools/broadcast_peers'
+require_relative 'tools/mesh_status'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
 
@@ -101,7 +106,12 @@ module Legion
         Tools::EvalResults,
         Tools::DoAction,
         Tools::PlanAction,
-        Tools::DiscoverTools
+        Tools::DiscoverTools,
+        Tools::AskPeer,
+        Tools::ListPeers,
+        Tools::NotifyPeer,
+        Tools::BroadcastPeers,
+        Tools::MeshStatus
       ].freeze
 
       class << self
