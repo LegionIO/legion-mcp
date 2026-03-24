@@ -4,6 +4,7 @@ require 'mcp'
 require 'legion/json'
 require_relative 'mcp/version'
 
+require_relative 'mcp/settings'
 require_relative 'mcp/auth'
 require_relative 'mcp/tool_governance'
 require_relative 'mcp/server'
