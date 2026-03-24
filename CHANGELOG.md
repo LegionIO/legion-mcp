@@ -1,5 +1,10 @@
 # legion-mcp Changelog
 
+## [0.5.6] - 2026-03-24
+
+### Changed
+- Reindex docs: update CLAUDE.md and README with current architecture and tool inventory
+
 ## [0.5.5] - 2026-03-24
 
 ### Added
