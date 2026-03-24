@@ -9,3 +9,4 @@ end
 
 require_relative 'client/server_registry'
 require_relative 'client/connection'
+require_relative 'client/pool'
