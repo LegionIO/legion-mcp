@@ -2,7 +2,7 @@
 
 MCP (Model Context Protocol) server for the LegionIO framework. Provides semantic tool matching, observation pipeline, context compilation, and tiered behavioral intelligence (Tier 0/1/2 routing).
 
-**Version**: 0.4.1
+**Version**: 0.5.5
 
 Extracted from [LegionIO](https://github.com/LegionIO/LegionIO) for independent versioning and reuse.
 
@@ -15,7 +15,7 @@ gem 'legion-mcp'
 Or in a Gemfile:
 
 ```ruby
-gem 'legion-mcp', '~> 0.4'
+gem 'legion-mcp', '~> 0.5'
 ```
 
 ## Architecture
@@ -32,7 +32,7 @@ Legion::MCP
 ├── PatternStore        # 4-layer degrading storage (L0 memory → L1 cache → L2 SQLite)
 ├── TierRouter          # Confidence-gated tier selection (0/1/2)
 ├── ContextGuard        # Staleness, rapid-fire, anomaly detection
-├── Tools/              # 35 MCP::Tool subclasses (legion.* namespace)
+├── Tools/              # 41 MCP::Tool subclasses (legion.* namespace)
 └── Resources/          # RunnerCatalog, ExtensionInfo
 ```
 
@@ -77,7 +77,7 @@ All persistence wraps in `begin/rescue => nil` — failed writes never block Tie
 
 ## Tools
 
-35 MCP tools in the `legion.*` namespace:
+41 MCP tools in the `legion.*` namespace:
 
 | Tool | Purpose |
 |------|---------|
@@ -95,6 +95,8 @@ All persistence wraps in `begin/rescue => nil` — failed writes never block Tie
 | `legion.list_workers` / `show_worker` / `worker_lifecycle` / `worker_costs` | Worker management |
 | `legion.team_summary` / `routing_stats` | Team and routing metrics |
 | `legion.rbac_assignments` / `rbac_check` / `rbac_grants` | Access control |
+| `legion.mind_growth_status` / `mind_growth_propose` / `mind_growth_approve` | Cognitive architecture growth |
+| `legion.mind_growth_build_queue` / `mind_growth_cognitive_profile` / `mind_growth_health` | Growth analysis and health |
 
 ## Resources
 
