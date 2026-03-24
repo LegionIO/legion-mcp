@@ -54,7 +54,8 @@ module Legion
           knowledge_domain: 'system',
           context:          { tool: tool, lex: lex, confidence: confidence, tests: tests }
         )
-      rescue StandardError
+      rescue StandardError => e
+        Legion::Logging.warn("OverrideBroadcast#store_to_apollo failed: #{e.message}") if defined?(Legion::Logging)
         nil
       end
 
