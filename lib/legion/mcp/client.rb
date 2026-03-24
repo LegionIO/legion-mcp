@@ -8,3 +8,4 @@ module Legion
 end
 
 require_relative 'client/server_registry'
+require_relative 'client/connection'
