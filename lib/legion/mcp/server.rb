@@ -154,6 +154,7 @@ module Legion
           Resources::ExtensionInfo.register_read_handler(server)
 
           register_catalog_listener
+          hydrate_override_confidence
 
           server
         end
@@ -191,6 +192,14 @@ module Legion
             tool_name: data[:tool_name],
             success:   success
           )
+        end
+
+        def hydrate_override_confidence
+          return unless defined?(Legion::LLM::OverrideConfidence)
+          return unless Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_l2)
+
+          Legion::LLM::OverrideConfidence.hydrate_from_l2
+          Legion::LLM::OverrideConfidence.hydrate_from_apollo if Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_apollo)
         end
 
         def register_catalog_listener
