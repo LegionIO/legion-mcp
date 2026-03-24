@@ -191,6 +191,25 @@ module Legion
           )
         end
 
+        def dispatch_catalog_tool(tool_name, arguments)
+          return nil unless defined?(Legion::Extensions::Catalog::Registry)
+
+          cap = Legion::Extensions::Catalog::Registry.find_by_mcp_name(tool_name)
+          return nil unless cap
+
+          segments = cap.extension.delete_prefix('lex-').split('-')
+          runner_path = (%w[Legion Extensions] + segments.map(&:capitalize) + ['Runners', cap.runner]).join('::')
+          runner = Kernel.const_get(runner_path)
+          fn = cap.function.to_sym
+          result = runner.send(fn, **(arguments || {}).transform_keys(&:to_sym))
+          { status: :success, result: result, source: :catalog }
+        rescue NameError => e
+          Legion::Logging.warn("Catalog dispatch failed: #{e.message}") if defined?(Legion::Logging)
+          nil
+        rescue StandardError => e
+          { status: :error, error: e.message, source: :catalog }
+        end
+
         def dynamic_tool_list
           static = TOOL_CLASSES.map do |klass|
             { name: klass.tool_name, description: klass.description,
