@@ -57,9 +57,9 @@ module Legion
         def mark_unhealthy(name, cooldown: 60)
           @mutex.synchronize do
             @health[name] = {
-              healthy: false,
-              marked_at: Time.now,
-              cooldown: cooldown,
+              healthy:    false,
+              marked_at:  Time.now,
+              cooldown:   cooldown,
               last_check: Time.now
             }
           end

@@ -7,11 +7,11 @@ module Legion
 
       def defaults
         {
-          servers: {},
-          overrides: {},
-          tool_cache_ttl: 300,
+          servers:         {},
+          overrides:       {},
+          tool_cache_ttl:  300,
           connect_timeout: 10,
-          call_timeout: 30
+          call_timeout:    30
         }
       end
     end

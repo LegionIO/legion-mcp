@@ -82,7 +82,7 @@ module Legion
           []
         end
 
-        def execute_tool_call(name:, arguments:)
+        def execute_tool_call(_name:, _arguments:)
           connect unless connected?
           { content: [], error: false }
         end

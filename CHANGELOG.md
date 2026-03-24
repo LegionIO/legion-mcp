@@ -1,5 +1,15 @@
 # legion-mcp Changelog
 
+## [0.5.0] - 2026-03-23
+
+### Added
+- MCP client: `ServerRegistry` for static (settings) and dynamic (runtime) server registration with health tracking and cooldown-based recovery
+- MCP client: `Connection` class for stdio and HTTP transport connections with TTL-cached tool lists
+- MCP client: `Pool` for long-lived connection management, aggregates tools across all healthy servers
+- MCP client: `Client.boot` loads server registry from `Legion::Settings[:mcp][:servers]` at startup
+- MCP client: `Client.register` / `Client.deregister` for runtime server management
+- `Settings` module with defaults for `servers`, `overrides`, `tool_cache_ttl`, `connect_timeout`, `call_timeout`
+
 ## [0.4.5] - 2026-03-22
 
 ### Fixed
