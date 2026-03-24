@@ -8,6 +8,7 @@ require_relative 'mcp/settings'
 require_relative 'mcp/auth'
 require_relative 'mcp/tool_governance'
 require_relative 'mcp/server'
+require_relative 'mcp/override_broadcast'
 require_relative 'mcp/client'
 
 module Legion
