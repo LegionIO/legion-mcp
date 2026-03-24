@@ -191,6 +191,21 @@ module Legion
           )
         end
 
+        def dynamic_tool_list
+          static = TOOL_CLASSES.map do |klass|
+            { name: klass.tool_name, description: klass.description,
+              input_schema: klass.input_schema, source: :builtin, klass: klass }
+          end
+
+          dynamic = if defined?(Legion::Extensions::Catalog::Registry)
+                      Legion::Extensions::Catalog::Registry.for_mcp.map(&:to_mcp_tool)
+                    else
+                      []
+                    end
+
+          static + dynamic
+        end
+
         def build_filtered_tool_list(keywords: [])
           tool_names = TOOL_CLASSES.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
           ranked     = UsageFilter.ranked_tools(tool_names, keywords: keywords)
