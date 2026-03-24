@@ -1,5 +1,19 @@
 # legion-mcp Changelog
 
+## [0.5.5] - 2026-03-24
+
+### Added
+- Mind Growth Phase 7.2: 6 MCP tools for lex-mind-growth integration
+- `legion.mind_growth_status` — growth status including proposals and cognitive coverage
+- `legion.mind_growth_propose` — propose a new cognitive extension concept
+- `legion.mind_growth_approve` — evaluate and score a proposal for approval
+- `legion.mind_growth_build_queue` — list approved proposals in the build queue
+- `legion.mind_growth_cognitive_profile` — analyze cognitive architecture coverage against reference models
+- `legion.mind_growth_health` — extension fitness scores, prune candidates, and improvement candidates
+- All 6 tools registered in `TOOL_CLASSES`; total tool count raised from 50 to 56
+- Specs for all 6 new tools (38 examples)
+- Updated `server_spec.rb` tool count assertion from 50 to 56
+
 ## [0.5.4] - 2026-03-24
 
 ### Added

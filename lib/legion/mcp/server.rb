@@ -58,6 +58,12 @@ require_relative 'tools/list_peers'
 require_relative 'tools/notify_peer'
 require_relative 'tools/broadcast_peers'
 require_relative 'tools/mesh_status'
+require_relative 'tools/mind_growth_status'
+require_relative 'tools/mind_growth_propose'
+require_relative 'tools/mind_growth_approve'
+require_relative 'tools/mind_growth_build_queue'
+require_relative 'tools/mind_growth_cognitive_profile'
+require_relative 'tools/mind_growth_health'
 require_relative 'catalog_bridge'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
@@ -115,7 +121,13 @@ module Legion
         Tools::ListPeers,
         Tools::NotifyPeer,
         Tools::BroadcastPeers,
-        Tools::MeshStatus
+        Tools::MeshStatus,
+        Tools::MindGrowthStatus,
+        Tools::MindGrowthPropose,
+        Tools::MindGrowthApprove,
+        Tools::MindGrowthBuildQueue,
+        Tools::MindGrowthCognitiveProfile,
+        Tools::MindGrowthHealth
       ].freeze
 
       class << self
