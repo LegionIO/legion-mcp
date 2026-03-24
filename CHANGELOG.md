@@ -1,5 +1,10 @@
 # legion-mcp Changelog
 
+## [0.5.2] - 2026-03-23
+
+### Changed
+- Bump legion-data dependency to >= 1.4.19
+
 ## [0.5.1] - 2026-03-23
 
 ### Added
