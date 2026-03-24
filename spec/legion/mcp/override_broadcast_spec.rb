@@ -3,37 +3,36 @@
 require 'spec_helper'
 require 'legion/mcp'
 
-# Stub OverrideConfidence for broadcast tests
-module Legion
-  module LLM
-    module OverrideConfidence
-      @overrides = {}
-      @mutex = Mutex.new
-
-      module_function
-
-      def record(tool:, lex:, confidence:)
-        @mutex.synchronize do
-          @overrides[tool] = {
+RSpec.describe Legion::MCP::OverrideBroadcast do
+  let(:confidence_stub) do
+    overrides = {}
+    mutex = Mutex.new
+    Module.new do
+      define_method(:record) do |tool:, lex:, confidence:|
+        mutex.synchronize do
+          overrides[tool] = {
             tool: tool, lex: lex, confidence: confidence.clamp(0.0, 1.0),
             hit_count: 0, miss_count: 0
           }
         end
       end
 
-      def lookup(tool)
-        @mutex.synchronize { @overrides[tool]&.dup }
+      define_method(:lookup) do |tool|
+        mutex.synchronize { overrides[tool]&.dup }
       end
 
-      def reset!
-        @mutex.synchronize { @overrides.clear }
+      define_method(:reset!) do
+        mutex.synchronize { overrides.clear }
       end
+
+      %i[record lookup reset!].each { |m| module_function m }
     end
   end
-end
 
-RSpec.describe Legion::MCP::OverrideBroadcast do
-  before { Legion::LLM::OverrideConfidence.reset! }
+  before do
+    stub_const('Legion::LLM::OverrideConfidence', confidence_stub)
+    confidence_stub.reset!
+  end
 
   describe '.publish_confirmation' do
     it 'publishes override confirmation when Transport is available' do
@@ -61,7 +60,7 @@ RSpec.describe Legion::MCP::OverrideBroadcast do
 
   describe '.receive_confirmation' do
     it 'boosts local confidence from remote confirmation' do
-      Legion::LLM::OverrideConfidence.record(
+      confidence_stub.record(
         tool: 'close_pr', lex: 'lex-github:PullRequest:close', confidence: 0.5
       )
 
@@ -70,7 +69,7 @@ RSpec.describe Legion::MCP::OverrideBroadcast do
         confidence: 0.85, tests: 5, node: 'node_a'
       )
 
-      entry = Legion::LLM::OverrideConfidence.lookup('close_pr')
+      entry = confidence_stub.lookup('close_pr')
       expect(entry[:confidence]).to be > 0.5
     end
 
@@ -80,7 +79,7 @@ RSpec.describe Legion::MCP::OverrideBroadcast do
         confidence: 0.85, tests: 5, node: 'node_a'
       )
 
-      entry = Legion::LLM::OverrideConfidence.lookup('close_pr')
+      entry = confidence_stub.lookup('close_pr')
       expect(entry).not_to be_nil
       expect(entry[:confidence]).to be > 0
       expect(entry[:confidence]).to be <= 0.85

@@ -1,5 +1,15 @@
 # legion-mcp Changelog
 
+## [0.5.1] - 2026-03-23
+
+### Added
+- Dynamic tool list from `Catalog::Registry` merged with static TOOL_CLASSES
+- `dispatch_catalog_tool` routes Catalog-sourced MCP tool calls to extension runners
+- `CatalogBridge` module extracted for catalog integration (hydration, listener, dispatch, dynamic tools)
+- `OverrideBroadcast` for mesh-wide override confirmation via RabbitMQ
+- Hydrate `OverrideConfidence` from SQLite (L2) and Apollo (L3) at server boot
+- MCP server resets automatically when Catalog registry changes
+
 ## [0.5.0] - 2026-03-23
 
 ### Added
