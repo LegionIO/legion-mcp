@@ -37,7 +37,8 @@ module Legion
 
           def generate_narrative(goal, steps)
             tool_list = steps.map { |s| s[:tool] }.join(', ')
-            Legion::LLM.ask("Create a brief execution plan for: #{goal}. Available tools: #{tool_list}")
+            Legion::LLM.ask("Create a brief execution plan for: #{goal}. Available tools: #{tool_list}",
+                            caller: { extension: 'legion-mcp', tool: 'plan_action' })
           rescue StandardError => e
             Legion::Logging.debug("PlanAction#generate_narrative failed: #{e.message}") if defined?(Legion::Logging)
             nil

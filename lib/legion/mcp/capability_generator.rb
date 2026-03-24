@@ -79,7 +79,7 @@ module Legion
                  'Follow the pattern: module with module_function methods returning hashes. ' \
                  'Include proper error handling. Return ONLY the Ruby code.'
 
-        Legion::LLM.ask(prompt)
+        Legion::LLM.ask(prompt, caller: { extension: 'legion-mcp', operation: 'capability_gen', phase: 'runner' })
       rescue StandardError => e
         Legion::Logging.warn("CapabilityGenerator#generate_runner failed: #{e.message}") if defined?(Legion::Logging)
         nil
@@ -92,7 +92,7 @@ module Legion
                  "Description: #{description}. " \
                  'Use described_class pattern. Return ONLY the Ruby code.'
 
-        Legion::LLM.ask(prompt)
+        Legion::LLM.ask(prompt, caller: { extension: 'legion-mcp', operation: 'capability_gen', phase: 'spec' })
       rescue StandardError => e
         Legion::Logging.warn("CapabilityGenerator#generate_spec failed: #{e.message}") if defined?(Legion::Logging)
         nil

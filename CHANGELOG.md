@@ -1,5 +1,10 @@
 # legion-mcp Changelog
 
+## [0.5.3] - 2026-03-23
+
+### Changed
+- Add `caller:` identity to all LLM call sites (do_action tier 1/2, plan_action, capability_generator runner/spec)
+
 ## [0.5.2] - 2026-03-23
 
 ### Changed

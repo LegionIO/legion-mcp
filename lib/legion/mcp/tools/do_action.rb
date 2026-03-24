@@ -84,7 +84,7 @@ module Legion
             return nil unless defined?(Legion::LLM) && Legion::LLM.started?
 
             hint = "Known pattern: #{pattern[:intent_text]}. Tools: #{Array(pattern[:tool_chain]).join(', ')}. "
-            Legion::LLM.ask("#{hint}User intent: #{intent}")
+            Legion::LLM.ask("#{hint}User intent: #{intent}", caller: { extension: 'legion-mcp', tool: 'do_action', tier: 1 })
           rescue StandardError => e
             Legion::Logging.debug("DoAction#try_tier1 failed: #{e.message}") if defined?(Legion::Logging)
             nil
@@ -95,7 +95,7 @@ module Legion
 
             catalog = ContextCompiler.respond_to?(:compressed_catalog) ? ContextCompiler.compressed_catalog : []
             context_str = catalog.any? ? "Available tools: #{Legion::JSON.dump(catalog)}. " : ''
-            Legion::LLM.ask("#{context_str}User intent: #{intent}")
+            Legion::LLM.ask("#{context_str}User intent: #{intent}", caller: { extension: 'legion-mcp', tool: 'do_action', tier: 2 })
           rescue StandardError => e
             Legion::Logging.debug("DoAction#try_tier2 failed: #{e.message}") if defined?(Legion::Logging)
             nil
