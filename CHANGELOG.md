@@ -1,5 +1,16 @@
 # legion-mcp Changelog
 
+## [0.5.4] - 2026-03-24
+
+### Added
+- TBI Phase 5: `GapDetector` — detects unmatched intents, high-failure tools, and stale candidates from Observer/PatternStore data
+- TBI Phase 5: `FunctionGenerator` — LLM-powered tool spec generation from detected gaps, with validation and pattern registration
+- TBI Phase 5: `SelfGenerate` — orchestrates gap detection + function generation cycles with cooldown, history tracking, and status reporting
+- 89 new specs across gap_detector, function_generator, and self_generate
+
+### Changed
+- Rewrote `GapDetector` from frequency-based to gap-type-based detection (unmatched, failure, stale) with priority scoring
+
 ## [0.5.3] - 2026-03-23
 
 ### Changed
