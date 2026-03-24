@@ -153,6 +153,8 @@ module Legion
           Resources::RunnerCatalog.register(server)
           Resources::ExtensionInfo.register_read_handler(server)
 
+          register_catalog_listener
+
           server
         end
 
@@ -189,6 +191,13 @@ module Legion
             tool_name: data[:tool_name],
             success:   success
           )
+        end
+
+        def register_catalog_listener
+          return unless defined?(Legion::Extensions::Catalog::Registry)
+          return unless Legion::Extensions::Catalog::Registry.respond_to?(:on_change)
+
+          Legion::Extensions::Catalog::Registry.on_change { Legion::MCP.reset! }
         end
 
         def dispatch_catalog_tool(tool_name, arguments)

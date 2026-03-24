@@ -2,74 +2,7 @@
 
 require 'spec_helper'
 require 'legion/mcp'
-
-# Stub Capability and Catalog::Registry for tests
-unless defined?(Legion::Extensions::Capability)
-  module Legion
-    module Extensions
-      Capability = ::Data.define(
-        :name, :extension, :runner, :function,
-        :description, :parameters, :tags, :loaded_at
-      ) do
-        def self.from_runner(extension:, runner:, function:, description: nil, parameters: nil, tags: nil)
-          canonical = "#{extension}:#{runner.to_s.gsub(/([A-Z])/, '_\1').sub(/^_/, '').downcase}:#{function}"
-          new(
-            name: canonical, extension: extension, runner: runner.to_s,
-            function: function.to_s, description: description,
-            parameters: parameters || {}, tags: Array(tags), loaded_at: Time.now
-          )
-        end
-
-        def to_mcp_tool
-          snake_runner = runner.gsub(/([A-Z])/, '_\1').sub(/^_/, '').downcase
-          {
-            name: "legion.#{extension.delete_prefix('lex-').tr('-', '_')}.#{snake_runner}.#{function}",
-            description: description || "#{extension} #{runner}##{function}",
-            input_schema: { type: 'object', properties: {}, required: [] }
-          }
-        end
-      end
-
-      module Catalog
-        module Registry
-          @capabilities = []
-          @by_name = {}
-          @mutex = Mutex.new
-
-          module_function
-
-          def register(capability)
-            @mutex.synchronize do
-              return if @by_name.key?(capability.name)
-
-              @capabilities << capability
-              @by_name[capability.name] = capability
-            end
-          end
-
-          def for_mcp
-            @mutex.synchronize { @capabilities.dup }
-          end
-
-          def find_by_mcp_name(mcp_name)
-            @mutex.synchronize do
-              @capabilities.find do |cap|
-                cap.to_mcp_tool[:name] == mcp_name
-              end
-            end
-          end
-
-          def reset!
-            @mutex.synchronize do
-              @capabilities.clear
-              @by_name.clear
-            end
-          end
-        end
-      end
-    end
-  end
-end
+require_relative '../../support/catalog_stubs'
 
 RSpec.describe 'MCP Server dynamic dispatch' do
   before do
