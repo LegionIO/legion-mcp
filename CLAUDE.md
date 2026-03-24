@@ -7,7 +7,7 @@
 Standalone gem providing the Model Context Protocol (MCP) server for LegionIO. Extracted from LegionIO to enable independent versioning and reuse. Includes semantic tool matching, observation pipeline, context compilation, tiered inference (Tier 0/1/2), and tool governance.
 
 **GitHub**: https://github.com/LegionIO/legion-mcp
-**Version**: 0.4.1
+**Version**: 0.5.5
 **License**: Apache-2.0
 **Ruby**: >= 3.4
 
@@ -25,7 +25,7 @@ Legion::MCP
 ├── PatternStore        # 4-layer degrading storage (L0 memory, L1 cache, L2 local SQLite)
 ├── TierRouter          # Confidence-gated tier selection (Tier 0/1/2)
 ├── ContextGuard        # Staleness, rapid-fire, anomaly detection guards
-├── Tools/              # 35 MCP::Tool subclasses (legion.* namespace)
+├── Tools/              # 41 MCP::Tool subclasses (legion.* namespace)
 └── Resources/          # RunnerCatalog, ExtensionInfo
 ```
 
@@ -75,10 +75,16 @@ All optional dependencies use `defined?()` guards:
 | `lib/legion/mcp/pattern_store.rb` | 4-layer degrading storage (L0/L1/L2) with thread-safe access |
 | `lib/legion/mcp/tier_router.rb` | Confidence-gated tier selection, tool chain execution |
 | `lib/legion/mcp/context_guard.rb` | Staleness, rapid-fire, anomaly detection |
-| `lib/legion/mcp/tools/` | 35 MCP::Tool subclasses (legion.* namespace) |
+| `lib/legion/mcp/tools/` | 41 MCP::Tool subclasses (legion.* namespace) |
 | `lib/legion/mcp/tools/do_action.rb` | Natural language intent routing with Tier 0 fast path |
 | `lib/legion/mcp/tools/discover_tools.rb` | Dynamic tool discovery with context |
 | `lib/legion/mcp/tools/run_task.rb` | Execute runner function via dot notation |
+| `legion.mind_growth_status` | Current growth cycle state |
+| `legion.mind_growth_propose` | Trigger concept proposal (category, description, name) |
+| `legion.mind_growth_approve` | Approve a proposal by ID |
+| `legion.mind_growth_build_queue` | List approved proposals ready to build |
+| `legion.mind_growth_cognitive_profile` | Current architecture analysis |
+| `legion.mind_growth_health` | Extension fitness validation |
 | `lib/legion/mcp/resources/runner_catalog.rb` | `legion://runners` resource |
 | `lib/legion/mcp/resources/extension_info.rb` | `legion://extensions/{name}` resource template |
 
