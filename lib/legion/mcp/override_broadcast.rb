@@ -44,15 +44,14 @@ module Legion
       end
 
       def store_to_apollo(tool:, lex:, confidence:, tests:, node:)
-        return unless defined?(Legion::Extensions::Apollo::Runners::Knowledge)
+        return unless defined?(Legion::Apollo) && Legion::Apollo.started?
 
-        Legion::Extensions::Apollo::Runners::Knowledge.handle_ingest(
+        Legion::Apollo.ingest(
           content:          "Override confirmed: #{tool} -> #{lex} (confidence: #{confidence}, tests: #{tests})",
-          content_type:     'fact',
           tags:             %w[override mesh_confirmed] + [tool],
-          source_agent:     "mesh:#{node}",
-          knowledge_domain: 'system',
-          context:          { tool: tool, lex: lex, confidence: confidence, tests: tests }
+          source_channel:   'mesh',
+          submitted_by:     "mesh:#{node}",
+          knowledge_domain: 'system'
         )
       rescue StandardError => e
         Legion::Logging.warn("OverrideBroadcast#store_to_apollo failed: #{e.message}") if defined?(Legion::Logging)
