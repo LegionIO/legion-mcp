@@ -1,5 +1,10 @@
 # legion-mcp Changelog
 
+## [0.5.7] - 2026-03-25
+
+### Changed
+- `OverrideBroadcast#store_to_apollo` now routes through `Legion::Apollo.ingest` (core library) instead of calling `Legion::Extensions::Apollo::Runners::Knowledge.handle_ingest` directly — removes the hard coupling to the co-located extension
+
 ## [0.5.6] - 2026-03-24
 
 ### Changed

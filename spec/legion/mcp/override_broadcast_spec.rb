@@ -58,6 +58,27 @@ RSpec.describe Legion::MCP::OverrideBroadcast do
     end
   end
 
+  describe '#store_to_apollo' do
+    context 'when Legion::Apollo is available' do
+      before do
+        stub_const('Legion::Apollo', double(started?: true, ingest: { success: true }))
+      end
+
+      it 'calls Legion::Apollo.ingest' do
+        described_class.send(:store_to_apollo, tool: 't', lex: 'l', confidence: 0.9, tests: 3, node: 'n1')
+        expect(Legion::Apollo).to have_received(:ingest)
+      end
+    end
+
+    context 'when Legion::Apollo is not available' do
+      it 'does not raise' do
+        expect do
+          described_class.send(:store_to_apollo, tool: 't', lex: 'l', confidence: 0.9, tests: 3, node: 'n1')
+        end.not_to raise_error
+      end
+    end
+  end
+
   describe '.receive_confirmation' do
     it 'boosts local confidence from remote confirmation' do
       confidence_stub.record(
