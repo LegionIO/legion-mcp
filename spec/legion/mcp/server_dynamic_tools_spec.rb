@@ -23,9 +23,9 @@ RSpec.describe 'MCP Server dynamic tool list' do
     expect(tool_names).to include('legion.jira.issue.create')
   end
 
-  it 'includes static TOOL_CLASSES in dynamic_tool_list' do
+  it 'includes static tools from tool_registry in dynamic_tool_list' do
     tools = Legion::MCP::Server.dynamic_tool_list
-    static_names = Legion::MCP::Server::TOOL_CLASSES.map(&:tool_name)
+    static_names = Legion::MCP::Server.tool_registry.map(&:tool_name)
     tool_names = tools.map { |t| t[:name] }
     static_names.each { |sn| expect(tool_names).to include(sn) }
   end

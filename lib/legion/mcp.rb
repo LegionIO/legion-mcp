@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'concurrent'
 require 'mcp'
 require 'legion/json'
 require_relative 'mcp/version'

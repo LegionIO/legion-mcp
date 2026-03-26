@@ -62,7 +62,7 @@ module Legion
         end
       end
 
-      # Returns tools for a specific category, filtered to only those present in TOOL_CLASSES.
+      # Returns tools for a specific category, filtered to only those present in Server.tool_registry.
       # @param category_sym [Symbol] one of the CATEGORIES keys
       # @return [Hash, nil] { category:, summary:, tools: [{ name:, description:, params: }] } or nil
       def category_tools(category_sym)
@@ -82,7 +82,7 @@ module Legion
 
       # Keyword-match intent against tool names and descriptions.
       # @param intent_string [String] natural language intent
-      # @return [Class, nil] best matching tool CLASS from Server::TOOL_CLASSES or nil
+      # @return [Class, nil] best matching tool CLASS from Server.tool_registry or nil
       def match_tool(intent_string)
         scored = scored_tools(intent_string)
         return nil if scored.empty?
@@ -90,7 +90,7 @@ module Legion
         best = scored.max_by { |entry| entry[:score] }
         return nil if best[:score].zero?
 
-        Server::TOOL_CLASSES.find { |klass| klass.tool_name == best[:name] }
+        Server.tool_registry.find { |klass| klass.tool_name == best[:name] }
       end
 
       # Returns top N keyword-matched tools ranked by score.
@@ -118,7 +118,7 @@ module Legion
       end
 
       def build_tool_index
-        Server::TOOL_CLASSES.each_with_object({}) do |klass, idx|
+        Server.tool_registry.each_with_object({}) do |klass, idx|
           raw_schema = klass.input_schema
           schema = raw_schema.is_a?(Hash) ? raw_schema : raw_schema.to_h
           properties = schema[:properties] || {}

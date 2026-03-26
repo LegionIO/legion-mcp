@@ -48,7 +48,7 @@ require_relative 'context_compiler'
 require_relative 'embedding_index'
 require_relative 'cold_start'
 require_relative 'gap_detector'
-require_relative 'function_generator'
+require_relative 'function_discovery'
 require_relative 'self_generate'
 require_relative 'tools/do_action'
 require_relative 'tools/plan_action'
@@ -74,7 +74,7 @@ require_relative 'resources/extension_info'
 module Legion
   module MCP
     module Server
-      TOOL_CLASSES = [
+      STATIC_TOOLS = [
         Tools::RunTask,
         Tools::DescribeRunner,
         Tools::ListTasks,
@@ -136,14 +136,40 @@ module Legion
         Tools::KnowledgeContext
       ].freeze
 
+      @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
+      @tool_registry_lock = Mutex.new
+
       class << self
         include CatalogBridge
 
+        attr_reader :tool_registry
+
+        def register_tool(tool_class)
+          @tool_registry_lock.synchronize do
+            return if tool_registry.any? { |tc| tc.tool_name == tool_class.tool_name }
+
+            tool_registry << tool_class
+            reset_caches!
+          end
+        end
+
+        def unregister_tool(tool_name)
+          @tool_registry_lock.synchronize do
+            tool_registry.reject! { |tc| tc.tool_name == tool_name }
+            reset_caches!
+          end
+        end
+
+        def reset_caches!
+          ContextCompiler.reset! if defined?(ContextCompiler)
+          EmbeddingIndex.reset! if defined?(EmbeddingIndex) && EmbeddingIndex.respond_to?(:reset!)
+        end
+
         def build(identity: nil)
           tools = if ToolGovernance.governance_enabled?
-                    ToolGovernance.filter_tools(TOOL_CLASSES, identity)
+                    ToolGovernance.filter_tools(tool_registry, identity)
                   else
-                    TOOL_CLASSES
+                    tool_registry
                   end
 
           server = ::MCP::Server.new(
@@ -170,6 +196,10 @@ module Legion
 
           # Cold-start: load community patterns if store is still empty after hydration
           ColdStart.load_community_patterns if defined?(ColdStart)
+
+          # Discover and register runner functions before building the embedding index
+          # so all tools are present when embeddings are populated
+          FunctionDiscovery.discover_and_register if defined?(Legion::Extensions)
 
           # Populate embedding index for semantic tool matching (lazy — no-op if LLM unavailable)
           populate_embedding_index
@@ -219,10 +249,10 @@ module Legion
         end
 
         def build_filtered_tool_list(keywords: [])
-          tool_names = TOOL_CLASSES.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
+          tool_names = tool_registry.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
           ranked     = UsageFilter.ranked_tools(tool_names, keywords: keywords)
           ranked.filter_map do |name|
-            TOOL_CLASSES.find do |tc|
+            tool_registry.find do |tc|
               (tc.respond_to?(:tool_name) ? tc.tool_name : tc.name) == name
             end
           end

@@ -109,7 +109,7 @@ RSpec.describe Legion::MCP::ContextCompiler do
 
   before(:each) do
     described_class.reset!
-    stub_const('Legion::MCP::Server::TOOL_CLASSES', stub_tool_classes)
+    allow(Legion::MCP::Server).to receive(:tool_registry).and_return(stub_tool_classes)
   end
 
   describe 'CATEGORIES' do
@@ -354,7 +354,7 @@ RSpec.describe Legion::MCP::ContextCompiler do
     it 'clears the memoized tool_index' do
       first_index = described_class.tool_index
       described_class.reset!
-      stub_const('Legion::MCP::Server::TOOL_CLASSES', stub_tool_classes)
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return(stub_tool_classes)
       second_index = described_class.tool_index
       # After reset the index is rebuilt — it may be equal in value but is a new object
       expect(second_index).not_to equal(first_index)

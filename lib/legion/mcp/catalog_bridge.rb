@@ -38,7 +38,7 @@ module Legion
       end
 
       def dynamic_tool_list
-        static = Server::TOOL_CLASSES.map do |klass|
+        static = Server.tool_registry.map do |klass|
           { name: klass.tool_name, description: klass.description,
             input_schema: klass.input_schema, source: :builtin, klass: klass }
         end

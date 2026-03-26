@@ -6,9 +6,9 @@ module Legion
       module_function
 
       def compile_tool_definitions
-        return [] unless defined?(Legion::MCP::Server::TOOL_CLASSES)
+        return [] unless defined?(Legion::MCP::Server)
 
-        Legion::MCP::Server::TOOL_CLASSES.map do |klass|
+        Legion::MCP::Server.tool_registry.map do |klass|
           name = klass.respond_to?(:tool_name) ? klass.tool_name : klass.name
           desc = klass.respond_to?(:description) ? klass.description : ''
           params = extract_params(klass)

@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-03-26
+
+### Fixed
+- `deps_satisfied?` now strips leading `::` and rejects empty parts from dependency strings to avoid `NameError` on constants like `::Legion::MCP`
+- `discover_and_register` prefers `Legion::Extensions.extensions` public accessor with ivar fallback
+- `tool_registry` and `@tool_registry_lock` initialized eagerly at module level to eliminate thread-race on first access
+- Removed `@tool_registry_lock ||=` guard from `register_tool`/`unregister_tool` (lock always present)
+- Added explicit `require 'concurrent'` to `lib/legion/mcp.rb` to prevent `NameError: uninitialized constant Concurrent` in isolation
+
+### Changed
+- Spec descriptions updated from `TOOL_CLASSES` to `tool_registry` / `Server.tool_registry` for accuracy
+
+## [0.6.1] - 2026-03-26
+
+### Changed
+- Replace frozen TOOL_CLASSES with mutable tool_registry for dynamic tool registration
+- Simplify self_generate to detect gaps and publish via AMQP (removed FunctionGenerator)
+- Extract `runner_expose_opts` and `register_function` helpers from `build_tools_from_runner` to reduce cyclomatic complexity
+- Split `Settings.defaults` into focused sub-methods to reduce method length
+
+### Added
+- Codegen self-generate and MCP auto-expose settings defaults
+- Function metadata auto-discovery for dynamic MCP tool registration
+
+### Removed
+- `function_generator.rb` and `capability_generator.rb` (generation moved to lex-codegen)
+
 ## [0.6.0] - 2026-03-26
 
 ### Added
