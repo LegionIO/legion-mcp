@@ -64,6 +64,7 @@ require_relative 'tools/mind_growth_approve'
 require_relative 'tools/mind_growth_build_queue'
 require_relative 'tools/mind_growth_cognitive_profile'
 require_relative 'tools/mind_growth_health'
+require_relative 'tools/query_knowledge'
 require_relative 'catalog_bridge'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
@@ -127,7 +128,8 @@ module Legion
         Tools::MindGrowthApprove,
         Tools::MindGrowthBuildQueue,
         Tools::MindGrowthCognitiveProfile,
-        Tools::MindGrowthHealth
+        Tools::MindGrowthHealth,
+        Tools::QueryKnowledge
       ].freeze
 
       class << self

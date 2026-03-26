@@ -1,5 +1,13 @@
 # legion-mcp Changelog
 
+## [0.5.8] - 2026-03-26
+
+### Added
+- `legion.query_knowledge` MCP tool: search document knowledge base with optional LLM synthesis (closes #3)
+  - Inputs: question (required), top_k (default 5), synthesize (default true)
+  - Guards with defined?() — returns error response if lex-knowledge not loaded
+  - Tool count: 41 → 42
+
 ## [0.5.7] - 2026-03-25
 
 ### Changed
