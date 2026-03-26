@@ -5,7 +5,8 @@ module Legion
     module Tools
       class KnowledgeContext < ::MCP::Tool
         tool_name 'legion.knowledge_context'
-        description 'Retrieve knowledge relevant to the current task. Call this when you need context about the codebase, architecture, past decisions, or known gotchas.'
+        description 'Retrieve knowledge relevant to the current task. Call this when you need context about ' \
+                    'the codebase, architecture, past decisions, or known gotchas.'
 
         input_schema(
           properties: {
@@ -14,7 +15,7 @@ module Legion
                         enum: %w[local global all] },
             top_k:    { type: 'integer', description: 'Number of source chunks to retrieve (default 5)' }
           },
-          required: %w[question]
+          required:   %w[question]
         )
 
         class << self
@@ -60,9 +61,8 @@ module Legion
             global = query_global(question: question, top_k: top_k)
             return global unless defined?(Legion::Apollo::Local)
 
-            local   = Legion::Apollo::Local.query(question: question, top_k: top_k)
-            merged  = merge_results(global, local)
-            merged
+            local = Legion::Apollo::Local.query(question: question, top_k: top_k)
+            merge_results(global, local)
           end
 
           def merge_results(global, local)

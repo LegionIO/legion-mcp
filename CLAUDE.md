@@ -7,7 +7,7 @@
 Standalone gem providing the Model Context Protocol (MCP) server for LegionIO. Extracted from LegionIO to enable independent versioning and reuse. Includes semantic tool matching, observation pipeline, context compilation, tiered inference (Tier 0/1/2), and tool governance.
 
 **GitHub**: https://github.com/LegionIO/legion-mcp
-**Version**: 0.5.5
+**Version**: 0.6.0
 **License**: Apache-2.0
 **Ruby**: >= 3.4
 
@@ -25,7 +25,7 @@ Legion::MCP
 ├── PatternStore        # 4-layer degrading storage (L0 memory, L1 cache, L2 local SQLite)
 ├── TierRouter          # Confidence-gated tier selection (Tier 0/1/2)
 ├── ContextGuard        # Staleness, rapid-fire, anomaly detection guards
-├── Tools/              # 41 MCP::Tool subclasses (legion.* namespace)
+├── Tools/              # 59 MCP::Tool subclasses (legion.* namespace)
 └── Resources/          # RunnerCatalog, ExtensionInfo
 ```
 
@@ -75,16 +75,21 @@ All optional dependencies use `defined?()` guards:
 | `lib/legion/mcp/pattern_store.rb` | 4-layer degrading storage (L0/L1/L2) with thread-safe access |
 | `lib/legion/mcp/tier_router.rb` | Confidence-gated tier selection, tool chain execution |
 | `lib/legion/mcp/context_guard.rb` | Staleness, rapid-fire, anomaly detection |
-| `lib/legion/mcp/tools/` | 41 MCP::Tool subclasses (legion.* namespace) |
+| `lib/legion/mcp/tools/` | 59 MCP::Tool subclasses (legion.* namespace) |
 | `lib/legion/mcp/tools/do_action.rb` | Natural language intent routing with Tier 0 fast path |
 | `lib/legion/mcp/tools/discover_tools.rb` | Dynamic tool discovery with context |
 | `lib/legion/mcp/tools/run_task.rb` | Execute runner function via dot notation |
-| `legion.mind_growth_status` | Current growth cycle state |
-| `legion.mind_growth_propose` | Trigger concept proposal (category, description, name) |
-| `legion.mind_growth_approve` | Approve a proposal by ID |
-| `legion.mind_growth_build_queue` | List approved proposals ready to build |
-| `legion.mind_growth_cognitive_profile` | Current architecture analysis |
-| `legion.mind_growth_health` | Extension fitness validation |
+| `lib/legion/mcp/tools/query_knowledge.rb` | Query Apollo knowledge store |
+| `lib/legion/mcp/tools/knowledge_health.rb` | Knowledge store health and quality report |
+| `lib/legion/mcp/tools/knowledge_context.rb` | Scoped RAG query (local/global/all) for current-task context |
+| `lib/legion/mcp/tools/eval_*.rb` | Evaluation management (list/run/results) |
+| `lib/legion/mcp/tools/experiment_results.rb` | A/B experiment result comparison |
+| `lib/legion/mcp/tools/dataset_*.rb` | Dataset browsing (list/show) |
+| `lib/legion/mcp/tools/prompt_*.rb` | Prompt template management (list/show/run) |
+| `lib/legion/mcp/tools/plan_action.rb` | Agentic planning with action decomposition |
+| `lib/legion/mcp/tools/ask_peer.rb` / `notify_peer.rb` / `broadcast_peers.rb` / `list_peers.rb` | Agent mesh communication |
+| `lib/legion/mcp/tools/mesh_status.rb` | Mesh topology status |
+| `lib/legion/mcp/tools/mind_growth_*.rb` | Mind growth tools (status/propose/approve/build_queue/cognitive_profile/health) |
 | `lib/legion/mcp/resources/runner_catalog.rb` | `legion://runners` resource |
 | `lib/legion/mcp/resources/extension_info.rb` | `legion://extensions/{name}` resource template |
 
@@ -92,7 +97,7 @@ All optional dependencies use `defined?()` guards:
 
 ```bash
 bundle install
-bundle exec rspec       # 278 examples, 0 failures
+bundle exec rspec       # 0 failures
 bundle exec rubocop -A  # auto-fix
 bundle exec rubocop     # lint check
 ```
