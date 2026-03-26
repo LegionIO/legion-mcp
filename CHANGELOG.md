@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-03-26
+
+### Changed
+- Replace frozen TOOL_CLASSES with mutable tool_registry for dynamic tool registration
+- Simplify self_generate to detect gaps and publish via AMQP (removed FunctionGenerator)
+- Extract `runner_expose_opts` and `register_function` helpers from `build_tools_from_runner` to reduce cyclomatic complexity
+- Split `Settings.defaults` into focused sub-methods to reduce method length
+
+### Added
+- Codegen self-generate and MCP auto-expose settings defaults
+- Function metadata auto-discovery for dynamic MCP tool registration
+
+### Removed
+- `function_generator.rb` and `capability_generator.rb` (generation moved to lex-codegen)
+
 ## [0.6.0] - 2026-03-26
 
 ### Added

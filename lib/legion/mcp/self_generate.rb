@@ -34,10 +34,10 @@ module Legion
         record_cycle(published_count)
 
         {
-          success:   true,
+          success:    true,
           gaps_found: gaps.size,
-          processed: top_gaps.size,
-          published: published_count
+          processed:  top_gaps.size,
+          published:  published_count
         }
       end
 

@@ -24,28 +24,30 @@ module Legion
         functions = runner_module.settings[:functions]
         return if functions.nil? || functions.empty?
 
+        opts = runner_expose_opts(runner_module)
+        functions.each { |func_name, meta| register_function(runner_module, func_name, meta, opts) }
+      end
+
+      def runner_expose_opts(runner_module)
         class_expose = runner_module.class.respond_to?(:expose_as_mcp_tool) ? runner_module.class.expose_as_mcp_tool : nil
-        global_expose = if defined?(Legion::Settings)
-                          Legion::Settings.dig(:mcp, :auto_expose_runners) || false
-                        else
-                          false
-                        end
+        global_expose = defined?(Legion::Settings) ? (Legion::Settings.dig(:mcp, :auto_expose_runners) || false) : false
         prefix = runner_module.class.respond_to?(:mcp_tool_prefix) ? runner_module.class.mcp_tool_prefix : nil
+        { class_expose: class_expose, global_expose: global_expose, prefix: prefix }
+      end
 
-        functions.each do |func_name, meta|
-          next unless should_expose?(meta, class_expose, global_expose)
-          next unless deps_satisfied?(meta[:requires])
+      def register_function(runner_module, func_name, meta, opts)
+        return unless should_expose?(meta, opts[:class_expose], opts[:global_expose])
+        return unless deps_satisfied?(meta[:requires])
 
-          tool_class = build_tool_class(
-            name:          derive_tool_name(func_name, prefix),
-            description:   meta[:desc] || "Auto-discovered: #{func_name}",
-            input_schema:  meta[:options] || { properties: {} },
-            runner_module: runner_module,
-            function_name: func_name
-          )
+        tool_class = build_tool_class(
+          name:          derive_tool_name(func_name, opts[:prefix]),
+          description:   meta[:desc] || "Auto-discovered: #{func_name}",
+          input_schema:  meta[:options] || { properties: {} },
+          runner_module: runner_module,
+          function_name: func_name
+        )
 
-          Server.register_tool(tool_class)
-        end
+        Server.register_tool(tool_class)
       end
 
       def should_expose?(func_meta, class_level, global_default)
