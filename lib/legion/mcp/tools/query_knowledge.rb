@@ -38,7 +38,7 @@ module Legion
           end
 
           def text_response(data)
-            ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump(data) }])
+            ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ **data }) }])
           end
 
           def error_response(msg)
