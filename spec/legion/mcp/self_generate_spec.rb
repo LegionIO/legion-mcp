@@ -4,7 +4,6 @@ require 'spec_helper'
 require 'legion/mcp/observer'
 require 'legion/mcp/pattern_store'
 require 'legion/mcp/gap_detector'
-require 'legion/mcp/function_generator'
 require 'legion/mcp/self_generate'
 
 RSpec.describe Legion::MCP::SelfGenerate do
