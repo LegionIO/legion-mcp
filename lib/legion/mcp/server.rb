@@ -163,6 +163,7 @@ module Legion
 
         def reset_caches!
           ContextCompiler.reset! if defined?(ContextCompiler)
+          EmbeddingIndex.reset! if defined?(EmbeddingIndex) && EmbeddingIndex.respond_to?(:reset!)
         end
 
         def build(identity: nil)
