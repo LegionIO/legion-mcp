@@ -48,6 +48,7 @@ require_relative 'context_compiler'
 require_relative 'embedding_index'
 require_relative 'cold_start'
 require_relative 'gap_detector'
+require_relative 'function_discovery'
 require_relative 'self_generate'
 require_relative 'tools/do_action'
 require_relative 'tools/plan_action'
@@ -197,6 +198,7 @@ module Legion
 
           register_catalog_listener
           hydrate_override_confidence
+          FunctionDiscovery.discover_and_register if defined?(Legion::Extensions)
 
           server
         end
