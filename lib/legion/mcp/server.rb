@@ -154,8 +154,11 @@ module Legion
         end
 
         def unregister_tool(tool_name)
-          tool_registry.reject! { |tc| tc.tool_name == tool_name }
-          reset_caches!
+          @tool_registry_lock ||= Mutex.new
+          @tool_registry_lock.synchronize do
+            tool_registry.reject! { |tc| tc.tool_name == tool_name }
+            reset_caches!
+          end
         end
 
         def reset_caches!

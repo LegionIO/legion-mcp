@@ -49,6 +49,7 @@ RSpec.describe Legion::MCP::SelfGenerate do
       end
 
       it 'returns cooldown when called too soon after previous cycle' do
+        allow(described_class).to receive(:publish_gap).and_return(true)
         6.times { Legion::MCP::Observer.record_intent('cooldown test intent', nil) }
         described_class.run_cycle
         result = described_class.run_cycle
@@ -71,7 +72,8 @@ RSpec.describe Legion::MCP::SelfGenerate do
         expect(described_class.send(:max_gaps_per_cycle)).to eq(3)
       end
 
-      it 'increments cycle_count when gaps exist' do
+      it 'increments cycle_count when gaps exist and publish succeeds' do
+        allow(described_class).to receive(:publish_gap).and_return(true)
         6.times { Legion::MCP::Observer.record_intent('cycle count test', nil) }
         expect { described_class.run_cycle }.to change { described_class.cycle_count }.by(1)
       end

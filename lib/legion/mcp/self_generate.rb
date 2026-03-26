@@ -30,6 +30,17 @@ module Legion
           published_count += 1 if publish_gap(gap)
         end
 
+        if published_count.zero?
+          reason = defined?(Legion::Transport::Messages::Dynamic) ? :publish_failed : :transport_unavailable
+          return {
+            success:    false,
+            reason:     reason,
+            gaps_found: gaps.size,
+            processed:  top_gaps.size,
+            published:  0
+          }
+        end
+
         record_cycle(published_count)
 
         {
