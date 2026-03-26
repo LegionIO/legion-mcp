@@ -1,5 +1,12 @@
 # legion-mcp Changelog
 
+## [0.5.9] - 2026-03-26
+
+### Added
+- `legion.knowledge_health` MCP tool: health report for document knowledge base (local, Apollo, sync stats)
+  - Optional `path:` input (falls back to Settings corpus_path)
+  - Tool count: 57 → 58
+
 ## [0.5.8] - 2026-03-26
 
 ### Added
