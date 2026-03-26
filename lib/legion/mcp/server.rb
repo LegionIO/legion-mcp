@@ -74,7 +74,7 @@ require_relative 'resources/extension_info'
 module Legion
   module MCP
     module Server
-      TOOL_CLASSES = [
+      STATIC_TOOLS = [
         Tools::RunTask,
         Tools::DescribeRunner,
         Tools::ListTasks,
@@ -139,11 +139,30 @@ module Legion
       class << self
         include CatalogBridge
 
+        def tool_registry
+          @tool_registry ||= Concurrent::Array.new(STATIC_TOOLS)
+        end
+
+        def register_tool(tool_class)
+          return if tool_registry.any? { |tc| tc.tool_name == tool_class.tool_name }
+
+          tool_registry << tool_class
+        end
+
+        def unregister_tool(tool_name)
+          tool_registry.reject! { |tc| tc.tool_name == tool_name }
+          reset_caches!
+        end
+
+        def reset_caches!
+          ContextCompiler.reset! if defined?(ContextCompiler)
+        end
+
         def build(identity: nil)
           tools = if ToolGovernance.governance_enabled?
-                    ToolGovernance.filter_tools(TOOL_CLASSES, identity)
+                    ToolGovernance.filter_tools(tool_registry, identity)
                   else
-                    TOOL_CLASSES
+                    tool_registry
                   end
 
           server = ::MCP::Server.new(
@@ -219,10 +238,10 @@ module Legion
         end
 
         def build_filtered_tool_list(keywords: [])
-          tool_names = TOOL_CLASSES.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
+          tool_names = tool_registry.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
           ranked     = UsageFilter.ranked_tools(tool_names, keywords: keywords)
           ranked.filter_map do |name|
-            TOOL_CLASSES.find do |tc|
+            tool_registry.find do |tc|
               (tc.respond_to?(:tool_name) ? tc.tool_name : tc.name) == name
             end
           end

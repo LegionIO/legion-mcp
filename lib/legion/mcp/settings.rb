@@ -46,8 +46,8 @@ module Legion
                 auto_approve_gap_types:  []
               },
               hot_register:       {
-                mcp_tools:          true,
-                full_load_on_boot:  true
+                mcp_tools:         true,
+                full_load_on_boot: true
               },
               corroboration:      {
                 enabled:                      true,

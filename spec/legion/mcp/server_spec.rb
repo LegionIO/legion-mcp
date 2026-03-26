@@ -83,4 +83,61 @@ RSpec.describe Legion::MCP::Server do
       end
     end
   end
+
+  describe '.tool_registry' do
+    it 'returns an array containing all static tools' do
+      registry = Legion::MCP::Server.tool_registry
+      expect(registry).to include(Legion::MCP::Tools::RunTask)
+      expect(registry).to include(Legion::MCP::Tools::ListTasks)
+    end
+
+    it 'has 59 static tools' do
+      expect(Legion::MCP::Server.tool_registry.size).to be >= 59
+    end
+  end
+
+  describe '.register_tool' do
+    after { Legion::MCP::Server.unregister_tool('test.dynamic_tool') }
+
+    it 'adds a tool class to the registry' do
+      tool_class = Class.new(::MCP::Tool) do
+        tool_name 'test.dynamic_tool'
+        description 'A test tool'
+        input_schema(properties: {})
+        def self.call(**) = ::MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+      end
+
+      Legion::MCP::Server.register_tool(tool_class)
+      expect(Legion::MCP::Server.tool_registry.map(&:tool_name)).to include('test.dynamic_tool')
+    end
+
+    it 'does not add duplicate tool names' do
+      tool_class = Class.new(::MCP::Tool) do
+        tool_name 'test.dynamic_tool'
+        description 'A test tool'
+        input_schema(properties: {})
+        def self.call(**) = ::MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+      end
+
+      Legion::MCP::Server.register_tool(tool_class)
+      Legion::MCP::Server.register_tool(tool_class)
+      count = Legion::MCP::Server.tool_registry.count { |tc| tc.tool_name == 'test.dynamic_tool' }
+      expect(count).to eq(1)
+    end
+  end
+
+  describe '.unregister_tool' do
+    it 'removes a tool by name' do
+      tool_class = Class.new(::MCP::Tool) do
+        tool_name 'test.removable_tool'
+        description 'removable'
+        input_schema(properties: {})
+        def self.call(**) = ::MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+      end
+
+      Legion::MCP::Server.register_tool(tool_class)
+      Legion::MCP::Server.unregister_tool('test.removable_tool')
+      expect(Legion::MCP::Server.tool_registry.map(&:tool_name)).not_to include('test.removable_tool')
+    end
+  end
 end

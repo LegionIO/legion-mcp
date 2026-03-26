@@ -10,7 +10,7 @@ RSpec.describe Legion::MCP::PatternCompiler do
     it 'generates compressed tool definitions from TOOL_CLASSES' do
       result = described_class.compile_tool_definitions
       expect(result).to be_an(Array)
-      expect(result.size).to eq(Legion::MCP::Server::TOOL_CLASSES.size)
+      expect(result.size).to eq(Legion::MCP::Server.tool_registry.size)
     end
 
     it 'includes name and compressed fields' do
