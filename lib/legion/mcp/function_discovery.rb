@@ -102,11 +102,11 @@ module Legion
                   runner_ref.public_send(func_ref, **params)
                 rescue StandardError => e
                   error = true
-                  { success: false, error: e.message }
+                  { error: e.message }
                 end
               else
                 error = true
-                { success: false, error: "function #{func_ref} not found" }
+                { error: "function #{func_ref} not found" }
               end
 
             text = defined?(Legion::JSON) ? Legion::JSON.dump(result) : result.to_s

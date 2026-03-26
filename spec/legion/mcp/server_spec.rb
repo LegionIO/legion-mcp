@@ -91,7 +91,7 @@ RSpec.describe Legion::MCP::Server do
       expect(registry).to include(Legion::MCP::Tools::ListTasks)
     end
 
-    it 'has 59 static tools' do
+    it 'has at least 59 static tools' do
       expect(Legion::MCP::Server.tool_registry.size).to be >= 59
     end
   end
