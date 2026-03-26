@@ -42,7 +42,8 @@ module Legion
           end
 
           def error_response(msg)
-            ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ error: msg }) }], error: true)
+            body = { error: msg }
+            ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump(body) }], error: true)
           end
         end
       end
