@@ -60,7 +60,6 @@ RSpec.describe Legion::MCP::Tools::KnowledgeContext do
       end
 
       before do
-        allow(described_class).to receive(:knowledge_available?).and_return(true)
         stub_const('Legion::Extensions::Knowledge::Runners::Query', Class.new)
         allow(Legion::Extensions::Knowledge::Runners::Query).to receive(:query).and_return(query_result)
       end
@@ -112,7 +111,6 @@ RSpec.describe Legion::MCP::Tools::KnowledgeContext do
       let(:query_result) { { answer: 'Global answer', sources: [] } }
 
       before do
-        allow(described_class).to receive(:knowledge_available?).and_return(true)
         stub_const('Legion::Extensions::Knowledge::Runners::Query', Class.new)
         allow(Legion::Extensions::Knowledge::Runners::Query).to receive(:query).and_return(query_result)
       end
@@ -134,7 +132,6 @@ RSpec.describe Legion::MCP::Tools::KnowledgeContext do
       let(:query_result) { { answer: 'Local answer', sources: [] } }
 
       before do
-        allow(described_class).to receive(:knowledge_available?).and_return(true)
         stub_const('Legion::Extensions::Knowledge::Runners::Query', Class.new)
         allow(Legion::Extensions::Knowledge::Runners::Query).to receive(:query).and_return(query_result)
       end
@@ -176,7 +173,6 @@ RSpec.describe Legion::MCP::Tools::KnowledgeContext do
       let(:local_result)  { { answer: 'Local answer',  sources: [{ chunk_id: 'l1', content: 'local chunk' }] } }
 
       before do
-        allow(described_class).to receive(:knowledge_available?).and_return(true)
         stub_const('Legion::Extensions::Knowledge::Runners::Query', Class.new)
         allow(Legion::Extensions::Knowledge::Runners::Query).to receive(:query).and_return(global_result)
       end

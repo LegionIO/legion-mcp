@@ -37,7 +37,7 @@ module Legion
           private
 
           def knowledge_available?(scope = 'all')
-            return defined?(Legion::Apollo::Local) if scope == 'local'
+            return defined?(Legion::Apollo::Local) || defined?(Legion::Extensions::Knowledge::Runners::Query) if scope == 'local'
 
             defined?(Legion::Extensions::Knowledge::Runners::Query)
           end
