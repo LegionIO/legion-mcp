@@ -2,7 +2,7 @@
 
 MCP (Model Context Protocol) server for the LegionIO framework. Provides semantic tool matching, observation pipeline, context compilation, and tiered behavioral intelligence (Tier 0/1/2 routing).
 
-**Version**: 0.5.5
+**Version**: 0.6.0
 
 Extracted from [LegionIO](https://github.com/LegionIO/LegionIO) for independent versioning and reuse.
 
@@ -32,7 +32,7 @@ Legion::MCP
 ├── PatternStore        # 4-layer degrading storage (L0 memory → L1 cache → L2 SQLite)
 ├── TierRouter          # Confidence-gated tier selection (0/1/2)
 ├── ContextGuard        # Staleness, rapid-fire, anomaly detection
-├── Tools/              # 41 MCP::Tool subclasses (legion.* namespace)
+├── Tools/              # 59 MCP::Tool subclasses (legion.* namespace)
 └── Resources/          # RunnerCatalog, ExtensionInfo
 ```
 
@@ -77,7 +77,7 @@ All persistence wraps in `begin/rescue => nil` — failed writes never block Tie
 
 ## Tools
 
-41 MCP tools in the `legion.*` namespace:
+59 MCP tools in the `legion.*` namespace:
 
 | Tool | Purpose |
 |------|---------|
@@ -97,6 +97,16 @@ All persistence wraps in `begin/rescue => nil` — failed writes never block Tie
 | `legion.rbac_assignments` / `rbac_check` / `rbac_grants` | Access control |
 | `legion.mind_growth_status` / `mind_growth_propose` / `mind_growth_approve` | Cognitive architecture growth |
 | `legion.mind_growth_build_queue` / `mind_growth_cognitive_profile` / `mind_growth_health` | Growth analysis and health |
+| `legion.query_knowledge` | Query Apollo knowledge store |
+| `legion.knowledge_health` | Knowledge store health and quality report |
+| `legion.knowledge_context` | Scoped RAG knowledge retrieval (local/global/all) |
+| `legion.eval_list` / `eval_run` / `eval_results` | Evaluation management |
+| `legion.experiment_results` | A/B experiment result comparison |
+| `legion.dataset_list` / `dataset_show` | Dataset browsing |
+| `legion.prompt_list` / `prompt_show` / `prompt_run` | Prompt template management |
+| `legion.plan_action` | Agentic planning with action decomposition |
+| `legion.ask_peer` / `notify_peer` / `broadcast_peers` / `list_peers` | Agent mesh communication |
+| `legion.mesh_status` | Mesh topology status |
 
 ## Resources
 
@@ -176,7 +186,7 @@ All configuration is optional and read via `Legion::Settings` when available:
 
 ```bash
 bundle install
-bundle exec rspec       # 278 examples, 0 failures
+bundle exec rspec       # 0 failures
 bundle exec rubocop -A  # auto-fix
 bundle exec rubocop     # lint check
 ```
