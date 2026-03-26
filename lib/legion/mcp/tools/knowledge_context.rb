@@ -20,7 +20,7 @@ module Legion
 
         class << self
           def call(question:, scope: 'all', top_k: 5)
-            return error_response('lex-knowledge is not available') unless knowledge_available?
+            return error_response('lex-knowledge is not available') unless knowledge_available?(scope)
 
             result = case scope
                      when 'local'  then query_local(question: question, top_k: top_k)
@@ -36,7 +36,9 @@ module Legion
 
           private
 
-          def knowledge_available?
+          def knowledge_available?(scope = 'all')
+            return defined?(Legion::Apollo::Local) if scope == 'local'
+
             defined?(Legion::Extensions::Knowledge::Runners::Query)
           end
 

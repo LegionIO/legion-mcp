@@ -27,6 +27,28 @@ RSpec.describe Legion::MCP::Tools::KnowledgeContext do
         data = Legion::JSON.load(response.content.first[:text])
         expect(data[:error]).to include('lex-knowledge')
       end
+
+      context 'with scope: local and Apollo::Local available' do
+        let(:local_result) { { answer: 'Local only answer', sources: [] } }
+
+        before do
+          stub_const('Legion::Apollo::Local', Class.new)
+          allow(Legion::Apollo::Local).to receive(:query).and_return(local_result)
+          allow(described_class).to receive(:knowledge_available?).and_call_original
+        end
+
+        it 'allows local scope without lex-knowledge' do
+          response = described_class.call(question: 'What gotchas exist?', scope: 'local')
+          expect(response).to be_a(MCP::Tool::Response)
+          expect(response.error?).to be false
+        end
+
+        it 'returns local answer from Apollo::Local' do
+          response = described_class.call(question: 'What gotchas exist?', scope: 'local')
+          data = Legion::JSON.load(response.content.first[:text])
+          expect(data[:answer]).to eq('Local only answer')
+        end
+      end
     end
 
     context 'when lex-knowledge is available' do
