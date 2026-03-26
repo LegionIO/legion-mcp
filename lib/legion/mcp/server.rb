@@ -144,9 +144,13 @@ module Legion
         end
 
         def register_tool(tool_class)
-          return if tool_registry.any? { |tc| tc.tool_name == tool_class.tool_name }
+          @tool_registry_lock ||= Mutex.new
+          @tool_registry_lock.synchronize do
+            return if tool_registry.any? { |tc| tc.tool_name == tool_class.tool_name }
 
-          tool_registry << tool_class
+            tool_registry << tool_class
+            reset_caches!
+          end
         end
 
         def unregister_tool(tool_name)
@@ -190,6 +194,10 @@ module Legion
           # Cold-start: load community patterns if store is still empty after hydration
           ColdStart.load_community_patterns if defined?(ColdStart)
 
+          # Discover and register runner functions before building the embedding index
+          # so all tools are present when embeddings are populated
+          FunctionDiscovery.discover_and_register if defined?(Legion::Extensions)
+
           # Populate embedding index for semantic tool matching (lazy — no-op if LLM unavailable)
           populate_embedding_index
 
@@ -198,7 +206,6 @@ module Legion
 
           register_catalog_listener
           hydrate_override_confidence
-          FunctionDiscovery.discover_and_register if defined?(Legion::Extensions)
 
           server
         end

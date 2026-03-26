@@ -89,14 +89,23 @@ module Legion
           input_schema(input_schema)
 
           define_singleton_method(:call) do |**params|
-            result = if runner_ref.respond_to?(func_ref)
-                       runner_ref.public_send(func_ref, **params)
-                     else
-                       { success: false, error: "function #{func_ref} not found" }
-                     end
+            error = false
+
+            result =
+              if runner_ref.respond_to?(func_ref)
+                begin
+                  runner_ref.public_send(func_ref, **params)
+                rescue StandardError => e
+                  error = true
+                  { success: false, error: e.message }
+                end
+              else
+                error = true
+                { success: false, error: "function #{func_ref} not found" }
+              end
 
             text = defined?(Legion::JSON) ? Legion::JSON.dump(result) : result.to_s
-            ::MCP::Tool::Response.new([{ type: 'text', text: text }])
+            ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
           end
         end
       end

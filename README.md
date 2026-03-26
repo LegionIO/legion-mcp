@@ -2,7 +2,7 @@
 
 MCP (Model Context Protocol) server for the LegionIO framework. Provides semantic tool matching, observation pipeline, context compilation, and tiered behavioral intelligence (Tier 0/1/2 routing).
 
-**Version**: 0.6.0
+**Version**: 0.6.1
 
 Extracted from [LegionIO](https://github.com/LegionIO/LegionIO) for independent versioning and reuse.
 

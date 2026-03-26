@@ -27,8 +27,7 @@ module Legion
 
         published_count = 0
         top_gaps.each do |gap|
-          publish_gap(gap)
-          published_count += 1
+          published_count += 1 if publish_gap(gap)
         end
 
         record_cycle(published_count)
@@ -42,22 +41,24 @@ module Legion
       end
 
       def publish_gap(gap)
-        return unless defined?(Legion::Transport::Messages::Dynamic)
+        return false unless defined?(Legion::Transport::Messages::Dynamic)
 
         Legion::Transport::Messages::Dynamic.new(
-          function_name: 'codegen.gap.detected',
-          arguments:     {
+          function: 'codegen.gap.detected',
+          data:     {
             gap_id:           gap[:id],
             gap_type:         gap[:type],
             intent:           gap[:intent] || gap[:intent_text],
-            occurrence_count: gap[:occurrence_count] || gap[:count] || 1,
+            occurrence_count: gap[:occurrences] || gap[:observation_count] || gap[:failure_count] || 1,
             priority:         gap[:priority],
             metadata:         gap[:metadata] || {},
             detected_at:      Time.now.iso8601
           }
         ).publish
+        true
       rescue StandardError => e
         Legion::Logging.warn("SelfGenerate#publish_gap failed: #{e.message}") if defined?(Legion::Logging)
+        false
       end
 
       def status
