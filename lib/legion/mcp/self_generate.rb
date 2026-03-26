@@ -10,41 +10,64 @@ module Legion
 
       module_function
 
+      def enabled?
+        return false unless defined?(Legion::Settings)
+
+        Legion::Settings.dig(:codegen, :self_generate, :enabled) == true
+      end
+
       def run_cycle
+        return { success: false, reason: :disabled } unless enabled?
         return { success: false, reason: :cooldown } if in_cooldown?
 
         gaps = GapDetector.detect_gaps
-        return { success: true, gaps_found: 0, generated: 0 } if gaps.empty?
+        return { success: true, gaps_found: 0, published: 0 } if gaps.empty?
 
-        top_gaps = gaps.sort_by { |g| -g[:priority] }.first(MAX_GAPS_PER_CYCLE)
+        top_gaps = gaps.sort_by { |g| -g[:priority] }.first(max_gaps_per_cycle)
 
-        results = top_gaps.map do |gap|
-          result = FunctionGenerator.generate_from_gap(gap)
-          { gap: gap[:id], type: gap[:type], result: result }
+        published_count = 0
+        top_gaps.each do |gap|
+          publish_gap(gap)
+          published_count += 1
         end
 
-        record_cycle(results)
-
-        generated = results.count { |r| r[:result][:success] }
-        failed    = results.count { |r| !r[:result][:success] }
+        record_cycle(published_count)
 
         {
-          success:    true,
+          success:   true,
           gaps_found: gaps.size,
-          processed:  top_gaps.size,
-          generated:  generated,
-          failed:     failed,
-          results:    results
+          processed: top_gaps.size,
+          published: published_count
         }
+      end
+
+      def publish_gap(gap)
+        return unless defined?(Legion::Transport::Messages::Dynamic)
+
+        Legion::Transport::Messages::Dynamic.new(
+          function_name: 'codegen.gap.detected',
+          arguments:     {
+            gap_id:           gap[:id],
+            gap_type:         gap[:type],
+            intent:           gap[:intent] || gap[:intent_text],
+            occurrence_count: gap[:occurrence_count] || gap[:count] || 1,
+            priority:         gap[:priority],
+            metadata:         gap[:metadata] || {},
+            detected_at:      Time.now.iso8601
+          }
+        ).publish
+      rescue StandardError => e
+        Legion::Logging.warn("SelfGenerate#publish_gap failed: #{e.message}") if defined?(Legion::Logging)
       end
 
       def status
         {
           last_cycle_at:      last_cycle_at,
           total_cycles:       cycle_count,
-          total_generated:    total_generated,
+          total_published:    total_published,
           cooldown_remaining: cooldown_remaining,
-          pending_gaps:       GapDetector.detect_gaps.size
+          pending_gaps:       GapDetector.detect_gaps.size,
+          enabled:            enabled?
         }
       rescue StandardError => e
         { error: e.message }
@@ -54,7 +77,7 @@ module Legion
         mutex.synchronize do
           @last_cycle_at   = nil
           @cycle_count     = 0
-          @total_generated = 0
+          @total_published = 0
           @cycle_history   = []
         end
       end
@@ -66,27 +89,39 @@ module Legion
       def in_cooldown?
         return false unless last_cycle_at
 
-        Time.now - last_cycle_at < COOLDOWN_SECONDS
+        Time.now - last_cycle_at < cooldown_seconds
       end
 
       def cooldown_remaining
         return 0 unless last_cycle_at
 
-        remaining = COOLDOWN_SECONDS - (Time.now - last_cycle_at)
+        remaining = cooldown_seconds - (Time.now - last_cycle_at)
         [remaining, 0].max.round(1)
       end
 
-      def record_cycle(results)
+      def total_published
+        mutex.synchronize { @total_published || 0 }
+      end
+
+      # private helpers
+
+      def max_gaps_per_cycle
+        val = Legion::Settings.dig(:codegen, :self_generate, :max_gaps_per_cycle) if defined?(Legion::Settings)
+        val || MAX_GAPS_PER_CYCLE
+      end
+
+      def cooldown_seconds
+        val = Legion::Settings.dig(:codegen, :self_generate, :cooldown_seconds) if defined?(Legion::Settings)
+        val || COOLDOWN_SECONDS
+      end
+
+      def record_cycle(published_count)
         mutex.synchronize do
           @last_cycle_at   = Time.now
           @cycle_count     = (@cycle_count || 0) + 1
-          @total_generated = (@total_generated || 0) + results.count { |r| r[:result][:success] }
+          @total_published = (@total_published || 0) + published_count
           @cycle_history ||= []
-          @cycle_history << {
-            at:            Time.now,
-            results_count: results.size,
-            generated:     results.count { |r| r[:result][:success] }
-          }
+          @cycle_history << { at: Time.now, published: published_count }
           @cycle_history.shift if @cycle_history.size > 50
         end
       end
@@ -97,10 +132,6 @@ module Legion
 
       def cycle_count
         mutex.synchronize { @cycle_count || 0 }
-      end
-
-      def total_generated
-        mutex.synchronize { @total_generated || 0 }
       end
 
       def mutex
