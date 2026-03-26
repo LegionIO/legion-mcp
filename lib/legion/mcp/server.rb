@@ -66,6 +66,7 @@ require_relative 'tools/mind_growth_cognitive_profile'
 require_relative 'tools/mind_growth_health'
 require_relative 'tools/query_knowledge'
 require_relative 'tools/knowledge_health'
+require_relative 'tools/knowledge_context'
 require_relative 'catalog_bridge'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
@@ -131,7 +132,8 @@ module Legion
         Tools::MindGrowthCognitiveProfile,
         Tools::MindGrowthHealth,
         Tools::QueryKnowledge,
-        Tools::KnowledgeHealth
+        Tools::KnowledgeHealth,
+        Tools::KnowledgeContext
       ].freeze
 
       class << self
