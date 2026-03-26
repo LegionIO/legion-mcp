@@ -7,7 +7,7 @@ require 'legion/mcp/pattern_compiler'
 
 RSpec.describe Legion::MCP::PatternCompiler do
   describe '.compile_tool_definitions' do
-    it 'generates compressed tool definitions from TOOL_CLASSES' do
+    it 'generates compressed tool definitions from the server tool registry' do
       result = described_class.compile_tool_definitions
       expect(result).to be_an(Array)
       expect(result.size).to eq(Legion::MCP::Server.tool_registry.size)

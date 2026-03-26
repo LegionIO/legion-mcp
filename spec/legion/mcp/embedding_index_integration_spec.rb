@@ -37,7 +37,7 @@ RSpec.describe 'EmbeddingIndex integration' do
       expect(entry[:vector]).to be_an(Array)
     end
 
-    it 'populates all tools from TOOL_CLASSES' do
+    it 'populates all tools from Server.tool_registry' do
       fake_embedder = ->(text) { ('a'..'z').map { |c| text.downcase.count(c).to_f } }
       Legion::MCP::Server.populate_embedding_index(embedder: fake_embedder)
       expect(Legion::MCP::EmbeddingIndex.size).to eq(Legion::MCP::Server.tool_registry.size)

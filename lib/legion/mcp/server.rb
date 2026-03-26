@@ -136,15 +136,15 @@ module Legion
         Tools::KnowledgeContext
       ].freeze
 
+      @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
+      @tool_registry_lock = Mutex.new
+
       class << self
         include CatalogBridge
 
-        def tool_registry
-          @tool_registry ||= Concurrent::Array.new(STATIC_TOOLS)
-        end
+        attr_reader :tool_registry
 
         def register_tool(tool_class)
-          @tool_registry_lock ||= Mutex.new
           @tool_registry_lock.synchronize do
             return if tool_registry.any? { |tc| tc.tool_name == tool_class.tool_name }
 
@@ -154,7 +154,6 @@ module Legion
         end
 
         def unregister_tool(tool_name)
-          @tool_registry_lock ||= Mutex.new
           @tool_registry_lock.synchronize do
             tool_registry.reject! { |tc| tc.tool_name == tool_name }
             reset_caches!

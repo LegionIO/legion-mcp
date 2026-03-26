@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-03-26
+
+### Fixed
+- `deps_satisfied?` now strips leading `::` and rejects empty parts from dependency strings to avoid `NameError` on constants like `::Legion::MCP`
+- `discover_and_register` prefers `Legion::Extensions.extensions` public accessor with ivar fallback
+- `tool_registry` and `@tool_registry_lock` initialized eagerly at module level to eliminate thread-race on first access
+- Removed `@tool_registry_lock ||=` guard from `register_tool`/`unregister_tool` (lock always present)
+- Added explicit `require 'concurrent'` to `lib/legion/mcp.rb` to prevent `NameError: uninitialized constant Concurrent` in isolation
+
+### Changed
+- Spec descriptions updated from `TOOL_CLASSES` to `tool_registry` / `Server.tool_registry` for accuracy
+
 ## [0.6.1] - 2026-03-26
 
 ### Changed

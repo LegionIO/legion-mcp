@@ -8,7 +8,12 @@ module Legion
       def discover_and_register
         return unless defined?(Legion::Extensions)
 
-        extensions = Legion::Extensions.instance_variable_get(:@extensions) || []
+        extensions =
+          if Legion::Extensions.respond_to?(:extensions)
+            Legion::Extensions.extensions || []
+          else
+            Legion::Extensions.instance_variable_get(:@extensions) || []
+          end
         extensions.each do |ext|
           next unless ext.respond_to?(:runner_modules)
 
@@ -66,7 +71,7 @@ module Legion
         return true if deps.nil? || deps.empty?
 
         deps.all? do |dep|
-          parts = dep.split('::')
+          parts = dep.delete_prefix('::').split('::').reject(&:empty?)
           current = Object
           parts.all? do |part|
             if current.const_defined?(part, false)
