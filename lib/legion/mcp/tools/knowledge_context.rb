@@ -41,16 +41,18 @@ module Legion
           end
 
           def query_global(question:, top_k:)
-            Legion::Extensions::Knowledge::Runners::Query.query(
+            result = Legion::Extensions::Knowledge::Runners::Query.query(
               question:   question,
               top_k:      top_k,
               synthesize: true
             )
+            result.merge(scope: 'global')
           end
 
           def query_local(question:, top_k:)
             if defined?(Legion::Apollo::Local)
-              Legion::Apollo::Local.query(question: question, top_k: top_k)
+              result = Legion::Apollo::Local.query(question: question, top_k: top_k)
+              result.merge(scope: 'local')
             else
               Legion::Logging.warn('KnowledgeContext: Apollo::Local not available, falling back to global') if defined?(Legion::Logging)
               query_global(question: question, top_k: top_k)
@@ -79,7 +81,9 @@ module Legion
               deduped << src
             end
 
-            answer = global[:answer] || global['answer']
+            global_answer = global[:answer] || global['answer']
+            local_answer  = local[:answer]  || local['answer']
+            answer        = global_answer.nil? || global_answer.to_s.empty? ? local_answer : global_answer
             { answer: answer, sources: deduped, scope: 'all' }
           end
 

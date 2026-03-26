@@ -2,7 +2,7 @@
 
 MCP (Model Context Protocol) server for the LegionIO framework. Provides semantic tool matching, observation pipeline, context compilation, and tiered behavioral intelligence (Tier 0/1/2 routing).
 
-**Version**: 0.5.9
+**Version**: 0.6.0
 
 Extracted from [LegionIO](https://github.com/LegionIO/LegionIO) for independent versioning and reuse.
 
@@ -32,7 +32,7 @@ Legion::MCP
 ├── PatternStore        # 4-layer degrading storage (L0 memory → L1 cache → L2 SQLite)
 ├── TierRouter          # Confidence-gated tier selection (0/1/2)
 ├── ContextGuard        # Staleness, rapid-fire, anomaly detection
-├── Tools/              # 58 MCP::Tool subclasses (legion.* namespace)
+├── Tools/              # 59 MCP::Tool subclasses (legion.* namespace)
 └── Resources/          # RunnerCatalog, ExtensionInfo
 ```
 
@@ -77,7 +77,7 @@ All persistence wraps in `begin/rescue => nil` — failed writes never block Tie
 
 ## Tools
 
-58 MCP tools in the `legion.*` namespace:
+59 MCP tools in the `legion.*` namespace:
 
 | Tool | Purpose |
 |------|---------|
@@ -99,6 +99,7 @@ All persistence wraps in `begin/rescue => nil` — failed writes never block Tie
 | `legion.mind_growth_build_queue` / `mind_growth_cognitive_profile` / `mind_growth_health` | Growth analysis and health |
 | `legion.query_knowledge` | Query Apollo knowledge store |
 | `legion.knowledge_health` | Knowledge store health and quality report |
+| `legion.knowledge_context` | Scoped RAG knowledge retrieval (local/global/all) |
 | `legion.eval_list` / `eval_run` / `eval_results` | Evaluation management |
 | `legion.experiment_results` | A/B experiment result comparison |
 | `legion.dataset_list` / `dataset_show` | Dataset browsing |

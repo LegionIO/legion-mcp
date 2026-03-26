@@ -2,9 +2,6 @@
 
 ## [Unreleased]
 
-### Added
-- `legion.knowledge_context` MCP tool (59th tool) — scoped RAG query with local/global/all routing
-
 ## [0.6.0] - 2026-03-26
 
 ### Added
