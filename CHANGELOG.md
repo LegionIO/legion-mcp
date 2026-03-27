@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-03-27
+
+### Added
+- `legion.absorb` MCP tool for programmatic content absorption via pattern-matched absorber dispatch (60th tool)
+
 ## [0.6.2] - 2026-03-26
 
 ### Fixed
