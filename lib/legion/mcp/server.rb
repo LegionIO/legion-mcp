@@ -67,6 +67,7 @@ require_relative 'tools/mind_growth_health'
 require_relative 'tools/query_knowledge'
 require_relative 'tools/knowledge_health'
 require_relative 'tools/knowledge_context'
+require_relative 'tools/absorb'
 require_relative 'catalog_bridge'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
@@ -133,7 +134,8 @@ module Legion
         Tools::MindGrowthHealth,
         Tools::QueryKnowledge,
         Tools::KnowledgeHealth,
-        Tools::KnowledgeContext
+        Tools::KnowledgeContext,
+        Tools::Absorb
       ].freeze
 
       @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
