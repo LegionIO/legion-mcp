@@ -34,8 +34,8 @@ RSpec.describe Legion::MCP::Server do
       expect(server.tools.keys).to include(*expected)
     end
 
-    it 'registers exactly 59 tools' do
-      expect(server.tools.size).to eq(59)
+    it 'registers exactly 60 tools' do
+      expect(server.tools.size).to eq(60)
     end
 
     it 'includes instructions' do
@@ -100,11 +100,11 @@ RSpec.describe Legion::MCP::Server do
     after { Legion::MCP::Server.unregister_tool('test.dynamic_tool') }
 
     it 'adds a tool class to the registry' do
-      tool_class = Class.new(::MCP::Tool) do
+      tool_class = Class.new(MCP::Tool) do
         tool_name 'test.dynamic_tool'
         description 'A test tool'
         input_schema(properties: {})
-        def self.call(**) = ::MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+        def self.call(**) = MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
       end
 
       Legion::MCP::Server.register_tool(tool_class)
@@ -112,11 +112,11 @@ RSpec.describe Legion::MCP::Server do
     end
 
     it 'does not add duplicate tool names' do
-      tool_class = Class.new(::MCP::Tool) do
+      tool_class = Class.new(MCP::Tool) do
         tool_name 'test.dynamic_tool'
         description 'A test tool'
         input_schema(properties: {})
-        def self.call(**) = ::MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+        def self.call(**) = MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
       end
 
       Legion::MCP::Server.register_tool(tool_class)
@@ -128,11 +128,11 @@ RSpec.describe Legion::MCP::Server do
 
   describe '.unregister_tool' do
     it 'removes a tool by name' do
-      tool_class = Class.new(::MCP::Tool) do
+      tool_class = Class.new(MCP::Tool) do
         tool_name 'test.removable_tool'
         description 'removable'
         input_schema(properties: {})
-        def self.call(**) = ::MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+        def self.call(**) = MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
       end
 
       Legion::MCP::Server.register_tool(tool_class)
