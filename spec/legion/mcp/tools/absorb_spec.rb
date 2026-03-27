@@ -84,6 +84,14 @@ RSpec.describe Legion::MCP::Tools::Absorb do
         expect(data[:error]).to include('absorption failed')
       end
 
+      it 'returns error for invalid scope' do
+        result = described_class.call(input: 'https://example.com/test', scope: 'invalid')
+        expect(result).to be_a(MCP::Tool::Response)
+        expect(result.error?).to be true
+        data = Legion::JSON.load(result.content.first[:text])
+        expect(data[:error]).to include('invalid scope')
+      end
+
       it 'rescues StandardError and returns error response' do
         allow(Legion::Extensions::Actors::AbsorberDispatch).to receive(:dispatch).and_raise(
           StandardError, 'unexpected boom'

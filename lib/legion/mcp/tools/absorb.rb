@@ -21,9 +21,13 @@ module Legion
           def call(input:, scope: 'global')
             return error_response('AbsorberDispatch not available') unless dispatch_available?
 
+            scope_str = scope.to_s
+            allowed_scopes = { 'local' => :local, 'global' => :global, 'all' => :all }
+            return error_response("invalid scope: #{scope}") unless allowed_scopes.key?(scope_str)
+
             result = Legion::Extensions::Actors::AbsorberDispatch.dispatch(
               input:   input,
-              context: { scope: scope.to_sym }
+              context: { scope: allowed_scopes[scope_str] }
             )
 
             if result[:success]
@@ -33,7 +37,7 @@ module Legion
             end
           rescue StandardError => e
             Legion::Logging.warn("Absorb MCP tool failed: #{e.message}") if defined?(Legion::Logging)
-            error_response("failed: #{e.message}")
+            error_response("Absorption failed: #{e.message}")
           end
 
           private
