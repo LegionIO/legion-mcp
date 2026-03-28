@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-03-28
+
+### Changed
+- `FunctionDiscovery`: prefer `definition[:mcp_exposed]` over deprecated `expose_as_mcp_tool` class method; fall back to legacy path when definition is absent
+- `FunctionDiscovery#build_tool_class`: stores `mcp_category` and `mcp_tier` as singleton methods on dynamically built tool classes so downstream consumers can read them
+- `ContextCompiler#compressed_catalog` and `#category_tools` now call `merged_categories`, which supplements the `CATEGORIES` constant with any tool classes that declare `mcp_category:` via the definition DSL
+- `ToolGovernance#filter_tools`: prefers definition-level `mcp_tier` singleton method on the tool class over `DEFAULT_TOOL_TIERS` fallback; `DEFAULT_TOOL_TIERS` and `custom_tiers` (Settings) remain as fallbacks
+- `FunctionDiscovery#register_function` refactored into `resolve_exposed` + `build_tool_opts` helpers to reduce perceived complexity
+
+### Added
+- `FunctionDiscovery#definition_for` — reads `runner_module.definition_for(method)` if available, returns nil otherwise
+- `FunctionDiscovery#should_expose_from_definition?` — exposure check that treats `definition[:mcp_exposed]` as highest precedence
+- `FunctionDiscovery#build_tool_opts` — builds the options hash passed to `build_tool_class`
+- `FunctionDiscovery#wire_call_method` — wires the `call` singleton method onto the built tool class
+- `ContextCompiler#merged_categories` — merges `CATEGORIES` with definition-declared categories from registered tool classes
+- `ToolGovernance#definition_tier` — extracts `mcp_tier` from a tool class singleton method (returns nil when absent)
+
 ## [0.6.3] - 2026-03-27
 
 ### Added
