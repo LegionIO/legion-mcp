@@ -32,9 +32,11 @@ module Legion
         risk_tier = identity&.dig(:risk_tier) || :low
         tier_value = RISK_TIER_ORDER[risk_tier] || 0
 
-        tool_tiers = DEFAULT_TOOL_TIERS.merge(custom_tiers)
+        # DEFAULT_TOOL_TIERS is the fallback; custom_tiers (from Settings) override it;
+        # definition-level mcp_tier on the tool class takes highest precedence.
+        fallback_tiers = DEFAULT_TOOL_TIERS.merge(custom_tiers)
         tools.select do |tool|
-          tool_tier = tool_tiers[tool_name(tool)] || :low
+          tool_tier = definition_tier(tool) || fallback_tiers[tool_name(tool)] || :low
           (RISK_TIER_ORDER[tool_tier] || 0) <= tier_value
         end
       end
@@ -71,6 +73,17 @@ module Legion
         else
           tool.to_s
         end
+      end
+
+      # Returns the mcp_tier declared on the tool class via the definition DSL, or nil if absent.
+      # Tool classes built by FunctionDiscovery expose mcp_tier as a singleton method.
+      def definition_tier(tool)
+        return nil unless tool.respond_to?(:mcp_tier)
+
+        tier = tool.mcp_tier
+        return nil if tier.nil?
+
+        tier.to_sym
       end
     end
   end

@@ -408,4 +408,76 @@ RSpec.describe Legion::MCP::ContextCompiler do
       expect(Legion::MCP::EmbeddingIndex.size).to eq(0)
     end
   end
+
+  describe '.merged_categories' do
+    it 'returns at minimum the CATEGORIES keys' do
+      result = described_class.merged_categories
+      described_class::CATEGORIES.each_key do |cat|
+        expect(result).to have_key(cat)
+      end
+    end
+
+    it 'adds a new category when a registered tool declares mcp_category not in CATEGORIES' do
+      new_tool = Class.new(MCP::Tool) do
+        tool_name 'legion.novel_tool'
+        description 'A tool with a new category.'
+        input_schema(properties: {})
+        define_singleton_method(:mcp_category) { :novel_domain }
+      end
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return(stub_tool_classes + [new_tool])
+      described_class.reset!
+      result = described_class.merged_categories
+      expect(result).to have_key(:novel_domain)
+      expect(result[:novel_domain][:tools]).to include('legion.novel_tool')
+    end
+
+    it 'merges a definition-declared tool into an existing CATEGORIES entry' do
+      extra_tasks_tool = Class.new(MCP::Tool) do
+        tool_name 'legion.extra_task_op'
+        description 'An extra task operation.'
+        input_schema(properties: {})
+        define_singleton_method(:mcp_category) { :tasks }
+      end
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return(stub_tool_classes + [extra_tasks_tool])
+      described_class.reset!
+      result = described_class.merged_categories
+      expect(result[:tasks][:tools]).to include('legion.extra_task_op')
+    end
+
+    it 'does not add duplicate entries when tool name already in CATEGORIES' do
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return(stub_tool_classes)
+      described_class.reset!
+      result = described_class.merged_categories
+      tasks_tools = result[:tasks][:tools]
+      expect(tasks_tools.uniq).to eq(tasks_tools)
+    end
+
+    it 'ignores tools that do not respond to mcp_category' do
+      no_cat_tool = Class.new(MCP::Tool) do
+        tool_name 'legion.no_category'
+        description 'No category declared.'
+        input_schema(properties: {})
+      end
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return(stub_tool_classes + [no_cat_tool])
+      described_class.reset!
+      result = described_class.merged_categories
+      # Should not appear in any category
+      all_tools = result.values.flat_map { |v| v[:tools] }
+      expect(all_tools).not_to include('legion.no_category')
+    end
+
+    it 'ignores tools whose mcp_category is nil' do
+      nil_cat_tool = Class.new(MCP::Tool) do
+        tool_name 'legion.nil_category'
+        description 'Nil category.'
+        input_schema(properties: {})
+        define_singleton_method(:mcp_category) { nil }
+      end
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return(stub_tool_classes + [nil_cat_tool])
+      described_class.reset!
+      result = described_class.merged_categories
+      all_tools = result.values.flat_map { |v| v[:tools] }
+      expect(all_tools).not_to include('legion.nil_category')
+    end
+  end
 end

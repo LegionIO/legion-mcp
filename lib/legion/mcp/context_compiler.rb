@@ -49,9 +49,12 @@ module Legion
       module_function
 
       # Returns a compressed summary of all categories with tool counts and tool name lists.
+      # Merges CATEGORIES (hardcoded fallback) with any categories declared via the definition DSL
+      # (mcp_category: on dynamically discovered tool classes).
       # @return [Array<Hash>] array of { category:, summary:, tool_count:, tools: }
       def compressed_catalog
-        CATEGORIES.map do |category, config|
+        merged = merged_categories
+        merged.map do |category, config|
           tool_names = config[:tools]
           {
             category:   category,
@@ -63,10 +66,11 @@ module Legion
       end
 
       # Returns tools for a specific category, filtered to only those present in Server.tool_registry.
-      # @param category_sym [Symbol] one of the CATEGORIES keys
+      # Checks CATEGORIES (hardcoded fallback) as well as definition-declared mcp_category on tool classes.
+      # @param category_sym [Symbol] one of the CATEGORIES keys (or a definition-declared category)
       # @return [Hash, nil] { category:, summary:, tools: [{ name:, description:, params: }] } or nil
       def category_tools(category_sym)
-        config = CATEGORIES[category_sym]
+        config = merged_categories[category_sym]
         return nil unless config
 
         index = tool_index
@@ -78,6 +82,28 @@ module Legion
           summary:  config[:summary],
           tools:    tools
         }
+      end
+
+      # Builds a merged category map: CATEGORIES constant as fallback, augmented by tool classes
+      # that declare mcp_category: via the definition DSL.
+      # @return [Hash<Symbol, Hash>] { category_sym => { tools: [...], summary: '...' } }
+      def merged_categories
+        result = CATEGORIES.transform_values do |config|
+          { tools: config[:tools].dup, summary: config[:summary] }
+        end
+
+        Server.tool_registry.each do |klass|
+          next unless klass.respond_to?(:mcp_category) && klass.mcp_category
+
+          cat = klass.mcp_category.to_sym
+          if result.key?(cat)
+            result[cat][:tools] |= [klass.tool_name]
+          else
+            result[cat] = { tools: [klass.tool_name], summary: cat.to_s.tr('_', ' ').capitalize }
+          end
+        end
+
+        result
       end
 
       # Keyword-match intent against tool names and descriptions.

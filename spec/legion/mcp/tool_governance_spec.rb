@@ -67,4 +67,51 @@ RSpec.describe Legion::MCP::ToolGovernance do
       expect(described_class.governance_enabled?).to be true
     end
   end
+
+  describe '.definition_tier' do
+    it 'returns nil for a tool with no mcp_tier method' do
+      tool = double('tool')
+      expect(described_class.definition_tier(tool)).to be_nil
+    end
+
+    it 'returns nil when mcp_tier returns nil' do
+      tool = double('tool', mcp_tier: nil)
+      expect(described_class.definition_tier(tool)).to be_nil
+    end
+
+    it 'returns the tier as a symbol when mcp_tier is set' do
+      tool = double('tool', mcp_tier: :high)
+      expect(described_class.definition_tier(tool)).to eq(:high)
+    end
+
+    it 'coerces string tier to symbol' do
+      tool = double('tool', mcp_tier: 'medium')
+      expect(described_class.definition_tier(tool)).to eq(:medium)
+    end
+  end
+
+  describe '.filter_tools with definition-level tiers' do
+    context 'when governance is enabled' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :tool_risk_tiers).and_return({})
+      end
+
+      it 'prefers definition mcp_tier over DEFAULT_TOOL_TIERS' do
+        # legion.list_tasks is :low in DEFAULT_TOOL_TIERS but definition says :high
+        overridden_tool = double('tool', tool_name: 'legion.list_tasks', mcp_tier: :high)
+        identity = { risk_tier: :medium }
+        result = described_class.filter_tools([overridden_tool], identity)
+        # :high > :medium so the tool should be excluded
+        expect(result).to be_empty
+      end
+
+      it 'falls back to DEFAULT_TOOL_TIERS when mcp_tier is nil' do
+        tool_without_def = double('tool', tool_name: 'legion.list_tasks', mcp_tier: nil)
+        identity = { risk_tier: :low }
+        result = described_class.filter_tools([tool_without_def], identity)
+        expect(result).to contain_exactly(tool_without_def)
+      end
+    end
+  end
 end
