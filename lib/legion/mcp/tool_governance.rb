@@ -83,7 +83,10 @@ module Legion
         tier = tool.mcp_tier
         return nil if tier.nil?
 
-        tier.to_sym
+        normalized = tier.to_s.downcase.to_sym
+        return nil unless RISK_TIER_ORDER.key?(normalized)
+
+        normalized
       end
     end
   end

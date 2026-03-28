@@ -118,14 +118,19 @@ module Legion
       end
 
       def build_tool_class(opts)
-        runner_ref   = opts[:runner_module]
-        func_ref     = opts[:function_name]
+        runner_ref         = opts[:runner_module]
+        func_ref           = opts[:function_name]
+        tool_name_value    = opts[:name]
+        description_value  = opts[:description]
+        input_schema_value = opts[:input_schema]
+        mcp_category_value = opts[:mcp_category]
+        mcp_tier_value     = opts[:mcp_tier]
         klass = Class.new(::MCP::Tool) do
-          tool_name opts[:name]
-          description opts[:description]
-          input_schema(opts[:input_schema])
-          define_singleton_method(:mcp_category) { opts[:mcp_category] }
-          define_singleton_method(:mcp_tier)     { opts[:mcp_tier] }
+          tool_name tool_name_value
+          description description_value
+          input_schema(input_schema_value)
+          define_singleton_method(:mcp_category) { mcp_category_value }
+          define_singleton_method(:mcp_tier)     { mcp_tier_value }
         end
         wire_call_method(klass, runner_ref, func_ref)
         klass
