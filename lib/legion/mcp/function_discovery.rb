@@ -33,12 +33,9 @@ module Legion
         functions.each { |func_name, meta| register_function(runner_module, func_name, meta, opts) }
       end
 
-      def runner_expose_opts(runner_module)
-        # @deprecated class_expose/prefix — prefer definition DSL (mcp_exposed:, mcp_tool_prefix:)
-        class_expose = runner_module.respond_to?(:expose_as_mcp_tool) ? runner_module.expose_as_mcp_tool : nil
+      def runner_expose_opts(_runner_module)
         global_expose = defined?(Legion::Settings) ? (Legion::Settings.dig(:mcp, :auto_expose_runners) || false) : false
-        prefix = runner_module.respond_to?(:mcp_tool_prefix) ? runner_module.mcp_tool_prefix : nil
-        { class_expose: class_expose, global_expose: global_expose, prefix: prefix }
+        { class_expose: nil, global_expose: global_expose, prefix: nil }
       end
 
       def register_function(runner_module, func_name, meta, opts)

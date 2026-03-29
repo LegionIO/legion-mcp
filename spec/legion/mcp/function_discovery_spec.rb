@@ -111,7 +111,7 @@ RSpec.describe Legion::MCP::FunctionDiscovery do
         runner_module: Module.new { def self.my_func(**) = { success: true } },
         function_name: :my_func
       )
-      expect(klass).to be < ::MCP::Tool
+      expect(klass).to be < MCP::Tool
       expect(klass.tool_name).to eq('test.discovery_tool')
     end
 
