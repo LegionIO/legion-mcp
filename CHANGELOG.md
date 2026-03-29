@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-03-28
+
+### Removed
+- Legacy `expose_as_mcp_tool` and `mcp_tool_prefix` fallback reads from `FunctionDiscovery#runner_expose_opts` — runners that do not use the definition DSL are no longer exposed; `class_expose` is always `nil` and `prefix` is always `nil` in the opts hash
+
 ## [0.6.4] - 2026-03-28
 
 ### Changed
