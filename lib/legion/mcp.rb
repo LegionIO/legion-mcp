@@ -11,6 +11,7 @@ require_relative 'mcp/tool_governance'
 require_relative 'mcp/server'
 require_relative 'mcp/override_broadcast'
 require_relative 'mcp/client'
+require_relative 'mcp/actors/self_generate_cycle' if defined?(Legion::Extensions::Actors::Every)
 
 module Legion
   module MCP

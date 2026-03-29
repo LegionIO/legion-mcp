@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-03-28
+
+### Added
+- `Legion::MCP::Actor::SelfGenerateCycle` — periodic `Every`-style actor that calls `SelfGenerate.run_cycle` on a configurable interval (default 300 s, reads `codegen.self_generate.cycle_interval` from Settings)
+
 ## [0.6.5] - 2026-03-28
 
 ### Removed
