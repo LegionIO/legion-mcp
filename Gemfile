@@ -6,5 +6,6 @@ gemspec
 gem 'rake'
 gem 'rspec'
 gem 'rubocop'
+gem 'rubocop-legion'
 gem 'rubocop-rspec'
 gem 'simplecov'
