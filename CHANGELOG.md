@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-31
+
+### Added
+- `DeferredRegistry` module for deferred tool loading — tools not in the always-loaded set return name and description only (no `inputSchema`) in `tools/list`, reducing token footprint by ~75% for standard MCP clients (closes #19)
+- `legion.tools` now accepts `tool_names` (array) + `schema: true` parameters to load full JSON schemas for specific deferred tools on demand
+- `Settings.deferred_loading_defaults` — configurable `enabled` (default true) and `always_loaded` (custom tool names merged with built-in defaults)
+- 13 always-loaded tools: `legion.do`, `legion.tools`, `legion.run_task`, `legion.list_tasks`, `legion.get_task`, `legion.get_status`, `legion.describe_runner`, `legion.plan_action`, `legion.query_knowledge`, `legion.knowledge_context`, `legion.knowledge_health`, `legion.absorb`, `legion.get_task_logs`
+
+### Changed
+- `Server.build` now installs a custom `tools/list` handler via `install_deferred_tools_list_handler` for mcp gem 0.10 compatibility (replaces removed `tools_list_handler` block API)
+
 ## [0.6.6] - 2026-03-28
 
 ### Added

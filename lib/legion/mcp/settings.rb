@@ -13,8 +13,12 @@ module Legion
           connect_timeout: 10,
           call_timeout:    30,
           codegen:         { self_generate: self_generate_defaults },
-          mcp:             { auto_expose_runners: false }
+          mcp:             { auto_expose_runners: false, deferred_loading: deferred_loading_defaults }
         }
+      end
+
+      def deferred_loading_defaults
+        { enabled: true, always_loaded: [] }
       end
 
       def self_generate_defaults
