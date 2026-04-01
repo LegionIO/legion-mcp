@@ -43,6 +43,37 @@ module Legion
         describe:      {
           tools:   %w[legion.describe_runner],
           summary: 'Inspect a specific runner function - parameters, return type, metadata.'
+        },
+        knowledge:     {
+          tools:   %w[legion.query_knowledge legion.knowledge_health legion.knowledge_context legion.absorb],
+          summary: 'Knowledge base operations - query, health, context retrieval, content absorption.'
+        },
+        mesh:          {
+          tools:   %w[legion.ask_peer legion.list_peers legion.notify_peer legion.broadcast_peers
+                      legion.mesh_status],
+          summary: 'Agent mesh communication - peer queries, notifications, broadcasts, and topology.'
+        },
+        mind_growth:   {
+          tools:   %w[legion.mind_growth_status legion.mind_growth_propose legion.mind_growth_approve
+                      legion.mind_growth_build_queue legion.mind_growth_cognitive_profile
+                      legion.mind_growth_health],
+          summary: 'Cognitive growth - proposals, approvals, build queue, profiling, fitness scores.'
+        },
+        prompts:       {
+          tools:   %w[legion.prompt_list legion.prompt_show legion.prompt_run],
+          summary: 'Prompt template management - list, view, and render prompt templates.'
+        },
+        datasets:      {
+          tools:   %w[legion.dataset_list legion.dataset_show legion.experiment_results],
+          summary: 'Dataset and experiment browsing - list datasets, view rows, compare results.'
+        },
+        evals:         {
+          tools:   %w[legion.eval_list legion.eval_run legion.eval_results],
+          summary: 'Evaluation management - list evaluators, run evaluations, view results.'
+        },
+        meta:          {
+          tools:   %w[legion.do legion.tools legion.plan_action legion.structural_index],
+          summary: 'Meta-tools - natural language routing, tool discovery, planning, structural index.'
         }
       }.freeze
 

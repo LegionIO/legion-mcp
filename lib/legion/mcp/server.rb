@@ -68,6 +68,16 @@ require_relative 'tools/query_knowledge'
 require_relative 'tools/knowledge_health'
 require_relative 'tools/knowledge_context'
 require_relative 'tools/absorb'
+require_relative 'tools/structural_index'
+require_relative 'tools/tool_audit'
+require_relative 'tools/state_diff'
+require_relative 'tools/search_sessions'
+require_relative 'structural_index'
+require_relative 'state_tracker'
+require_relative 'tool_quality'
+require_relative 'deferred_registry'
+require_relative 'catalog_dispatcher'
+require_relative 'dynamic_injector'
 require_relative 'catalog_bridge'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
@@ -135,7 +145,11 @@ module Legion
         Tools::QueryKnowledge,
         Tools::KnowledgeHealth,
         Tools::KnowledgeContext,
-        Tools::Absorb
+        Tools::Absorb,
+        Tools::StructuralIndexTool,
+        Tools::ToolAudit,
+        Tools::StateDiff,
+        Tools::SearchSessions
       ].freeze
 
       @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
@@ -189,21 +203,12 @@ module Legion
             end
           end
 
-          server.tools_list_handler do |_params|
-            build_filtered_tool_list.map(&:to_h)
-          end
+          install_deferred_tools_list_handler(server)
 
-          # Hydrate pattern store from L2 persistence (SQLite) on boot
           PatternStore.hydrate_from_l2 if defined?(PatternStore)
-
-          # Cold-start: load community patterns if store is still empty after hydration
           ColdStart.load_community_patterns if defined?(ColdStart)
-
-          # Discover and register runner functions before building the embedding index
-          # so all tools are present when embeddings are populated
           FunctionDiscovery.discover_and_register if defined?(Legion::Extensions)
-
-          # Populate embedding index for semantic tool matching (lazy — no-op if LLM unavailable)
+          register_catalog_tools
           populate_embedding_index
 
           Resources::RunnerCatalog.register(server)
@@ -261,6 +266,15 @@ module Legion
         end
 
         private
+
+        def install_deferred_tools_list_handler(server)
+          handlers = server.instance_variable_get(:@handlers)
+          return unless handlers
+
+          handlers[::MCP::Methods::TOOLS_LIST] = lambda { |_request|
+            DeferredRegistry.build_tools_list(build_filtered_tool_list)
+          }
+        end
 
         def instructions
           <<~TEXT

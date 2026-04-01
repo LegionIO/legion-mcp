@@ -52,7 +52,6 @@ RSpec.describe Legion::MCP::Tools::DiscoverTools do
         response = described_class.call
         data = Legion::JSON.load(response.content.first[:text])
         expect(data).to be_an(Array)
-        # symbol values serialize to strings through JSON round-trip
         expect(data.first[:category].to_s).to eq('tasks')
       end
     end
@@ -121,6 +120,41 @@ RSpec.describe Legion::MCP::Tools::DiscoverTools do
         response = described_class.call(intent: 'run a task')
         data = Legion::JSON.load(response.content.first[:text])
         expect(data[:matched_tools].first[:name]).to eq('legion.run_task')
+      end
+    end
+
+    context 'with tool_names and schema: true' do
+      let(:mock_tool) do
+        Class.new(MCP::Tool) do
+          tool_name 'legion.ask_peer'
+          description 'Ask a peer.'
+          input_schema(properties: { peer: { type: 'string' } }, required: ['peer'])
+        end
+      end
+
+      before do
+        allow(Legion::MCP::Server).to receive(:tool_registry).and_return([mock_tool])
+      end
+
+      it 'returns full schemas for matching tools' do
+        response = described_class.call(tool_names: ['legion.ask_peer'], schema: true)
+        expect(response.error?).to be false
+        data = Legion::JSON.load(response.content.first[:text])
+        expect(data).to have_key(:schemas)
+        expect(data[:schemas].first[:name]).to eq('legion.ask_peer')
+      end
+
+      it 'returns inputSchema in the resolved schemas' do
+        response = described_class.call(tool_names: ['legion.ask_peer'], schema: true)
+        data = Legion::JSON.load(response.content.first[:text])
+        expect(data[:schemas].first).to have_key(:inputSchema)
+      end
+
+      it 'returns error when no tools match' do
+        response = described_class.call(tool_names: ['legion.nonexistent'], schema: true)
+        expect(response.error?).to be true
+        data = Legion::JSON.load(response.content.first[:text])
+        expect(data[:error]).to include('legion.nonexistent')
       end
     end
 
