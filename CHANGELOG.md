@@ -19,6 +19,8 @@
 - `ToolQuality` module — docstring quality gate (min description length, param descriptions), category resolution across `CATEGORIES` and `EXPANDED_CATEGORIES`, reads/writes capability matrix, and audit summary (closes #17)
 - `legion.tool_audit` MCP tool (62nd tool) — audit all registered tools with modes: `summary` (default), `matrix` (capability matrix), `issues` (quality warnings only)
 - `ContextCompiler::CATEGORIES` expanded from 9 to 16 categories: added `knowledge`, `mesh`, `mind_growth`, `prompts`, `datasets`, `evals`, `meta` — all 62 tools now have category assignments
+- `StateTracker` module — in-memory state snapshots with timestamps and delta diff computation; tracks tool count, observer stats, pattern count, and extension count (closes #16)
+- `legion.state_diff` MCP tool (63rd tool) — return only changed system state since a given timestamp; supports `snapshot: true` to take a baseline and `since:` for delta polling
 
 ### Changed
 - `Server.build` now installs a custom `tools/list` handler via `install_deferred_tools_list_handler` for mcp gem 0.10 compatibility (replaces removed `tools_list_handler` block API)
