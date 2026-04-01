@@ -71,6 +71,7 @@ require_relative 'tools/absorb'
 require_relative 'tools/structural_index'
 require_relative 'tools/tool_audit'
 require_relative 'tools/state_diff'
+require_relative 'tools/search_sessions'
 require_relative 'structural_index'
 require_relative 'state_tracker'
 require_relative 'tool_quality'
@@ -147,7 +148,8 @@ module Legion
         Tools::Absorb,
         Tools::StructuralIndexTool,
         Tools::ToolAudit,
-        Tools::StateDiff
+        Tools::StateDiff,
+        Tools::SearchSessions
       ].freeze
 
       @tool_registry = Concurrent::Array.new(STATIC_TOOLS)

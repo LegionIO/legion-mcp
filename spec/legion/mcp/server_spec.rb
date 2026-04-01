@@ -34,8 +34,8 @@ RSpec.describe Legion::MCP::Server do
       expect(server.tools.keys).to include(*expected)
     end
 
-    it 'registers at least 63 static tools' do
-      expect(server.tools.size).to be >= 63
+    it 'registers at least 64 static tools' do
+      expect(server.tools.size).to be >= 64
     end
 
     it 'includes instructions' do

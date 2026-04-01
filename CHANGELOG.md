@@ -21,6 +21,7 @@
 - `ContextCompiler::CATEGORIES` expanded from 9 to 16 categories: added `knowledge`, `mesh`, `mind_growth`, `prompts`, `datasets`, `evals`, `meta` — all 62 tools now have category assignments
 - `StateTracker` module — in-memory state snapshots with timestamps and delta diff computation; tracks tool count, observer stats, pattern count, and extension count (closes #16)
 - `legion.state_diff` MCP tool (63rd tool) — return only changed system state since a given timestamp; supports `snapshot: true` to take a baseline and `since:` for delta polling
+- `legion.search_sessions` MCP tool (64th tool) — search across past conversation sessions by keyword or topic with relevance-sorted results and context snippets (closes #15)
 
 ### Changed
 - `Server.build` now installs a custom `tools/list` handler via `install_deferred_tools_list_handler` for mcp gem 0.10 compatibility (replaces removed `tools_list_handler` block API)
