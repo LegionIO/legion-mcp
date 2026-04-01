@@ -69,7 +69,9 @@ require_relative 'tools/knowledge_health'
 require_relative 'tools/knowledge_context'
 require_relative 'tools/absorb'
 require_relative 'tools/structural_index'
+require_relative 'tools/tool_audit'
 require_relative 'structural_index'
+require_relative 'tool_quality'
 require_relative 'deferred_registry'
 require_relative 'catalog_dispatcher'
 require_relative 'dynamic_injector'
@@ -141,7 +143,8 @@ module Legion
         Tools::KnowledgeHealth,
         Tools::KnowledgeContext,
         Tools::Absorb,
-        Tools::StructuralIndexTool
+        Tools::StructuralIndexTool,
+        Tools::ToolAudit
       ].freeze
 
       @tool_registry = Concurrent::Array.new(STATIC_TOOLS)

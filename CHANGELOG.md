@@ -16,6 +16,9 @@
 - `Settings.dynamic_tools_defaults` — configurable `enabled` (default false) and `max_injected` (default 10)
 - `StructuralIndex` module — precomputed static index of all extensions, runners, actors, and tools with JSON cache at `~/.legionio/cache/structural_index.json`; supports filtering by extension name or type (closes #18)
 - `legion.structural_index` MCP tool (61st tool) — query the structural index with optional `extension`, `type`, and `refresh` parameters
+- `ToolQuality` module — docstring quality gate (min description length, param descriptions), category resolution across `CATEGORIES` and `EXPANDED_CATEGORIES`, reads/writes capability matrix, and audit summary (closes #17)
+- `legion.tool_audit` MCP tool (62nd tool) — audit all registered tools with modes: `summary` (default), `matrix` (capability matrix), `issues` (quality warnings only)
+- `ContextCompiler::CATEGORIES` expanded from 9 to 16 categories: added `knowledge`, `mesh`, `mind_growth`, `prompts`, `datasets`, `evals`, `meta` — all 62 tools now have category assignments
 
 ### Changed
 - `Server.build` now installs a custom `tools/list` handler via `install_deferred_tools_list_handler` for mcp gem 0.10 compatibility (replaces removed `tools_list_handler` block API)
