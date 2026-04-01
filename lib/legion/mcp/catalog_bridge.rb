@@ -37,6 +37,10 @@ module Legion
         { status: :error, error: e.message, source: :catalog }
       end
 
+      def register_catalog_tools
+        CatalogDispatcher.generate_tools_from_catalog.each { |tc| Server.register_tool(tc) }
+      end
+
       def dynamic_tool_list
         static = Server.tool_registry.map do |klass|
           { name: klass.tool_name, description: klass.description,

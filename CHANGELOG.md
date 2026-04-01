@@ -10,8 +10,14 @@
 - `Settings.deferred_loading_defaults` — configurable `enabled` (default true) and `always_loaded` (custom tool names merged with built-in defaults)
 - 13 always-loaded tools: `legion.do`, `legion.tools`, `legion.run_task`, `legion.list_tasks`, `legion.get_task`, `legion.get_status`, `legion.describe_runner`, `legion.plan_action`, `legion.query_knowledge`, `legion.knowledge_context`, `legion.knowledge_health`, `legion.absorb`, `legion.get_task_logs`
 
+- `CatalogDispatcher` module — thin dispatch layer routing MCP tool calls through `Legion::Ingress` for RBAC, audit, and sandbox enforcement; auto-generates tool classes from `Catalog::Registry` entries (closes #20)
+- `DynamicInjector` module — context-aware tool injection/removal using `ContextCompiler.match_tools`; sends `notifications/tools/list_changed` when active tool set changes based on conversation context
+- `CatalogBridge.register_catalog_tools` — auto-generates and registers catalog-sourced tools through `CatalogDispatcher` at server boot
+- `Settings.dynamic_tools_defaults` — configurable `enabled` (default false) and `max_injected` (default 10)
+
 ### Changed
 - `Server.build` now installs a custom `tools/list` handler via `install_deferred_tools_list_handler` for mcp gem 0.10 compatibility (replaces removed `tools_list_handler` block API)
+- `Server.build` now calls `register_catalog_tools` to auto-generate Ingress-dispatched tool classes from Catalog entries
 
 ## [0.6.6] - 2026-03-28
 
