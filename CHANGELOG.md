@@ -14,6 +14,8 @@
 - `DynamicInjector` module — context-aware tool injection/removal using `ContextCompiler.match_tools`; sends `notifications/tools/list_changed` when active tool set changes based on conversation context
 - `CatalogBridge.register_catalog_tools` — auto-generates and registers catalog-sourced tools through `CatalogDispatcher` at server boot
 - `Settings.dynamic_tools_defaults` — configurable `enabled` (default false) and `max_injected` (default 10)
+- `StructuralIndex` module — precomputed static index of all extensions, runners, actors, and tools with JSON cache at `~/.legionio/cache/structural_index.json`; supports filtering by extension name or type (closes #18)
+- `legion.structural_index` MCP tool (61st tool) — query the structural index with optional `extension`, `type`, and `refresh` parameters
 
 ### Changed
 - `Server.build` now installs a custom `tools/list` handler via `install_deferred_tools_list_handler` for mcp gem 0.10 compatibility (replaces removed `tools_list_handler` block API)
