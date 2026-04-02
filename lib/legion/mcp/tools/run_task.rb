@@ -23,7 +23,9 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(task:, params: {})
+            log.info("Starting legion.mcp.tools.run_task.call")
             parts = task.split('.')
             return error_response("Invalid dot notation '#{task}'. Expected format: extension.runner.function") unless parts.length == 3
 
@@ -41,10 +43,12 @@ module Legion
 
             text_response(result)
           rescue NameError => e
-            Legion::Logging.warn("RunTask#call runner not found: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.run_task.call")
+            log.warn("RunTask#call runner not found: #{e.message}")
             error_response("Runner not found: #{e.message}")
           rescue StandardError => e
-            Legion::Logging.warn("RunTask#call execution failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.run_task.call")
+            log.warn("RunTask#call execution failed: #{e.message}")
             error_response("Task execution failed: #{e.message}")
           end
 

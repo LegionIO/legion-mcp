@@ -16,7 +16,9 @@ module Legion
         SENSITIVE_KEYS = %i[password secret token key cert private_key api_key].freeze
 
         class << self
+          include Legion::Logging::Helper
           def call(section: nil)
+            log.info("Starting legion.mcp.tools.get_config.call")
             settings = Legion::Settings.loader.to_hash
 
             if section
@@ -30,7 +32,8 @@ module Legion
               text_response(redact_hash(settings))
             end
           rescue StandardError => e
-            Legion::Logging.warn("GetConfig#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.get_config.call")
+            log.warn("GetConfig#call failed: #{e.message}")
             error_response("Failed to get config: #{e.message}")
           end
 

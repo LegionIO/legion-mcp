@@ -18,7 +18,9 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(evaluator_name:, input:, output:, expected: nil)
+            log.info("Starting legion.mcp.tools.eval_run.call")
             return error_response('lex-eval is not loaded') unless extension_loaded?('eval')
 
             require 'legion/extensions/eval/client'
@@ -27,7 +29,8 @@ module Legion
             result = client.run_evaluation(evaluator_name: evaluator_name, inputs: inputs)
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("EvalRun#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.eval_run.call")
+            log.warn("EvalRun#call failed: #{e.message}")
             error_response("Failed to run evaluation: #{e.message}")
           end
 
@@ -37,7 +40,8 @@ module Legion
             require "legion/extensions/#{name}"
             true
           rescue LoadError => e
-            Legion::Logging.debug("EvalRun#extension_loaded? #{name} not available: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :debug, operation: "legion.mcp.tools.eval_run.extension_loaded?")
+            log.debug("EvalRun#extension_loaded? #{name} not available: #{e.message}")
             false
           end
 

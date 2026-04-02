@@ -19,7 +19,9 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(principal:, action:, resource:, roles: [], team: nil)
+            log.info("Starting legion.mcp.tools.rbac_check.call")
             return error_response('legion-rbac not installed') unless defined?(Legion::Rbac)
 
             p = Legion::Rbac::Principal.new(id: principal, roles: roles, team: team)
@@ -27,7 +29,8 @@ module Legion
                                                          enforce: false)
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("RbacCheck#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.rbac_check.call")
+            log.warn("RbacCheck#call failed: #{e.message}")
             error_response("RBAC check failed: #{e.message}")
           end
 

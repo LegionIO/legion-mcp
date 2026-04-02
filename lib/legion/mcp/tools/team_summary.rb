@@ -15,7 +15,9 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(team:)
+            log.info("Starting legion.mcp.tools.team_summary.call")
             return error_response('legion-data is not connected') unless data_connected?
 
             workers = Legion::DigitalWorker.by_team(team: team).all
@@ -30,7 +32,8 @@ module Legion
                             end
                           })
           rescue StandardError => e
-            Legion::Logging.warn("TeamSummary#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.team_summary.call")
+            log.warn("TeamSummary#call failed: #{e.message}")
             error_response("Failed to fetch team summary: #{e.message}")
           end
 
@@ -39,7 +42,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("TeamSummary#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.team_summary.data_connected?")
+            log.warn("TeamSummary#data_connected? failed: #{e.message}")
             false
           end
 

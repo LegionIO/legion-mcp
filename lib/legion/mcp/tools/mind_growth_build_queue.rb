@@ -10,13 +10,16 @@ module Legion
         input_schema(properties: {})
 
         class << self
+          include Legion::Logging::Helper
           def call
+            log.info("Starting legion.mcp.tools.mind_growth_build_queue.call")
             return error_response('lex-mind-growth is not available') unless mind_growth_available?
 
             result = mind_growth_client.list_proposals(status: :approved)
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("MindGrowthBuildQueue#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.mind_growth_build_queue.call")
+            log.warn("MindGrowthBuildQueue#call failed: #{e.message}")
             error_response("Failed to get build queue: #{e.message}")
           end
 

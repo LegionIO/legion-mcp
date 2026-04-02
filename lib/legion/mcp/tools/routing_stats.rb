@@ -14,7 +14,9 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(worker_id: nil)
+            log.info("Starting legion.mcp.tools.routing_stats.call")
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('lex-metering is not loaded') unless metering_available?
 
@@ -22,7 +24,8 @@ module Legion
             stats = runner.routing_stats(worker_id: worker_id)
             text_response(stats)
           rescue StandardError => e
-            Legion::Logging.warn("RoutingStats#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.routing_stats.call")
+            log.warn("RoutingStats#call failed: #{e.message}")
             error_response("Failed to fetch routing stats: #{e.message}")
           end
 
@@ -31,7 +34,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("RoutingStats#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.routing_stats.data_connected?")
+            log.warn("RoutingStats#data_connected? failed: #{e.message}")
             false
           end
 

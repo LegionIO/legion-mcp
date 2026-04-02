@@ -14,14 +14,17 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(active: nil)
+            log.info("Starting legion.mcp.tools.list_extensions.call")
             return error_response('legion-data is not connected') unless data_connected?
 
             dataset = Legion::Data::Model::Extension.order(:id)
             dataset = dataset.where(active: true) if active == true
             text_response(dataset.all.map(&:values))
           rescue StandardError => e
-            Legion::Logging.warn("ListExtensions#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_extensions.call")
+            log.warn("ListExtensions#call failed: #{e.message}")
             error_response("Failed to list extensions: #{e.message}")
           end
 
@@ -30,7 +33,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("ListExtensions#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_extensions.data_connected?")
+            log.warn("ListExtensions#data_connected? failed: #{e.message}")
             false
           end
 

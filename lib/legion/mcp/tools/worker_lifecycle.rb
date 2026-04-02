@@ -18,7 +18,9 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(worker_id:, to_state:, by:, reason: nil)
+            log.info("Starting legion.mcp.tools.worker_lifecycle.call")
             return error_response('legion-data is not connected') unless data_connected?
 
             worker = Legion::DigitalWorker.find(worker_id: worker_id)
@@ -27,10 +29,12 @@ module Legion
             updated = Legion::DigitalWorker::Lifecycle.transition!(worker, to_state: to_state, by: by, reason: reason)
             text_response(updated.values)
           rescue Legion::DigitalWorker::Lifecycle::InvalidTransition => e
-            Legion::Logging.warn("WorkerLifecycle#call invalid transition: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.worker_lifecycle.call")
+            log.warn("WorkerLifecycle#call invalid transition: #{e.message}")
             error_response("Invalid transition: #{e.message}")
           rescue StandardError => e
-            Legion::Logging.warn("WorkerLifecycle#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.worker_lifecycle.call")
+            log.warn("WorkerLifecycle#call failed: #{e.message}")
             error_response("Lifecycle transition failed: #{e.message}")
           end
 
@@ -39,7 +43,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("WorkerLifecycle#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.worker_lifecycle.data_connected?")
+            log.warn("WorkerLifecycle#data_connected? failed: #{e.message}")
             false
           end
 

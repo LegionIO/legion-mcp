@@ -17,7 +17,9 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
           def call(to:, query:, timeout: 30)
+            log.info("Starting legion.mcp.tools.ask_peer.call")
             return error_response('lex-mesh is not available') unless mesh_available?
 
             result = mesh_client.request_task(
@@ -29,7 +31,8 @@ module Legion
             )
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("AskPeer#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.tools.ask_peer.call")
+            log.warn("AskPeer#call failed: #{e.message}")
             error_response("Failed to query peer: #{e.message}")
           end
 
