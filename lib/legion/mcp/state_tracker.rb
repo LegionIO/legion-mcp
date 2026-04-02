@@ -5,9 +5,11 @@ module Legion
     module StateTracker
       MAX_SNAPSHOTS = 50
 
+      extend Legion::Logging::Helper
       module_function
 
       def snapshot
+        log.info("Starting legion.mcp.state_tracker.snapshot")
         state = collect_state
         timestamp = Time.now.floor
 
@@ -20,6 +22,7 @@ module Legion
       end
 
       def diff(since:)
+        log.info("Starting legion.mcp.state_tracker.diff")
         since_time = parse_time(since)
         return { error: 'invalid timestamp' } unless since_time
 
@@ -49,7 +52,8 @@ module Legion
 
         stats = Observer.stats
         { total_calls: stats[:total_calls], tool_count: stats[:tool_count], failure_rate: stats[:failure_rate] }
-      rescue StandardError
+      rescue StandardError => e
+        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.collect_observer_stats")
         {}
       end
 
@@ -57,7 +61,8 @@ module Legion
         return 0 unless defined?(PatternStore)
 
         PatternStore.respond_to?(:size) ? PatternStore.size : 0
-      rescue StandardError
+      rescue StandardError => e
+        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.collect_pattern_count")
         0
       end
 
@@ -70,7 +75,8 @@ module Legion
                        Legion::Extensions.instance_variable_get(:@extensions)
                      end
         extensions&.size || 0
-      rescue StandardError
+      rescue StandardError => e
+        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.collect_extension_count")
         0
       end
 
@@ -110,7 +116,8 @@ module Legion
         when Numeric
           Time.at(value)
         end
-      rescue ArgumentError
+      rescue ArgumentError => e
+        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.parse_time")
         nil
       end
 

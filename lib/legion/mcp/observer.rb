@@ -2,6 +2,7 @@
 
 require 'concurrent-ruby'
 require 'digest'
+require_relative 'logging_support'
 
 module Legion
   module MCP
@@ -9,6 +10,7 @@ module Legion
       RING_BUFFER_MAX   = 500
       INTENT_BUFFER_MAX = 200
 
+      extend Legion::Logging::Helper
       module_function
 
       def record(tool_name:, duration_ms:, success:, params_keys: [], error: nil)
@@ -46,7 +48,7 @@ module Legion
         end
       end
 
-      def record_intent_with_result(intent:, tool_name:, success:)
+      def record_intent_with_result(intent:, tool_name:, success:, request_id: nil)
         record_intent(intent, tool_name)
         return unless success
         return unless defined?(Legion::MCP::PatternStore)
@@ -57,7 +59,8 @@ module Legion
         promotion = Legion::MCP::PatternStore.record_candidate(
           intent_hash: intent_hash,
           tool_chain:  [tool_name],
-          intent_text: intent
+          intent_text: intent,
+          request_id:  request_id
         )
 
         return unless promotion&.dig(:promote)
@@ -66,7 +69,8 @@ module Legion
           intent_hash:   promotion[:intent_hash],
           tool_chain:    promotion[:tool_chain],
           intent_text:   promotion[:intent_text],
-          intent_vector: try_embed(normalized)
+          intent_vector: try_embed(normalized),
+          request_id:    request_id
         )
       end
 
@@ -164,7 +168,8 @@ module Legion
 
         embedder.call(text)
       rescue StandardError => e
-        Legion::Logging.debug("Observer#try_embed failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :debug, operation: 'legion.mcp.observer.try_embed')
+        LoggingSupport.debug('observer.embed.failed', error: e.message)
         nil
       end
     end

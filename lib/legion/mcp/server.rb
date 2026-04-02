@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'observer'
+require_relative 'logging_support'
 require_relative 'usage_filter'
 require_relative 'tools/run_task'
 require_relative 'tools/describe_runner'
@@ -166,6 +167,11 @@ module Legion
 
             tool_registry << tool_class
             reset_caches!
+            LoggingSupport.info(
+              'server.tool.registered',
+              tool_name:     tool_class.tool_name,
+              registry_size: tool_registry.size
+            )
           end
         end
 
@@ -173,6 +179,11 @@ module Legion
           @tool_registry_lock.synchronize do
             tool_registry.reject! { |tc| tc.tool_name == tool_name }
             reset_caches!
+            LoggingSupport.info(
+              'server.tool.unregistered',
+              tool_name:     tool_name,
+              registry_size: tool_registry.size
+            )
           end
         end
 
@@ -182,6 +193,12 @@ module Legion
         end
 
         def build(identity: nil)
+          LoggingSupport.info(
+            'server.build.start',
+            identity:      LoggingSupport.summarize_identity(identity),
+            registry_size: tool_registry.size,
+            governance:    ToolGovernance.governance_enabled?
+          )
           tools = if ToolGovernance.governance_enabled?
                     ToolGovernance.filter_tools(tool_registry, identity)
                   else
@@ -217,6 +234,13 @@ module Legion
           register_catalog_listener
           hydrate_override_confidence
 
+          LoggingSupport.info(
+            'server.build.complete',
+            identity:       LoggingSupport.summarize_identity(identity),
+            tool_count:     tools.size,
+            registry_size:  tool_registry.size,
+            resource_count: server.resources.size
+          )
           server
         end
 
@@ -225,6 +249,10 @@ module Legion
 
           tool_data = ContextCompiler.tool_index.values
           EmbeddingIndex.build_from_tool_data(tool_data, embedder: embedder)
+          LoggingSupport.info(
+            'server.embedding_index.populated',
+            tool_count: tool_data.size
+          )
         end
 
         def wire_observer(data)
@@ -233,6 +261,17 @@ module Legion
           duration_ms = (data[:duration].to_f * 1000).to_i
           params_keys = data[:tool_arguments].respond_to?(:keys) ? data[:tool_arguments].keys : []
           success     = data[:error].nil?
+          request_id  = LoggingSupport.request_id_from(data[:tool_arguments])
+
+          LoggingSupport.info(
+            'server.tool_call.complete',
+            request_id: request_id,
+            tool_name:  data[:tool_name],
+            success:    success,
+            duration_ms: duration_ms,
+            params_keys: params_keys,
+            error:      data[:error]
+          )
 
           Observer.record(
             tool_name:   data[:tool_name],
@@ -248,11 +287,14 @@ module Legion
           return if data[:tool_name] == 'legion.do'
           return unless data[:tool_arguments]&.dig(:intent)
 
-          Observer.record_intent_with_result(
+          observer_args = {
             intent:    data[:tool_arguments][:intent],
             tool_name: data[:tool_name],
             success:   success
-          )
+          }
+          observer_args[:request_id] = request_id if request_id
+
+          Observer.record_intent_with_result(**observer_args)
         end
 
         def build_filtered_tool_list(keywords: [])
@@ -272,7 +314,13 @@ module Legion
           return unless handlers
 
           handlers[::MCP::Methods::TOOLS_LIST] = lambda { |_request|
-            DeferredRegistry.build_tools_list(build_filtered_tool_list)
+            tool_list = DeferredRegistry.build_tools_list(build_filtered_tool_list)
+            LoggingSupport.info(
+              'server.tools.list',
+              total:         tool_list.size,
+              deferred_only: tool_list.count { |entry| !entry.key?(:inputSchema) && !entry.key?(:input_schema) }
+            )
+            tool_list
           }
         end
 

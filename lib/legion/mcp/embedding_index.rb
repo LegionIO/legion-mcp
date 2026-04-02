@@ -3,6 +3,7 @@
 module Legion
   module MCP
     module EmbeddingIndex
+      extend Legion::Logging::Helper
       module_function
 
       def build_from_tool_data(tool_data, embedder: default_embedder)
@@ -98,7 +99,8 @@ module Legion
 
         result
       rescue StandardError => e
-        Legion::Logging.debug("EmbeddingIndex#safe_embed failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :debug, operation: "legion.mcp.embedding_index.safe_embed")
+        log.debug("EmbeddingIndex#safe_embed failed: #{e.message}")
         nil
       end
 
@@ -107,7 +109,8 @@ module Legion
 
         ->(text) { Legion::LLM.embed(text)[:vector] }
       rescue StandardError => e
-        Legion::Logging.debug("EmbeddingIndex#default_embedder failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :debug, operation: "legion.mcp.embedding_index.default_embedder")
+        log.debug("EmbeddingIndex#default_embedder failed: #{e.message}")
         nil
       end
     end

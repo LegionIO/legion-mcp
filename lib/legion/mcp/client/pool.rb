@@ -7,6 +7,7 @@ module Legion
         @connections = {}
         @mutex = Mutex.new
 
+        extend Legion::Logging::Helper
         module_function
 
         def connection_for(server_name)
@@ -30,7 +31,8 @@ module Legion
               tool.merge(source: { type: :mcp, server: name })
             end
           rescue StandardError => e
-            Legion::Logging.warn("MCP tool discovery failed for #{name}: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: "legion.mcp.client.pool.all_tools")
+            log.warn("MCP tool discovery failed for #{name}: #{e.message}")
             ServerRegistry.mark_unhealthy(name)
             []
           end
@@ -38,7 +40,11 @@ module Legion
 
         def reset!
           @mutex.synchronize do
-            @connections.each_value { |c| c.disconnect rescue nil } # rubocop:disable Style/RescueModifier
+            @connections.each_value do |connection|
+              connection.disconnect
+            rescue StandardError => e
+              handle_exception(e, level: :debug, operation: 'legion.mcp.client.pool.reset!')
+            end
             @connections.clear
           end
         end

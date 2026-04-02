@@ -4,7 +4,10 @@ require 'spec_helper'
 require 'legion/mcp/pattern_store'
 
 RSpec.describe Legion::MCP::PatternStore do
-  before { described_class.reset! }
+  before do
+    described_class.reset!
+    allow(Legion::Logging).to receive(:info)
+  end
 
   describe '.store and .lookup' do
     let(:pattern) do
@@ -29,6 +32,14 @@ RSpec.describe Legion::MCP::PatternStore do
       expect(result).not_to be_nil
       expect(result[:intent_text]).to eq('check deploy status')
       expect(result[:tool_chain]).to eq(['legion.get_status'])
+    end
+
+    it 'logs pattern store and lookup hits' do
+      described_class.store(pattern, request_id: 'req-pattern')
+      described_class.lookup('abc123', request_id: 'req-pattern')
+
+      expect(Legion::Logging).to have_received(:info).with(include('[mcp] pattern.store', 'request_id="req-pattern"'))
+      expect(Legion::Logging).to have_received(:info).with(include('[mcp] pattern.lookup', 'source=:l0'))
     end
 
     it 'returns nil for unknown intent_hash' do

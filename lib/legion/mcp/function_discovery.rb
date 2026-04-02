@@ -3,6 +3,7 @@
 module Legion
   module MCP
     module FunctionDiscovery
+      extend Legion::Logging::Helper
       module_function
 
       def discover_and_register
@@ -19,7 +20,8 @@ module Legion
 
           ext.runner_modules.each { |runner_mod| build_tools_from_runner(runner_mod) }
         rescue StandardError => e
-          Legion::Logging.debug("FunctionDiscovery: skipping #{ext}: #{e.message}") if defined?(Legion::Logging)
+          handle_exception(e, level: :debug, operation: "legion.mcp.function_discovery.discover_and_register")
+          log.debug("FunctionDiscovery: skipping #{ext}: #{e.message}")
         end
       end
 
@@ -141,6 +143,7 @@ module Legion
               begin
                 runner_ref.public_send(func_ref, **params)
               rescue StandardError => e
+                handle_exception(e, level: :warn, operation: "legion.mcp.function_discovery.call")
                 error = true
                 { error: e.message }
               end

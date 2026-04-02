@@ -17,6 +17,12 @@ RSpec.describe Legion::MCP::Tools::DoAction do
   end
 
   describe '.call' do
+    before do
+      allow(Legion::Logging).to receive(:info)
+      allow(Legion::Logging).to receive(:warn)
+      allow(Legion::Logging).to receive(:debug)
+    end
+
     context 'when no matching tool is found' do
       before do
         allow(Legion::MCP::ContextCompiler).to receive(:match_tool).and_return(nil)
@@ -54,6 +60,14 @@ RSpec.describe Legion::MCP::Tools::DoAction do
       it 'returns a successful response when tool succeeds' do
         response = described_class.call(intent: 'run a task')
         expect(response.error?).to be false
+      end
+
+      it 'logs the fallback tool match and completion' do
+        described_class.call(intent: 'run a task', context: { request_id: 'req-do-action' })
+
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] do_action.start', 'request_id="req-do-action"'))
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] do_action.match', 'matched_tool='))
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] do_action.complete', 'path="context_compiler"'))
       end
     end
 

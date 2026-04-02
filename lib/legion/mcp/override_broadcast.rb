@@ -7,12 +7,18 @@ module Legion
       ROUTING_KEY = 'override.confirmed'
       CORROBORATION_BOOST = 0.3
 
+      extend Legion::Logging::Helper
       module_function
 
       def publish_confirmation(tool:, lex:, confidence:, tests:)
         return unless defined?(Legion::Transport::Messages::Dynamic)
 
-        node_id = Legion::Settings.dig(:node, :id) rescue 'unknown' # rubocop:disable Style/RescueModifier
+        node_id = begin
+          Legion::Settings.dig(:node, :id)
+        rescue StandardError => e
+          handle_exception(e, level: :debug, operation: 'legion.mcp.override_broadcast.publish_confirmation')
+          'unknown'
+        end
         Legion::Transport::Messages::Dynamic.new(
           function:    'override_confirmed',
           exchange:    EXCHANGE,
@@ -23,7 +29,8 @@ module Legion
           }
         ).publish
       rescue StandardError => e
-        Legion::Logging.warn("Override broadcast failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: "legion.mcp.override_broadcast.publish_confirmation")
+        log.warn("Override broadcast failed: #{e.message}")
       end
 
       def receive_confirmation(tool:, lex:, confidence:, tests:, node:)
@@ -40,7 +47,8 @@ module Legion
 
         store_to_apollo(tool: tool, lex: lex, confidence: confidence, tests: tests, node: node)
       rescue StandardError => e
-        Legion::Logging.warn("Override receive failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: "legion.mcp.override_broadcast.receive_confirmation")
+        log.warn("Override receive failed: #{e.message}")
       end
 
       def store_to_apollo(tool:, lex:, confidence:, tests:, node:)
@@ -54,7 +62,8 @@ module Legion
           knowledge_domain: 'system'
         )
       rescue StandardError => e
-        Legion::Logging.warn("OverrideBroadcast#store_to_apollo failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: "legion.mcp.override_broadcast.store_to_apollo")
+        log.warn("OverrideBroadcast#store_to_apollo failed: #{e.message}")
         nil
       end
 

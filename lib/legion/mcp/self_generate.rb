@@ -9,6 +9,7 @@ module Legion
       MAX_GAPS_PER_CYCLE = 5
       COOLDOWN_SECONDS   = 300
 
+      extend Legion::Logging::Helper
       module_function
 
       def enabled?
@@ -18,6 +19,7 @@ module Legion
       end
 
       def run_cycle
+        log.info("Starting legion.mcp.self_generate.run_cycle")
         return { success: false, reason: :disabled } unless enabled?
         return { success: false, reason: :cooldown } if in_cooldown?
 
@@ -69,11 +71,13 @@ module Legion
         ).publish
         true
       rescue StandardError => e
-        Legion::Logging.warn("SelfGenerate#publish_gap failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: "legion.mcp.self_generate.publish_gap")
+        log.warn("SelfGenerate#publish_gap failed: #{e.message}")
         false
       end
 
       def status
+        log.info("Starting legion.mcp.self_generate.status")
         {
           last_cycle_at:      last_cycle_at,
           total_cycles:       cycle_count,
@@ -83,6 +87,7 @@ module Legion
           enabled:            enabled?
         }
       rescue StandardError => e
+        handle_exception(e, level: :error, operation: "legion.mcp.self_generate.status")
         { error: e.message }
       end
 

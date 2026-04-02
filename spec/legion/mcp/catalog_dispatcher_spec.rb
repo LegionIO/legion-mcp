@@ -6,6 +6,8 @@ require 'legion/mcp'
 RSpec.describe Legion::MCP::CatalogDispatcher do
   before do
     allow(Legion::Settings).to receive(:dig).and_return(nil)
+    allow(Legion::Logging).to receive(:info)
+    allow(Legion::Logging).to receive(:warn)
   end
 
   describe '.dispatch' do
@@ -26,6 +28,19 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
           params:       { url: 'https://example.com' }
         )
         expect(result).to eq({ status: 200 })
+      end
+
+      it 'logs dispatch start and completion' do
+        allow(Legion::Ingress).to receive(:run).and_return({ status: 200 })
+
+        described_class.dispatch(
+          runner_class: 'Legion::Extensions::Http::Runners::Request',
+          function:     'get',
+          params:       { url: 'https://example.com' }
+        )
+
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.dispatch.start', 'function="get"'))
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.dispatch.complete', 'result='))
       end
     end
 
@@ -99,6 +114,16 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
       response = klass.call(url: 'https://example.com')
       expect(response).to be_a(MCP::Tool::Response)
       expect(response.error?).to be false
+    end
+
+    it 'logs tool call start and completion' do
+      klass = described_class.build_tool_class(entry)
+      allow(described_class).to receive(:dispatch).and_return({ status: 200 })
+
+      klass.call(url: 'https://example.com')
+
+      expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.tool_call.start', 'tool_name="legion.http.request.get"'))
+      expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.tool_call.complete', 'tool_name="legion.http.request.get"'))
     end
 
     it 'returns error when dispatch returns nil' do

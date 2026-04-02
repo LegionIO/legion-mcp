@@ -7,6 +7,7 @@ module Legion
     module StructuralIndex
       CACHE_PATH = File.expand_path('~/.legionio/cache/structural_index.json')
 
+      extend Legion::Logging::Helper
       module_function
 
       def build
@@ -29,7 +30,8 @@ module Legion
         extensions.filter_map do |ext|
           build_extension_entry(ext)
         rescue StandardError => e
-          Legion::Logging.debug("StructuralIndex: skipping #{ext}: #{e.message}") if defined?(Legion::Logging)
+          handle_exception(e, level: :debug, operation: "legion.mcp.structural_index.scan_extensions")
+          log.debug("StructuralIndex: skipping #{ext}: #{e.message}")
           nil
         end
       end
@@ -88,7 +90,8 @@ module Legion
 
         data = File.read(CACHE_PATH)
         Legion::JSON.load(data)
-      rescue StandardError
+      rescue StandardError => e
+        handle_exception(e, level: :warn, operation: "legion.mcp.structural_index.cached")
         nil
       end
 

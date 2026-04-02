@@ -3,6 +3,11 @@
 require 'spec_helper'
 
 RSpec.describe Legion::MCP::Client::Connection do
+  before do
+    allow(Legion::Logging).to receive(:info)
+    allow(Legion::Logging).to receive(:warn)
+  end
+
   describe '#initialize' do
     it 'creates a stdio connection' do
       conn = described_class.new(
@@ -56,6 +61,18 @@ RSpec.describe Legion::MCP::Client::Connection do
       result = conn.call_tool(name: 'list_files', arguments: { path: '.' })
       expect(result).to be_a(Hash)
       expect(result[:content]).not_to be_empty
+    end
+
+    it 'logs tool call start and completion' do
+      conn = described_class.new(name: 'test', transport: :stdio, command: 'echo')
+      allow(conn).to receive(:execute_tool_call).and_return({
+        content: [{ type: 'text', text: '["file1.rb"]' }]
+      })
+
+      conn.call_tool(name: 'list_files', arguments: { path: '.' })
+
+      expect(Legion::Logging).to have_received(:info).with(include('[mcp] client.tool_call.start', 'tool_name="list_files"'))
+      expect(Legion::Logging).to have_received(:info).with(include('[mcp] client.tool_call.complete', 'tool_name="list_files"'))
     end
   end
 end

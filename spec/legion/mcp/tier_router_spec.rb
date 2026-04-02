@@ -10,6 +10,7 @@ RSpec.describe Legion::MCP::TierRouter do
   before do
     Legion::MCP::PatternStore.reset!
     Legion::MCP::ContextGuard.reset!
+    allow(Legion::Logging).to receive(:info)
   end
 
   describe '.route' do
@@ -70,6 +71,17 @@ RSpec.describe Legion::MCP::TierRouter do
         expect(result[:tier]).to eq(0)
         expect(result[:response]).not_to be_nil
         expect(result[:latency_ms]).to be_a(Numeric)
+      end
+
+      it 'logs the tier 0 routing lifecycle' do
+        allow(described_class).to receive(:execute_tool_chain)
+          .and_return([{ status: 'running' }])
+
+        described_class.route(intent: 'check status', context: { request_id: 'req-tier0' })
+
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] tier_router.start', 'request_id="req-tier0"'))
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] tier_router.lookup', 'source=:exact'))
+        expect(Legion::Logging).to have_received(:info).with(include('[mcp] tier_router.complete', 'tier=0'))
       end
     end
 
