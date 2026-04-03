@@ -3,7 +3,7 @@
 require 'concurrent'
 require 'mcp'
 require 'legion/json'
-require 'legion/logging/helper'
+require 'legion/logging'
 require_relative 'mcp/version'
 
 require_relative 'mcp/settings'

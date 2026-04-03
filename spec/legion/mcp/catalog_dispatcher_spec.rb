@@ -4,10 +4,12 @@ require 'spec_helper'
 require 'legion/mcp'
 
 RSpec.describe Legion::MCP::CatalogDispatcher do
+  let(:logger) { spy('logger') }
+
   before do
     allow(Legion::Settings).to receive(:dig).and_return(nil)
-    allow(Legion::Logging).to receive(:info)
-    allow(Legion::Logging).to receive(:warn)
+    allow(described_class).to receive(:log).and_return(logger)
+    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
   end
 
   describe '.dispatch' do
@@ -39,8 +41,8 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
           params:       { url: 'https://example.com' }
         )
 
-        expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.dispatch.start', 'function="get"'))
-        expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.dispatch.complete', 'result='))
+        expect(logger).to have_received(:info).with(include('[mcp] catalog.dispatch.start', 'function="get"'))
+        expect(logger).to have_received(:info).with(include('[mcp] catalog.dispatch.complete', 'result='))
       end
     end
 
@@ -122,8 +124,8 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
 
       klass.call(url: 'https://example.com')
 
-      expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.tool_call.start', 'tool_name="legion.http.request.get"'))
-      expect(Legion::Logging).to have_received(:info).with(include('[mcp] catalog.tool_call.complete', 'tool_name="legion.http.request.get"'))
+      expect(logger).to have_received(:info).with(include('[mcp] catalog.tool_call.start', 'tool_name="legion.http.request.get"'))
+      expect(logger).to have_received(:info).with(include('[mcp] catalog.tool_call.complete', 'tool_name="legion.http.request.get"'))
     end
 
     it 'returns error when dispatch returns nil' do

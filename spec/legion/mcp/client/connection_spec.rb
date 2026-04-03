@@ -3,9 +3,10 @@
 require 'spec_helper'
 
 RSpec.describe Legion::MCP::Client::Connection do
+  let(:logger) { spy('logger') }
+
   before do
-    allow(Legion::Logging).to receive(:info)
-    allow(Legion::Logging).to receive(:warn)
+    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
   end
 
   describe '#initialize' do
@@ -71,8 +72,8 @@ RSpec.describe Legion::MCP::Client::Connection do
 
       conn.call_tool(name: 'list_files', arguments: { path: '.' })
 
-      expect(Legion::Logging).to have_received(:info).with(include('[mcp] client.tool_call.start', 'tool_name="list_files"'))
-      expect(Legion::Logging).to have_received(:info).with(include('[mcp] client.tool_call.complete', 'tool_name="list_files"'))
+      expect(logger).to have_received(:info).with(include('[mcp] client.tool_call.start', 'tool_name="list_files"'))
+      expect(logger).to have_received(:info).with(include('[mcp] client.tool_call.complete', 'tool_name="list_files"'))
     end
   end
 end

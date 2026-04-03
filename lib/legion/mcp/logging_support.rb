@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
-require 'legion/logging/helper'
+require 'legion/logging'
 
 module Legion
   module MCP
     module LoggingSupport
       extend Legion::Logging::Helper
+
       module_function
 
       def info(event, **fields)

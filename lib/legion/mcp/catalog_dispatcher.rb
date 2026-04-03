@@ -6,9 +6,10 @@ module Legion
   module MCP
     module CatalogDispatcher
       extend Legion::Logging::Helper
+
       module_function
 
-      def dispatch(runner_class:, function:, params:, source: :mcp)
+      def dispatch(runner_class:, function:, params:, source: :mcp) # rubocop:disable Metrics/MethodLength
         LoggingSupport.info(
           'catalog.dispatch.start',
           runner_class: runner_class,
@@ -61,13 +62,14 @@ module Legion
           define_singleton_method(:mcp_tier)     { tier }
           define_singleton_method(:catalog_entry) { true }
         end
+        klass.extend(Legion::Logging::Helper)
 
         wire_dispatch(klass, runner_class_str, function_name, tool_name_val)
         klass
       end
 
-      def wire_dispatch(klass, runner_class_str, function_name, tool_name_val)
-        klass.define_singleton_method(:call) do |**params|
+      def wire_dispatch(klass, runner_class_str, function_name, tool_name_val) # rubocop:disable Metrics/MethodLength
+        klass.define_singleton_method(:call) do |**params| # rubocop:disable Metrics/BlockLength
           LoggingSupport.info(
             'catalog.tool_call.start',
             tool_name:    tool_name_val,
@@ -97,7 +99,7 @@ module Legion
             response
           end
         rescue StandardError => e
-          handle_exception(e, level: :warn, operation: "legion.mcp.catalog_dispatcher.call")
+          handle_exception(e, level: :warn, operation: 'legion.mcp.catalog_dispatcher.call')
           LoggingSupport.warn(
             'catalog.tool_call.failed',
             tool_name:    tool_name_val,
@@ -125,7 +127,7 @@ module Legion
             tier:         cap.respond_to?(:tier) ? cap.tier : nil
           )
         rescue StandardError => e
-          handle_exception(e, level: :debug, operation: "legion.mcp.catalog_dispatcher.generate_tools_from_catalog")
+          handle_exception(e, level: :debug, operation: 'legion.mcp.catalog_dispatcher.generate_tools_from_catalog')
           log.debug("CatalogDispatcher: skipping #{cap}: #{e.message}")
           nil
         end

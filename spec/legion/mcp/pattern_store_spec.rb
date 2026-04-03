@@ -4,9 +4,11 @@ require 'spec_helper'
 require 'legion/mcp/pattern_store'
 
 RSpec.describe Legion::MCP::PatternStore do
+  let(:logger) { spy('logger') }
+
   before do
     described_class.reset!
-    allow(Legion::Logging).to receive(:info)
+    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
   end
 
   describe '.store and .lookup' do
@@ -38,8 +40,8 @@ RSpec.describe Legion::MCP::PatternStore do
       described_class.store(pattern, request_id: 'req-pattern')
       described_class.lookup('abc123', request_id: 'req-pattern')
 
-      expect(Legion::Logging).to have_received(:info).with(include('[mcp] pattern.store', 'request_id="req-pattern"'))
-      expect(Legion::Logging).to have_received(:info).with(include('[mcp] pattern.lookup', 'source=:l0'))
+      expect(logger).to have_received(:info).with(include('[mcp] pattern.store', 'request_id="req-pattern"'))
+      expect(logger).to have_received(:info).with(include('[mcp] pattern.lookup', 'source=:l0'))
     end
 
     it 'returns nil for unknown intent_hash' do
