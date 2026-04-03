@@ -12,7 +12,7 @@
 - Added `handle_exception` coverage across MCP tool, resource, router, client, observer, and pattern-store rescue paths
 - Added `info`-level tracing for MCP tool/resource entrypoints and key client, routing, and pattern lifecycle actions
 - Removed the custom fallback logger from `Actor::SelfGenerateCycle` in favor of the shared logging helper
-- Added explicit `require 'legion/logging/helper'` at the main MCP entrypoint
+- Added explicit `require 'legion/logging'` at the main MCP entrypoint
 - Raised the minimum `legion-logging` dependency to `>= 1.4.3` for helper support
 
 ## [0.7.0] - 2026-03-31
