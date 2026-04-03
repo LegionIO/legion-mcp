@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-04-03
+
+### Fixed
+- CatalogDispatcher sanitizes tool names to strip characters invalid for MCP (e.g., `?` from Ruby predicate methods)
+
 ## [0.7.1] - 2026-04-02
 
 ### Added
