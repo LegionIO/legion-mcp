@@ -9,9 +9,12 @@ module Legion
       EXCHANGE_NAME = 'tbi.patterns'
       ANNOUNCE_TTL = 86_400
 
+      extend Legion::Logging::Helper
+
       module_function
 
       def announce(pattern)
+        log.info('Starting legion.mcp.pattern_gossip.announce')
         return nil unless transport_available?
 
         exported = PatternSchema.export(pattern)
@@ -31,16 +34,19 @@ module Legion
 
         { published: true, pattern_id: exported[:pattern_id] }
       rescue StandardError => e
-        Legion::Logging.warn("PatternGossip#announce failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_gossip.announce')
+        log.warn("PatternGossip#announce failed: #{e.message}")
         nil
       end
 
       def receive(message)
+        log.info('Starting legion.mcp.pattern_gossip.receive')
         return nil unless message.is_a?(Hash) && message[:pattern]
 
         PatternSchema.import(message[:pattern], trust_level: :org)
       rescue StandardError => e
-        Legion::Logging.warn("PatternGossip#receive failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_gossip.receive')
+        log.warn("PatternGossip#receive failed: #{e.message}")
         nil
       end
 

@@ -16,7 +16,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(message:, capability: nil)
+            log.info('Starting legion.mcp.tools.broadcast_peers.call')
             return error_response('lex-mesh is not available') unless mesh_available?
 
             pattern = capability ? :multicast : :broadcast
@@ -28,7 +31,8 @@ module Legion
             )
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("BroadcastPeers#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.broadcast_peers.call')
+            log.warn("BroadcastPeers#call failed: #{e.message}")
             error_response("Failed to broadcast: #{e.message}")
           end
 

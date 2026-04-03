@@ -3,9 +3,12 @@
 module Legion
   module MCP
     module Auth
+      extend Legion::Logging::Helper
+
       module_function
 
       def authenticate(token)
+        log.info('Starting legion.mcp.auth.authenticate')
         return { authenticated: false, error: 'missing_token' } unless token
 
         if jwt_token?(token)
@@ -34,7 +37,8 @@ module Legion
         { authenticated: true, identity: { user_id: claims[:sub], risk_tier: claims[:risk_tier]&.to_sym,
                                             tenant_id: claims[:tenant_id], worker_id: claims[:worker_id] } }
       rescue StandardError => e
-        Legion::Logging.warn("Auth#verify_jwt failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: 'legion.mcp.auth.verify_jwt')
+        log.warn("Auth#verify_jwt failed: #{e.message}")
         { authenticated: false, error: e.message }
       end
 

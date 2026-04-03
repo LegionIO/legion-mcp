@@ -15,7 +15,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(id:)
+            log.info('Starting legion.mcp.tools.disable_extension.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             ext = Legion::Data::Model::Extension[id.to_i]
@@ -25,7 +28,8 @@ module Legion
             ext.refresh
             text_response(ext.values)
           rescue StandardError => e
-            Legion::Logging.warn("DisableExtension#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.disable_extension.call')
+            log.warn("DisableExtension#call failed: #{e.message}")
             error_response("Failed to disable extension: #{e.message}")
           end
 
@@ -34,7 +38,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("DisableExtension#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.disable_extension.data_connected?')
+            log.warn("DisableExtension#data_connected? failed: #{e.message}")
             false
           end
 

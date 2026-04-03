@@ -15,7 +15,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(name:, **attrs)
+            log.info('Starting legion.mcp.tools.create_chain.call')
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('chain data model is not available') unless chain_model?
 
@@ -23,7 +26,8 @@ module Legion
             record = Legion::Data::Model::Chain[id]
             text_response(record.values)
           rescue StandardError => e
-            Legion::Logging.warn("CreateChain#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_chain.call')
+            log.warn("CreateChain#call failed: #{e.message}")
             error_response("Failed to create chain: #{e.message}")
           end
 
@@ -32,7 +36,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("CreateChain#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_chain.data_connected?')
+            log.warn("CreateChain#data_connected? failed: #{e.message}")
             false
           end
 

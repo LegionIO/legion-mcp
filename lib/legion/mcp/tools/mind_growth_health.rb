@@ -10,13 +10,17 @@ module Legion
         input_schema(properties: {})
 
         class << self
+          include Legion::Logging::Helper
+
           def call
+            log.info('Starting legion.mcp.tools.mind_growth_health.call')
             return error_response('lex-mind-growth is not available') unless mind_growth_available?
 
             result = mind_growth_client.validate_fitness(extensions: [])
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("MindGrowthHealth#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.mind_growth_health.call')
+            log.warn("MindGrowthHealth#call failed: #{e.message}")
             error_response("Failed to get mind growth health: #{e.message}")
           end
 

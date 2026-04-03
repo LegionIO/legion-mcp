@@ -16,7 +16,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(worker_id:, period: 'weekly')
+            log.info('Starting legion.mcp.tools.worker_costs.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             worker = Legion::DigitalWorker.find(worker_id: worker_id)
@@ -30,7 +33,8 @@ module Legion
                             worker_name: worker.values[:name]
                           })
           rescue StandardError => e
-            Legion::Logging.warn("WorkerCosts#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.worker_costs.call')
+            log.warn("WorkerCosts#call failed: #{e.message}")
             error_response("Failed to fetch worker costs: #{e.message}")
           end
 
@@ -39,7 +43,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("WorkerCosts#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.worker_costs.data_connected?')
+            log.warn("WorkerCosts#data_connected? failed: #{e.message}")
             false
           end
 

@@ -18,7 +18,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(team: nil, owner_msid: nil, lifecycle_state: nil, limit: 20)
+            log.info('Starting legion.mcp.tools.list_workers.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             limit   = limit.to_i.clamp(1, 100)
@@ -29,7 +32,8 @@ module Legion
 
             text_response(dataset.limit(limit).all.map(&:values))
           rescue StandardError => e
-            Legion::Logging.warn("ListWorkers#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_workers.call')
+            log.warn("ListWorkers#call failed: #{e.message}")
             error_response("Failed to list workers: #{e.message}")
           end
 
@@ -38,7 +42,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("ListWorkers#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_workers.data_connected?')
+            log.warn("ListWorkers#data_connected? failed: #{e.message}")
             false
           end
 

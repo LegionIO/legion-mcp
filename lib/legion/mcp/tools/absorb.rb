@@ -18,7 +18,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(input:, scope: 'global')
+            log.info('Starting legion.mcp.tools.absorb.call')
             return error_response('AbsorberDispatch not available') unless dispatch_available?
 
             scope_str = scope.to_s
@@ -36,7 +39,8 @@ module Legion
               error_response(result[:error] || 'absorption failed')
             end
           rescue StandardError => e
-            Legion::Logging.warn("Absorb MCP tool failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.absorb.call')
+            log.warn("Absorb MCP tool failed: #{e.message}")
             error_response("Absorption failed: #{e.message}")
           end
 

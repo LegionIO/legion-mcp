@@ -14,7 +14,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(team: nil)
+            log.info('Starting legion.mcp.tools.rbac_grants.call')
             return error_response('legion-rbac not installed') unless defined?(Legion::Rbac)
             return error_response('legion-data not connected') unless Legion::Rbac::Store.db_available?
 
@@ -22,7 +25,8 @@ module Legion
             ds = ds.where(team: team) if team
             text_response(ds.all.map(&:values))
           rescue StandardError => e
-            Legion::Logging.warn("RbacGrants#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.rbac_grants.call')
+            log.warn("RbacGrants#call failed: #{e.message}")
             error_response("Failed to list grants: #{e.message}")
           end
 

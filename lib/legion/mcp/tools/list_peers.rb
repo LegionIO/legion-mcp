@@ -14,13 +14,17 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(capability: nil)
+            log.info('Starting legion.mcp.tools.list_peers.call')
             return error_response('lex-mesh is not available') unless mesh_available?
 
             result = mesh_client.find_agents(capability: capability)
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("ListPeers#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_peers.call')
+            log.warn("ListPeers#call failed: #{e.message}")
             error_response("Failed to list peers: #{e.message}")
           end
 

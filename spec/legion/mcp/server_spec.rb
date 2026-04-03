@@ -4,7 +4,12 @@ require 'spec_helper'
 require 'legion/mcp'
 
 RSpec.describe Legion::MCP::Server do
-  before { allow(Legion::Settings).to receive(:dig).and_return(nil) }
+  let(:logger) { spy('logger') }
+
+  before do
+    allow(Legion::Settings).to receive(:dig).and_return(nil)
+    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+  end
 
   describe '.build' do
     subject(:server) { described_class.build }
@@ -61,6 +66,20 @@ RSpec.describe Legion::MCP::Server do
           method: 'tools/call', tool_name: 'legion.get_status',
           duration: 0.01, tool_arguments: { intent: 'check status' }, error: nil
         )
+      end
+
+      it 'logs tool call completion' do
+        allow(Legion::MCP::Observer).to receive(:record_intent_with_result)
+
+        described_class.wire_observer(
+          method: 'tools/call',
+          tool_name: 'legion.get_status',
+          duration: 0.01,
+          tool_arguments: { intent: 'check status', request_id: 'req-observer' },
+          error: nil
+        )
+
+        expect(logger).to have_received(:info).with(include('[mcp] server.tool_call.complete', 'request_id="req-observer"', 'tool_name="legion.get_status"'))
       end
     end
 

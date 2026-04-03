@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-04-02
+
+### Added
+- `LoggingSupport` helper for structured MCP event logging with request, parameter, and result summarization
+
+### Changed
+- Uplifted non-Sinatra `lib/**/*.rb` logging paths to use `Legion::Logging::Helper` instead of direct `Legion::Logging.*` calls
+- Added `handle_exception` coverage across MCP tool, resource, router, client, observer, and pattern-store rescue paths
+- Added `info`-level tracing for MCP tool/resource entrypoints and key client, routing, and pattern lifecycle actions
+- Removed the custom fallback logger from `Actor::SelfGenerateCycle` in favor of the shared logging helper
+- Added explicit `require 'legion/logging'` at the main MCP entrypoint
+- Raised the minimum `legion-logging` dependency to `>= 1.4.3` for helper support
+
 ## [0.7.0] - 2026-03-31
 
 ### Added

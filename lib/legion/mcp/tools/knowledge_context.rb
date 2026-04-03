@@ -19,7 +19,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(question:, scope: 'all', top_k: 5)
+            log.info('Starting legion.mcp.tools.knowledge_context.call')
             return error_response('lex-knowledge is not available') unless knowledge_available?(scope)
 
             result = case scope
@@ -30,7 +33,8 @@ module Legion
 
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("KnowledgeContext#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.knowledge_context.call')
+            log.warn("KnowledgeContext#call failed: #{e.message}")
             error_response("Knowledge context failed: #{e.message}")
           end
 
@@ -56,7 +60,7 @@ module Legion
               result = Legion::Apollo::Local.query(question: question, top_k: top_k)
               result.merge(scope: 'local')
             else
-              Legion::Logging.warn('KnowledgeContext: Apollo::Local not available, falling back to global') if defined?(Legion::Logging)
+              log.warn('KnowledgeContext: Apollo::Local not available, falling back to global')
               query_global(question: question, top_k: top_k)
             end
           end

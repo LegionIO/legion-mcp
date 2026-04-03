@@ -10,7 +10,10 @@ module Legion
         input_schema(properties: {})
 
         class << self
+          include Legion::Logging::Helper
+
           def call
+            log.info('Starting legion.mcp.tools.prompt_list.call')
             return error_response('lex-prompt is not loaded') unless extension_loaded?('prompt')
 
             require 'legion/extensions/prompt/client'
@@ -18,7 +21,8 @@ module Legion
             result = client.list_prompts
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("PromptList#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.prompt_list.call')
+            log.warn("PromptList#call failed: #{e.message}")
             error_response("Failed to list prompts: #{e.message}")
           end
 
@@ -28,7 +32,8 @@ module Legion
             require "legion/extensions/#{name}"
             true
           rescue LoadError => e
-            Legion::Logging.debug("PromptList#extension_loaded? #{name} not available: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.prompt_list.extension_loaded?')
+            log.debug("PromptList#extension_loaded? #{name} not available: #{e.message}")
             false
           end
 

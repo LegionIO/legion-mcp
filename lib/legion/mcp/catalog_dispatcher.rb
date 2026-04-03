@@ -1,14 +1,33 @@
 # frozen_string_literal: true
 
+require_relative 'logging_support'
+
 module Legion
   module MCP
     module CatalogDispatcher
+      extend Legion::Logging::Helper
+
       module_function
 
-      def dispatch(runner_class:, function:, params:, source: :mcp)
-        return nil unless defined?(Legion::Ingress)
+      def dispatch(runner_class:, function:, params:, source: :mcp) # rubocop:disable Metrics/MethodLength
+        LoggingSupport.info(
+          'catalog.dispatch.start',
+          runner_class: runner_class,
+          function:     function,
+          source:       source,
+          params:       LoggingSupport.summarize_params(params)
+        )
+        unless defined?(Legion::Ingress)
+          LoggingSupport.warn(
+            'catalog.dispatch.skipped',
+            runner_class: runner_class,
+            function:     function,
+            reason:       'ingress unavailable'
+          )
+          return nil
+        end
 
-        Legion::Ingress.run(
+        result = Legion::Ingress.run(
           payload:       params,
           runner_class:  runner_class,
           function:      function.to_sym,
@@ -16,6 +35,14 @@ module Legion
           check_subtask: true,
           generate_task: true
         )
+        LoggingSupport.info(
+          'catalog.dispatch.complete',
+          runner_class: runner_class,
+          function:     function,
+          source:       source,
+          result:       LoggingSupport.summarize_result(result)
+        )
+        result
       end
 
       def build_tool_class(entry)
@@ -35,13 +62,21 @@ module Legion
           define_singleton_method(:mcp_tier)     { tier }
           define_singleton_method(:catalog_entry) { true }
         end
+        klass.extend(Legion::Logging::Helper)
 
-        wire_dispatch(klass, runner_class_str, function_name)
+        wire_dispatch(klass, runner_class_str, function_name, tool_name_val)
         klass
       end
 
-      def wire_dispatch(klass, runner_class_str, function_name)
-        klass.define_singleton_method(:call) do |**params|
+      def wire_dispatch(klass, runner_class_str, function_name, tool_name_val) # rubocop:disable Metrics/MethodLength
+        klass.define_singleton_method(:call) do |**params| # rubocop:disable Metrics/BlockLength
+          LoggingSupport.info(
+            'catalog.tool_call.start',
+            tool_name:    tool_name_val,
+            runner_class: runner_class_str,
+            function:     function_name,
+            params:       LoggingSupport.summarize_params(params)
+          )
           result = CatalogDispatcher.dispatch(
             runner_class: runner_class_str,
             function:     function_name,
@@ -53,10 +88,25 @@ module Legion
             ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: true)
           else
             text = defined?(Legion::JSON) ? Legion::JSON.dump(result) : result.to_s
-            ::MCP::Tool::Response.new([{ type: 'text', text: text }])
+            response = ::MCP::Tool::Response.new([{ type: 'text', text: text }])
+            LoggingSupport.info(
+              'catalog.tool_call.complete',
+              tool_name:    tool_name_val,
+              runner_class: runner_class_str,
+              function:     function_name,
+              result:       LoggingSupport.summarize_result(response)
+            )
+            response
           end
         rescue StandardError => e
-          Legion::Logging.warn("CatalogDispatcher: #{function_name} failed: #{e.message}") if defined?(Legion::Logging)
+          handle_exception(e, level: :warn, operation: 'legion.mcp.catalog_dispatcher.call')
+          LoggingSupport.warn(
+            'catalog.tool_call.failed',
+            tool_name:    tool_name_val,
+            runner_class: runner_class_str,
+            function:     function_name,
+            error:        e.message
+          )
           text = Legion::JSON.dump({ error: e.message })
           ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: true)
         end
@@ -77,7 +127,8 @@ module Legion
             tier:         cap.respond_to?(:tier) ? cap.tier : nil
           )
         rescue StandardError => e
-          Legion::Logging.debug("CatalogDispatcher: skipping #{cap}: #{e.message}") if defined?(Legion::Logging)
+          handle_exception(e, level: :debug, operation: 'legion.mcp.catalog_dispatcher.generate_tools_from_catalog')
+          log.debug("CatalogDispatcher: skipping #{cap}: #{e.message}")
           nil
         end
       end

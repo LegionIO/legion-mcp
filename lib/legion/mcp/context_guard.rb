@@ -8,6 +8,8 @@ module Legion
       DEFAULT_RAPID_FIRE_WINDOW_SECS = 600
       DEFAULT_ANOMALY_MISS_THRESHOLD = 2
 
+      extend Legion::Logging::Helper
+
       module_function
 
       def check(pattern, _params, _context)
@@ -76,7 +78,8 @@ module Legion
 
         Legion::Settings.dig(:mcp, :tier0, :guards, key)
       rescue StandardError => e
-        Legion::Logging.warn("ContextGuard#setting failed for key #{key}: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: 'legion.mcp.context_guard.setting')
+        log.warn("ContextGuard#setting failed for key #{key}: #{e.message}")
         nil
       end
 

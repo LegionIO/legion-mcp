@@ -3,14 +3,22 @@
 module Legion
   module MCP
     module Client
+      extend Legion::Logging::Helper
+
       module_function
 
       def boot
-        servers = Legion::Settings.dig(:mcp, :servers) rescue nil # rubocop:disable Style/RescueModifier
+        log.info('Starting legion.mcp.client.boot')
+        servers = begin
+          Legion::Settings.dig(:mcp, :servers)
+        rescue StandardError => e
+          handle_exception(e, level: :debug, operation: 'legion.mcp.client.boot')
+          nil
+        end
         return unless servers.is_a?(Hash) && servers.any?
 
         ServerRegistry.load_from_settings(servers)
-        Legion::Logging.info("MCP Client: #{servers.length} servers registered") if defined?(Legion::Logging)
+        log.info("MCP Client: #{servers.length} servers registered")
       end
 
       def shutdown

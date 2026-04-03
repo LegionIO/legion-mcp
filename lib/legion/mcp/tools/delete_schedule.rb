@@ -15,7 +15,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(id:)
+            log.info('Starting legion.mcp.tools.delete_schedule.call')
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('lex-scheduler is not loaded') unless scheduler_loaded?
 
@@ -25,7 +28,8 @@ module Legion
             record.delete
             text_response({ deleted: true, id: id })
           rescue StandardError => e
-            Legion::Logging.warn("DeleteSchedule#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_schedule.call')
+            log.warn("DeleteSchedule#call failed: #{e.message}")
             error_response("Failed to delete schedule: #{e.message}")
           end
 
@@ -34,7 +38,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("DeleteSchedule#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_schedule.data_connected?')
+            log.warn("DeleteSchedule#data_connected? failed: #{e.message}")
             false
           end
 

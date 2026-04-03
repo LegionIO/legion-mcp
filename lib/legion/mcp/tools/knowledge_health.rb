@@ -14,7 +14,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(path: nil)
+            log.info('Starting legion.mcp.tools.knowledge_health.call')
             return error_response('lex-knowledge is not available') unless knowledge_available?
 
             resolved = resolve_path(path)
@@ -23,7 +26,8 @@ module Legion
             result = Legion::Extensions::Knowledge::Runners::Maintenance.health(path: resolved)
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("KnowledgeHealth#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.knowledge_health.call')
+            log.warn("KnowledgeHealth#call failed: #{e.message}")
             error_response("Knowledge health failed: #{e.message}")
           end
 
@@ -38,7 +42,8 @@ module Legion
             return nil unless defined?(Legion::Settings)
 
             Legion::Settings.dig(:knowledge, :corpus_path)
-          rescue StandardError
+          rescue StandardError => e
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.knowledge_health.resolve_path')
             nil
           end
 

@@ -22,7 +22,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(since: nil, snapshot: nil)
+            log.info('Starting legion.mcp.tools.state_diff.call')
             if snapshot
               result = StateTracker.snapshot
               text_response(result)
@@ -33,7 +36,8 @@ module Legion
               text_response(StateTracker.collect_state.merge(timestamp: Time.now.iso8601))
             end
           rescue StandardError => e
-            Legion::Logging.warn("StateDiff#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.state_diff.call')
+            log.warn("StateDiff#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

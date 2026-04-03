@@ -5,6 +5,8 @@ module Legion
     module DynamicInjector
       MAX_INJECTED = 10
 
+      extend Legion::Logging::Helper
+
       module_function
 
       def enabled?
@@ -52,7 +54,8 @@ module Legion
 
         server.notify_tools_list_changed
       rescue StandardError => e
-        Legion::Logging.debug("DynamicInjector: notify failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :debug, operation: 'legion.mcp.dynamic_injector.notify_if_changed')
+        log.debug("DynamicInjector: notify failed: #{e.message}")
       end
 
       def inject_for_context(server, intent_string, previous_names: [])

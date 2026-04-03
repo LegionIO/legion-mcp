@@ -19,7 +19,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(mode: 'summary')
+            log.info('Starting legion.mcp.tools.tool_audit.call')
             result = case mode
                      when 'matrix'
                        ToolQuality.capability_matrix
@@ -31,7 +34,8 @@ module Legion
 
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("ToolAudit#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.tool_audit.call')
+            log.warn("ToolAudit#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

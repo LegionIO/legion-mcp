@@ -6,6 +6,8 @@ module Legion
   module MCP
     module Actor
       class SelfGenerateCycle < Legion::Extensions::Actors::Every
+        include Legion::Logging::Helper
+
         def runner_class    = self.class
         def runner_function = 'action'
         def check_subtask?  = false
@@ -18,6 +20,7 @@ module Legion
             300
           end
         rescue StandardError => e
+          handle_exception(e, level: :warn, operation: 'legion.mcp.actors.self_generate_cycle.time')
           log.warn(e.message)
           300
         end
@@ -25,22 +28,13 @@ module Legion
         def enabled?
           SelfGenerate.enabled?
         rescue StandardError => e
+          handle_exception(e, level: :warn, operation: 'legion.mcp.actors.self_generate_cycle.enabled?')
           log.warn(e.message)
           false
         end
 
         def action(_payload = nil)
           SelfGenerate.run_cycle
-        end
-
-        private
-
-        def log
-          return Legion::Logging if defined?(Legion::Logging)
-
-          @log ||= Object.new.tap do |nl|
-            %i[debug info warn error fatal].each { |m| nl.define_singleton_method(m) { |*| nil } }
-          end
         end
       end
     end

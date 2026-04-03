@@ -5,6 +5,8 @@ module Legion
     module Resources
       module ExtensionInfo
         class << self
+          include Legion::Logging::Helper
+
           def static_resources
             []
           end
@@ -25,6 +27,7 @@ module Legion
           end
 
           def read(uri)
+            log.info('Starting legion.mcp.resources.extension_info.read')
             name = uri.sub('legion://extensions/', '')
             return [] if name.empty?
 
@@ -49,7 +52,8 @@ module Legion
 
             [{ uri: uri, mimeType: 'application/json', text: Legion::JSON.dump(result) }]
           rescue StandardError => e
-            Legion::Logging.warn("ExtensionInfo#read failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.resources.extension_info.read')
+            log.warn("ExtensionInfo#read failed: #{e.message}")
             [{ uri: uri, mimeType: 'application/json',
                text: Legion::JSON.dump({ error: "Failed to read extension: #{e.message}" }) }]
           end
@@ -59,7 +63,8 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            Legion::Logging.warn("ExtensionInfo#data_connected? failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.resources.extension_info.data_connected?')
+            log.warn("ExtensionInfo#data_connected? failed: #{e.message}")
             false
           end
         end

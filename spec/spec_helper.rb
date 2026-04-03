@@ -6,6 +6,29 @@ SimpleCov.start do
   enable_coverage :branch
 end
 
+unless defined?(Legion::Logging)
+  module Legion
+    module Logging
+      module Helper
+        def log
+          Legion::Logging
+        end
+
+        def handle_exception(_error, **_opts)
+          nil
+        end
+      end
+
+      class << self
+        def debug(_msg = nil); end
+        def info(_msg = nil); end
+        def warn(_msg = nil); end
+        def error(_msg = nil); end
+      end
+    end
+  end
+end
+
 require 'legion/settings'
 require 'legion/mcp'
 

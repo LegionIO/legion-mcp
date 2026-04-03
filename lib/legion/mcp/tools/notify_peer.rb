@@ -16,7 +16,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(to:, message:)
+            log.info('Starting legion.mcp.tools.notify_peer.call')
             return error_response('lex-mesh is not available') unless mesh_available?
 
             result = mesh_client.send_message(
@@ -27,7 +30,8 @@ module Legion
             )
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("NotifyPeer#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.notify_peer.call')
+            log.warn("NotifyPeer#call failed: #{e.message}")
             error_response("Failed to notify peer: #{e.message}")
           end
 

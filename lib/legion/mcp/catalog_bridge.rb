@@ -3,6 +3,8 @@
 module Legion
   module MCP
     module CatalogBridge
+      include Legion::Logging::Helper
+
       def hydrate_override_confidence
         return unless defined?(Legion::LLM::OverrideConfidence)
         return unless Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_l2)
@@ -19,6 +21,7 @@ module Legion
       end
 
       def dispatch_catalog_tool(tool_name, arguments)
+        log.info('Starting legion.mcp.catalog_bridge.dispatch_catalog_tool')
         return nil unless defined?(Legion::Extensions::Catalog::Registry)
 
         cap = Legion::Extensions::Catalog::Registry.find_by_mcp_name(tool_name)
@@ -31,13 +34,16 @@ module Legion
         result = runner.send(fn, **(arguments || {}).transform_keys(&:to_sym))
         { status: :success, result: result, source: :catalog }
       rescue NameError => e
-        Legion::Logging.warn("Catalog dispatch failed: #{e.message}") if defined?(Legion::Logging)
+        handle_exception(e, level: :warn, operation: 'legion.mcp.catalog_bridge.dispatch_catalog_tool')
+        log.warn("Catalog dispatch failed: #{e.message}")
         nil
       rescue StandardError => e
+        handle_exception(e, level: :error, operation: 'legion.mcp.catalog_bridge.dispatch_catalog_tool')
         { status: :error, error: e.message, source: :catalog }
       end
 
       def register_catalog_tools
+        log.info('Starting legion.mcp.catalog_bridge.register_catalog_tools')
         CatalogDispatcher.generate_tools_from_catalog.each { |tc| Server.register_tool(tc) }
       end
 

@@ -18,7 +18,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(params = {})
+            log.info('Starting legion.mcp.tools.mind_growth_propose.call')
             return error_response('lex-mind-growth is not available') unless mind_growth_available?
 
             result = mind_growth_client.propose_concept(
@@ -28,7 +31,8 @@ module Legion
             )
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("MindGrowthPropose#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.mind_growth_propose.call')
+            log.warn("MindGrowthPropose#call failed: #{e.message}")
             error_response("Failed to propose concept: #{e.message}")
           end
 

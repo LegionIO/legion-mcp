@@ -31,7 +31,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(category: nil, intent: nil, tool_names: nil, schema: nil)
+            log.info('Starting legion.mcp.tools.discover_tools.call')
             if tool_names && schema
               resolve_schemas(tool_names)
             elsif category
@@ -43,7 +46,8 @@ module Legion
               text_response(ContextCompiler.compressed_catalog)
             end
           rescue StandardError => e
-            Legion::Logging.warn("DiscoverTools#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.discover_tools.call')
+            log.warn("DiscoverTools#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

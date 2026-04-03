@@ -16,7 +16,10 @@ module Legion
         )
 
         class << self
+          include Legion::Logging::Helper
+
           def call(name:, version: nil)
+            log.info('Starting legion.mcp.tools.dataset_show.call')
             return error_response('lex-dataset is not loaded') unless extension_loaded?('dataset')
 
             require 'legion/extensions/dataset/client'
@@ -24,7 +27,8 @@ module Legion
             result = client.get_dataset(name: name, version: version)
             text_response(result)
           rescue StandardError => e
-            Legion::Logging.warn("DatasetShow#call failed: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :error, operation: 'legion.mcp.tools.dataset_show.call')
+            log.warn("DatasetShow#call failed: #{e.message}")
             error_response("Failed to fetch dataset: #{e.message}")
           end
 
@@ -34,7 +38,8 @@ module Legion
             require "legion/extensions/#{name}"
             true
           rescue LoadError => e
-            Legion::Logging.debug("DatasetShow#extension_loaded? #{name} not available: #{e.message}") if defined?(Legion::Logging)
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.dataset_show.extension_loaded')
+            log.debug("DatasetShow#extension_loaded? #{name} not available: #{e.message}")
             false
           end
 
