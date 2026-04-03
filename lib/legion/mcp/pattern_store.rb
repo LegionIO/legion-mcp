@@ -12,6 +12,7 @@ module Legion
       DECAY_ARCHIVE_THRESHOLD  = 0.1
 
       extend Legion::Logging::Helper
+
       module_function
 
       def store(pattern = nil, request_id: nil, **attrs)
@@ -22,7 +23,7 @@ module Legion
         persist_l2(hash, pattern)
         LoggingSupport.info(
           'pattern.store',
-          request_id: request_id,
+          request_id:  request_id,
           intent_hash: hash&.[](0, 12),
           intent:      pattern[:intent_text],
           confidence:  pattern[:confidence]&.round(3),
@@ -30,16 +31,16 @@ module Legion
         )
       end
 
-      def lookup(intent_hash, request_id: nil)
+      def lookup(intent_hash, request_id: nil) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         result = mutex.synchronize { patterns_l0[intent_hash]&.dup }
         if result
           LoggingSupport.info(
             'pattern.lookup',
-            request_id: request_id,
-            source:     :l0,
+            request_id:  request_id,
+            source:      :l0,
             intent_hash: intent_hash&.[](0, 12),
-            confidence: result[:confidence]&.round(3),
-            tool_chain: Array(result[:tool_chain])
+            confidence:  result[:confidence]&.round(3),
+            tool_chain:  Array(result[:tool_chain])
           )
           return result
         end
@@ -49,11 +50,11 @@ module Legion
           mutex.synchronize { patterns_l0[intent_hash] = result }
           LoggingSupport.info(
             'pattern.lookup',
-            request_id: request_id,
-            source:     :l1,
+            request_id:  request_id,
+            source:      :l1,
             intent_hash: intent_hash&.[](0, 12),
-            confidence: result[:confidence]&.round(3),
-            tool_chain: Array(result[:tool_chain])
+            confidence:  result[:confidence]&.round(3),
+            tool_chain:  Array(result[:tool_chain])
           )
           return result.dup
         end
@@ -64,11 +65,11 @@ module Legion
           persist_l1(intent_hash, result)
           LoggingSupport.info(
             'pattern.lookup',
-            request_id: request_id,
-            source:     :l2,
+            request_id:  request_id,
+            source:      :l2,
             intent_hash: intent_hash&.[](0, 12),
-            confidence: result[:confidence]&.round(3),
-            tool_chain: Array(result[:tool_chain])
+            confidence:  result[:confidence]&.round(3),
+            tool_chain:  Array(result[:tool_chain])
           )
           return result.dup
         end
@@ -98,10 +99,10 @@ module Legion
 
         LoggingSupport.info(
           'pattern.semantic_lookup',
-          request_id: request_id,
-          matched:    !best_hash.nil?,
-          best_score: best_score.round(4),
-          threshold:  threshold,
+          request_id:  request_id,
+          matched:     !best_hash.nil?,
+          best_score:  best_score.round(4),
+          threshold:   threshold,
           intent_hash: best_hash&.[](0, 12)
         )
         best_hash ? lookup(best_hash, request_id: request_id) : nil
@@ -121,10 +122,10 @@ module Legion
         pattern = mutex.synchronize { patterns_l0[intent_hash]&.dup }
         LoggingSupport.info(
           'pattern.hit',
-          request_id: request_id,
+          request_id:  request_id,
           intent_hash: intent_hash&.[](0, 12),
-          confidence: pattern&.dig(:confidence)&.round(3),
-          hit_count:  pattern&.dig(:hit_count)
+          confidence:  pattern&.dig(:confidence)&.round(3),
+          hit_count:   pattern&.dig(:hit_count)
         )
       end
 
@@ -140,10 +141,10 @@ module Legion
         pattern = mutex.synchronize { patterns_l0[intent_hash]&.dup }
         LoggingSupport.info(
           'pattern.miss',
-          request_id: request_id,
+          request_id:  request_id,
           intent_hash: intent_hash&.[](0, 12),
-          confidence: pattern&.dig(:confidence)&.round(3),
-          miss_count: pattern&.dig(:miss_count)
+          confidence:  pattern&.dig(:confidence)&.round(3),
+          miss_count:  pattern&.dig(:miss_count)
         )
       end
 
@@ -165,7 +166,7 @@ module Legion
         candidates_mutex.synchronize { candidates_buffer.delete(intent_hash) }
         LoggingSupport.info(
           'pattern.promoted',
-          request_id: request_id,
+          request_id:  request_id,
           intent_hash: intent_hash&.[](0, 12),
           intent:      intent_text,
           tool_chain:  Array(tool_chain)
@@ -173,8 +174,8 @@ module Legion
         pattern
       end
 
-      def record_candidate(intent_hash:, tool_chain:, intent_text:, threshold: 3, request_id: nil)
-        candidates_mutex.synchronize do
+      def record_candidate(intent_hash:, tool_chain:, intent_text:, threshold: 3, request_id: nil) # rubocop:disable Metrics/MethodLength
+        candidates_mutex.synchronize do # rubocop:disable Metrics/BlockLength
           entry = candidates_buffer[intent_hash] ||= { intent_text: intent_text, tool_chain: tool_chain,
                                                        count: 0 }
           entry[:count] += 1
@@ -182,7 +183,7 @@ module Legion
           if entry[:count] == 1
             LoggingSupport.info(
               'pattern.candidate.recorded',
-              request_id: request_id,
+              request_id:  request_id,
               intent_hash: intent_hash&.[](0, 12),
               intent:      intent_text,
               tool_chain:  Array(tool_chain),
@@ -195,7 +196,7 @@ module Legion
             candidates_buffer.delete(intent_hash)
             LoggingSupport.info(
               'pattern.candidate.threshold_met',
-              request_id: request_id,
+              request_id:  request_id,
               intent_hash: intent_hash&.[](0, 12),
               intent:      intent_text,
               tool_chain:  Array(tool_chain),
@@ -265,7 +266,7 @@ module Legion
             sync_to_persistence(intent_hash)
             LoggingSupport.info(
               'pattern.template.learned',
-              request_id: request_id,
+              request_id:  request_id,
               intent_hash: intent_hash&.[](0, 12),
               template:    LoggingSupport.summarize_text(template)
             )
@@ -300,7 +301,7 @@ module Legion
         end
         LoggingSupport.info('pattern.hydrate.complete', source: :l2, loaded: loaded)
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.pattern_store.hydrate_from_l2")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.hydrate_from_l2')
         LoggingSupport.warn('pattern.hydrate.failed', source: :l2, error: e.message)
         nil
       end
@@ -335,7 +336,7 @@ module Legion
 
         Legion::Cache.set("tbi:pattern:#{intent_hash}", Legion::JSON.dump(pattern), 3600)
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.pattern_store.persist_l1")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.persist_l1')
         log.warn("PatternStore#persist_l1 failed: #{e.message}")
         nil
       end
@@ -346,7 +347,7 @@ module Legion
         raw = Legion::Cache.get("tbi:pattern:#{intent_hash}")
         raw ? Legion::JSON.load(raw) : nil
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.pattern_store.lookup_l1")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.lookup_l1')
         log.warn("PatternStore#lookup_l1 failed: #{e.message}")
         nil
       end
@@ -364,7 +365,7 @@ module Legion
           table.insert(data)
         end
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.pattern_store.persist_l2")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.persist_l2')
         log.warn("PatternStore#persist_l2 failed: #{e.message}")
         nil
       end
@@ -376,7 +377,7 @@ module Legion
         row = table.where(intent_hash: intent_hash).first
         row ? deserialize_pattern(row) : nil
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.pattern_store.lookup_l2")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.lookup_l2')
         log.warn("PatternStore#lookup_l2 failed: #{e.message}")
         nil
       end
@@ -395,7 +396,7 @@ module Legion
         table = ensure_local_table
         table.where(intent_hash: intent_hash).delete
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.pattern_store.archive_l2")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.archive_l2')
         log.warn("PatternStore#archive_l2 failed: #{e.message}")
         nil
       end

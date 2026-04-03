@@ -4,10 +4,11 @@ module Legion
   module MCP
     module Client
       extend Legion::Logging::Helper
+
       module_function
 
       def boot
-        log.info("Starting legion.mcp.client.boot")
+        log.info('Starting legion.mcp.client.boot')
         servers = begin
           Legion::Settings.dig(:mcp, :servers)
         rescue StandardError => e

@@ -4,6 +4,7 @@ module Legion
   module MCP
     module PatternCompiler
       extend Legion::Logging::Helper
+
       module_function
 
       def compile_tool_definitions
@@ -45,7 +46,7 @@ module Legion
 
         props.keys.map(&:to_s)
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.pattern_compiler.extract_params")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_compiler.extract_params')
         log.warn("PatternCompiler#extract_params failed: #{e.message}")
         []
       end

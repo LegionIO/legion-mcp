@@ -16,8 +16,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(active: nil, limit: 25)
-            log.info("Starting legion.mcp.tools.list_schedules.call")
+            log.info('Starting legion.mcp.tools.list_schedules.call')
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('lex-scheduler is not loaded') unless scheduler_loaded?
 
@@ -26,7 +27,7 @@ module Legion
             dataset = dataset.where(active: true) if active == true
             text_response(dataset.limit(limit).all.map(&:values))
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_schedules.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_schedules.call')
             log.warn("ListSchedules#call failed: #{e.message}")
             error_response("Failed to list schedules: #{e.message}")
           end
@@ -36,7 +37,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_schedules.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_schedules.data_connected?')
             log.warn("ListSchedules#data_connected? failed: #{e.message}")
             false
           end

@@ -17,8 +17,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(id:, limit: 50)
-            log.info("Starting legion.mcp.tools.get_task_logs.call")
+            log.info('Starting legion.mcp.tools.get_task_logs.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             task = Legion::Data::Model::Task[id.to_i]
@@ -33,7 +34,7 @@ module Legion
 
             text_response(logs)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.get_task_logs.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.get_task_logs.call')
             log.warn("GetTaskLogs#call failed: #{e.message}")
             error_response("Failed to get task logs: #{e.message}")
           end
@@ -43,7 +44,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.get_task_logs.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.get_task_logs.data_connected?')
             log.warn("GetTaskLogs#data_connected? failed: #{e.message}")
             false
           end

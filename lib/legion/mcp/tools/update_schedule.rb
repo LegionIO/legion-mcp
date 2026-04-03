@@ -21,8 +21,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(id:, **attrs) # rubocop:disable Metrics/AbcSize
-            log.info("Starting legion.mcp.tools.update_schedule.call")
+            log.info('Starting legion.mcp.tools.update_schedule.call')
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('lex-scheduler is not loaded') unless scheduler_loaded?
 
@@ -40,7 +41,7 @@ module Legion
             record.refresh
             text_response(record.values)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.update_schedule.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_schedule.call')
             log.warn("UpdateSchedule#call failed: #{e.message}")
             error_response("Failed to update schedule: #{e.message}")
           end
@@ -50,7 +51,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.update_schedule.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_schedule.data_connected?')
             log.warn("UpdateSchedule#data_connected? failed: #{e.message}")
             false
           end

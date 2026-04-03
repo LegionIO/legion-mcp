@@ -156,7 +156,7 @@ module Legion
       @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
       @tool_registry_lock = Mutex.new
 
-      class << self
+      class << self # rubocop:disable Metrics/ClassLength
         include CatalogBridge
 
         attr_reader :tool_registry
@@ -192,7 +192,7 @@ module Legion
           EmbeddingIndex.reset! if defined?(EmbeddingIndex) && EmbeddingIndex.respond_to?(:reset!)
         end
 
-        def build(identity: nil)
+        def build(identity: nil) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           LoggingSupport.info(
             'server.build.start',
             identity:      LoggingSupport.summarize_identity(identity),
@@ -265,12 +265,12 @@ module Legion
 
           LoggingSupport.info(
             'server.tool_call.complete',
-            request_id: request_id,
-            tool_name:  data[:tool_name],
-            success:    success,
+            request_id:  request_id,
+            tool_name:   data[:tool_name],
+            success:     success,
             duration_ms: duration_ms,
             params_keys: params_keys,
-            error:      data[:error]
+            error:       data[:error]
           )
 
           Observer.record(

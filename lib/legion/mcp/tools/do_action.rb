@@ -6,7 +6,7 @@ require_relative '../logging_support'
 module Legion
   module MCP
     module Tools
-      class DoAction < ::MCP::Tool
+      class DoAction < ::MCP::Tool # rubocop:disable Metrics/ClassLength
         tool_name 'legion.do'
         description 'Execute a Legion action by describing what you want to do in natural language. ' \
                     'Routes to the best matching tool automatically. Learned patterns are served ' \
@@ -34,7 +34,8 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
-          def call(intent:, params: {}, context: {}) # rubocop:disable Metrics/CyclomaticComplexity
+
+          def call(intent:, params: {}, context: {}) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
             request_id = LoggingSupport.request_id_from(context, params) || "mcp_#{SecureRandom.hex(6)}"
             normalized_context = symbolize_hash(context).merge(request_id: request_id)
             tool_params = params.transform_keys(&:to_sym)
@@ -65,10 +66,10 @@ module Legion
             case tier_result&.dig(:tier)
             when 0
               response = text_response(tier_result[:response].merge(
-                                     _meta: { tier:       0,
-                                              latency_ms: tier_result[:latency_ms],
-                                              confidence: tier_result[:pattern_confidence] }
-                                   ))
+                                         _meta: { tier:       0,
+                                                  latency_ms: tier_result[:latency_ms],
+                                                  confidence: tier_result[:pattern_confidence] }
+                                       ))
               LoggingSupport.info(
                 'do_action.complete',
                 request_id: request_id,
@@ -136,7 +137,7 @@ module Legion
             record_feedback(intent, matched_name, success: true)
             result
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.do_action.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.do_action.call')
             LoggingSupport.warn(
               'do_action.failed',
               request_id: defined?(request_id) ? request_id : nil,
@@ -180,7 +181,7 @@ module Legion
             )
             result
           rescue StandardError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.do_action.try_tier1")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.do_action.try_tier1')
             LoggingSupport.debug('do_action.tier1.failed', request_id: request_id, error: e.message)
             nil
           end
@@ -206,7 +207,7 @@ module Legion
             )
             result
           rescue StandardError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.do_action.try_tier2")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.do_action.try_tier2')
             LoggingSupport.debug('do_action.tier2.failed', request_id: request_id, error: e.message)
             nil
           end
@@ -220,7 +221,7 @@ module Legion
               context: symbolize_hash(context).merge(request_id: request_id)
             )
           rescue StandardError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.do_action.try_tier0")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.do_action.try_tier0')
             LoggingSupport.debug('do_action.tier0.failed', request_id: request_id, error: e.message)
             nil
           end

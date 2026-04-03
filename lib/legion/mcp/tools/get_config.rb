@@ -17,8 +17,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(section: nil)
-            log.info("Starting legion.mcp.tools.get_config.call")
+            log.info('Starting legion.mcp.tools.get_config.call')
             settings = Legion::Settings.loader.to_hash
 
             if section
@@ -32,7 +33,7 @@ module Legion
               text_response(redact_hash(settings))
             end
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.get_config.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.get_config.call')
             log.warn("GetConfig#call failed: #{e.message}")
             error_response("Failed to get config: #{e.message}")
           end

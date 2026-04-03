@@ -16,14 +16,15 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(proposal_id:)
-            log.info("Starting legion.mcp.tools.mind_growth_approve.call")
+            log.info('Starting legion.mcp.tools.mind_growth_approve.call')
             return error_response('lex-mind-growth is not available') unless mind_growth_available?
 
             result = mind_growth_client.evaluate_proposal(proposal_id: proposal_id)
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.mind_growth_approve.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.mind_growth_approve.call')
             log.warn("MindGrowthApprove#call failed: #{e.message}")
             error_response("Failed to evaluate proposal: #{e.message}")
           end

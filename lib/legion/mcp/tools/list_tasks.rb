@@ -17,8 +17,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(status: nil, function_id: nil, limit: 25)
-            log.info("Starting legion.mcp.tools.list_tasks.call")
+            log.info('Starting legion.mcp.tools.list_tasks.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             limit = limit.to_i.clamp(1, 100)
@@ -27,7 +28,7 @@ module Legion
             dataset = dataset.where(function_id: function_id.to_i) if function_id
             text_response(dataset.limit(limit).all.map(&:values))
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_tasks.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_tasks.call')
             log.warn("ListTasks#call failed: #{e.message}")
             error_response("Failed to list tasks: #{e.message}")
           end
@@ -37,7 +38,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_tasks.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_tasks.data_connected?')
             log.warn("ListTasks#data_connected? failed: #{e.message}")
             false
           end

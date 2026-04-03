@@ -18,13 +18,14 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(runner: nil)
-            log.info("Starting legion.mcp.tools.describe_runner.call")
+            log.info('Starting legion.mcp.tools.describe_runner.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             runner ? describe_single(runner) : describe_all
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.describe_runner.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.describe_runner.call')
             log.warn("DescribeRunner#call failed: #{e.message}")
             error_response("Failed to describe runners: #{e.message}")
           end
@@ -34,7 +35,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.describe_runner.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.describe_runner.data_connected?')
             log.warn("DescribeRunner#data_connected? failed: #{e.message}")
             false
           end

@@ -5,7 +5,7 @@ require_relative '../logging_support'
 module Legion
   module MCP
     module Client
-      class Connection
+      class Connection # rubocop:disable Metrics/ClassLength
         include Legion::Logging::Helper
 
         attr_reader :name, :transport_type, :config

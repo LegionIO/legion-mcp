@@ -15,14 +15,15 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(limit: 25)
-            log.info("Starting legion.mcp.tools.list_relationships.call")
+            log.info('Starting legion.mcp.tools.list_relationships.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             limit = limit.to_i.clamp(1, 100)
             text_response(Legion::Data::Model::Relationship.order(:id).limit(limit).all.map(&:values))
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_relationships.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_relationships.call')
             log.warn("ListRelationships#call failed: #{e.message}")
             error_response("Failed to list relationships: #{e.message}")
           end
@@ -32,7 +33,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.list_relationships.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_relationships.data_connected?')
             log.warn("ListRelationships#data_connected? failed: #{e.message}")
             false
           end

@@ -18,8 +18,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(question:, top_k: 5, synthesize: true)
-            log.info("Starting legion.mcp.tools.query_knowledge.call")
+            log.info('Starting legion.mcp.tools.query_knowledge.call')
             return error_response('lex-knowledge is not available') unless knowledge_available?
 
             result = Legion::Extensions::Knowledge::Runners::Query.query(
@@ -29,7 +30,7 @@ module Legion
             )
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.query_knowledge.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.query_knowledge.call')
             log.warn("QueryKnowledge#call failed: #{e.message}")
             error_response("Knowledge query failed: #{e.message}")
           end

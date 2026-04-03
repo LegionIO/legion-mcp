@@ -20,8 +20,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(function_id:, cron: nil, interval: nil, active: true, payload: {})
-            log.info("Starting legion.mcp.tools.create_schedule.call")
+            log.info('Starting legion.mcp.tools.create_schedule.call')
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('lex-scheduler is not loaded') unless scheduler_loaded?
             return error_response('cron or interval is required') if cron.nil? && interval.nil?
@@ -39,7 +40,7 @@ module Legion
             record = Legion::Extensions::Scheduler::Data::Model::Schedule[id]
             text_response(record.values)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.create_schedule.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_schedule.call')
             log.warn("CreateSchedule#call failed: #{e.message}")
             error_response("Failed to create schedule: #{e.message}")
           end
@@ -49,7 +50,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.create_schedule.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_schedule.data_connected?')
             log.warn("CreateSchedule#data_connected? failed: #{e.message}")
             false
           end

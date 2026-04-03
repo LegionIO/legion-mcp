@@ -22,8 +22,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(name:, variables: {}, version: nil)
-            log.info("Starting legion.mcp.tools.prompt_run.call")
+            log.info('Starting legion.mcp.tools.prompt_run.call')
             return error_response('lex-prompt is not loaded') unless extension_loaded?('prompt')
 
             require 'legion/extensions/prompt/client'
@@ -31,7 +32,7 @@ module Legion
             result = client.render_prompt(name: name, variables: variables, version: version)
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.prompt_run.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.prompt_run.call')
             log.warn("PromptRun#call failed: #{e.message}")
             error_response("Failed to render prompt: #{e.message}")
           end
@@ -42,7 +43,7 @@ module Legion
             require "legion/extensions/#{name}"
             true
           rescue LoadError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.prompt_run.extension_loaded?")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.prompt_run.extension_loaded?')
             log.debug("PromptRun#extension_loaded? #{name} not available: #{e.message}")
             false
           end

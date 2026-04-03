@@ -26,14 +26,15 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(query:, limit: 5)
-            log.info("Starting legion.mcp.tools.search_sessions.call")
+            log.info('Starting legion.mcp.tools.search_sessions.call')
             return error_response('query cannot be empty') if query.to_s.strip.empty?
 
             results = search(query, limit: limit)
             text_response({ query: query, results: results, total: results.size })
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.search_sessions.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.search_sessions.call')
             log.warn("SearchSessions#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
@@ -48,7 +49,7 @@ module Legion
             matches = Dir.glob(File.join(sessions_dir, '*.json')).filter_map do |path|
               match_session(path, pattern)
             rescue StandardError => e
-              handle_exception(e, level: :debug, operation: "legion.mcp.tools.search_sessions.search")
+              handle_exception(e, level: :debug, operation: 'legion.mcp.tools.search_sessions.search')
               nil
             end
             matches.sort_by { |r| -r[:matches] }.first(limit)

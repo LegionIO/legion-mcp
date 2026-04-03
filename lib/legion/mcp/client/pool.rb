@@ -8,6 +8,7 @@ module Legion
         @mutex = Mutex.new
 
         extend Legion::Logging::Helper
+
         module_function
 
         def connection_for(server_name)
@@ -31,7 +32,7 @@ module Legion
               tool.merge(source: { type: :mcp, server: name })
             end
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.client.pool.all_tools")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.client.pool.all_tools')
             log.warn("MCP tool discovery failed for #{name}: #{e.message}")
             ServerRegistry.mark_unhealthy(name)
             []

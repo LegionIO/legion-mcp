@@ -20,8 +20,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(question:, scope: 'all', top_k: 5)
-            log.info("Starting legion.mcp.tools.knowledge_context.call")
+            log.info('Starting legion.mcp.tools.knowledge_context.call')
             return error_response('lex-knowledge is not available') unless knowledge_available?(scope)
 
             result = case scope
@@ -32,7 +33,7 @@ module Legion
 
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.knowledge_context.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.knowledge_context.call')
             log.warn("KnowledgeContext#call failed: #{e.message}")
             error_response("Knowledge context failed: #{e.message}")
           end

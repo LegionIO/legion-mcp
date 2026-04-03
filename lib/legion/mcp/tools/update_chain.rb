@@ -17,8 +17,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(id:, **attrs)
-            log.info("Starting legion.mcp.tools.update_chain.call")
+            log.info('Starting legion.mcp.tools.update_chain.call')
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('chain data model is not available') unless chain_model?
 
@@ -29,7 +30,7 @@ module Legion
             record.refresh
             text_response(record.values)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.update_chain.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_chain.call')
             log.warn("UpdateChain#call failed: #{e.message}")
             error_response("Failed to update chain: #{e.message}")
           end
@@ -39,7 +40,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.update_chain.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_chain.data_connected?')
             log.warn("UpdateChain#data_connected? failed: #{e.message}")
             false
           end

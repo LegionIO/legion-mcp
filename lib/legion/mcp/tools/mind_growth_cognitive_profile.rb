@@ -11,14 +11,15 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call
-            log.info("Starting legion.mcp.tools.mind_growth_cognitive_profile.call")
+            log.info('Starting legion.mcp.tools.mind_growth_cognitive_profile.call')
             return error_response('lex-mind-growth is not available') unless mind_growth_available?
 
             result = mind_growth_client.cognitive_profile
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.mind_growth_cognitive_profile.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.mind_growth_cognitive_profile.call')
             log.warn("MindGrowthCognitiveProfile#call failed: #{e.message}")
             error_response("Failed to get cognitive profile: #{e.message}")
           end

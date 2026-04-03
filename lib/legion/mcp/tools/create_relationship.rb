@@ -17,8 +17,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(**attrs)
-            log.info("Starting legion.mcp.tools.create_relationship.call")
+            log.info('Starting legion.mcp.tools.create_relationship.call')
             return error_response('legion-data is not connected') unless data_connected?
             return error_response('relationship data model is not available') unless relationship_model?
 
@@ -26,7 +27,7 @@ module Legion
             record = Legion::Data::Model::Relationship[id]
             text_response(record.values)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.create_relationship.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_relationship.call')
             log.warn("CreateRelationship#call failed: #{e.message}")
             error_response("Failed to create relationship: #{e.message}")
           end
@@ -36,7 +37,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.create_relationship.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_relationship.data_connected?')
             log.warn("CreateRelationship#data_connected? failed: #{e.message}")
             false
           end

@@ -11,6 +11,7 @@ module Legion
       INTENT_BUFFER_MAX = 200
 
       extend Legion::Logging::Helper
+
       module_function
 
       def record(tool_name:, duration_ms:, success:, params_keys: [], error: nil)

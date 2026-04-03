@@ -12,9 +12,10 @@ module Legion
       CONFIDENCE_TIER1 = 0.6
 
       extend Legion::Logging::Helper
+
       module_function
 
-      def route(intent:, params: {}, context: {}) # rubocop:disable Metrics/AbcSize
+      def route(intent:, params: {}, context: {}) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
         start_time = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
         normalized = normalize_intent(intent)
         intent_hash = Digest::SHA256.hexdigest(normalized)
@@ -125,7 +126,7 @@ module Legion
             pattern_confidence: pattern[:confidence]
           }
         rescue StandardError => e
-          handle_exception(e, level: :warn, operation: "legion.mcp.tier_router.route")
+          handle_exception(e, level: :warn, operation: 'legion.mcp.tier_router.route')
           LoggingSupport.warn(
             'tier_router.execute.failed',
             request_id: request_id,
@@ -141,8 +142,8 @@ module Legion
         intent.to_s.strip.downcase.gsub(/\s+/, ' ')
       end
 
-      def execute_tool_chain(tool_chain, params, request_id: nil)
-        tool_chain.map do |tool_name|
+      def execute_tool_chain(tool_chain, params, request_id: nil) # rubocop:disable Metrics/MethodLength
+        tool_chain.map do |tool_name| # rubocop:disable Metrics/BlockLength
           tool_class = find_tool_class(tool_name)
           raise ArgumentError, "unknown tool: #{tool_name}" unless tool_class
 
@@ -168,7 +169,7 @@ module Legion
 
           result
         rescue StandardError => e
-          handle_exception(e, level: :warn, operation: "legion.mcp.tier_router.execute_tool_chain")
+          handle_exception(e, level: :warn, operation: 'legion.mcp.tier_router.execute_tool_chain')
           LoggingSupport.warn(
             'tier_router.tool_call.failed',
             request_id: request_id,
@@ -188,7 +189,7 @@ module Legion
             rendered = client.transform(transformation: template, payload: { results: results })
             return rendered[:result] if rendered[:success]
           rescue StandardError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tier_router.generate_response")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tier_router.generate_response')
             log.debug("TierRouter#generate_response transformer failed: #{e.message}")
           end
         end
@@ -207,7 +208,7 @@ module Legion
 
         PatternStore.lookup_semantic(intent_vector, request_id: request_id)
       rescue StandardError => e
-        handle_exception(e, level: :debug, operation: "legion.mcp.tier_router.try_semantic_lookup")
+        handle_exception(e, level: :debug, operation: 'legion.mcp.tier_router.try_semantic_lookup')
         LoggingSupport.debug('tier_router.semantic_lookup.failed', request_id: request_id, error: e.message)
         nil
       end

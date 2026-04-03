@@ -8,6 +8,7 @@ module Legion
   module MCP
     module PatternExchange
       extend Legion::Logging::Helper
+
       module_function
 
       def export_all(min_confidence: 0.5)
@@ -45,13 +46,13 @@ module Legion
       end
 
       def import_from_file(path, trust_level: :community)
-        log.info("Starting legion.mcp.pattern_exchange.import_from_file")
+        log.info('Starting legion.mcp.pattern_exchange.import_from_file')
         raw = File.read(path)
         patterns = ::JSON.parse(raw, symbolize_names: true)
         patterns = [patterns] if patterns.is_a?(Hash)
         import_all(patterns, trust_level: trust_level)
       rescue StandardError => e
-        handle_exception(e, level: :error, operation: "legion.mcp.pattern_exchange.import_from_file")
+        handle_exception(e, level: :error, operation: 'legion.mcp.pattern_exchange.import_from_file')
         log.error("PatternExchange#import_from_file failed: #{e.message}")
         { error: e.message, imported: 0 }
       end

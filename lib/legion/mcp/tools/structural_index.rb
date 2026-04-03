@@ -28,8 +28,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(extension: nil, type: nil, refresh: nil)
-            log.info("Starting legion.mcp.tools.structural_index.call")
+            log.info('Starting legion.mcp.tools.structural_index.call')
             index = if refresh
                       StructuralIndex.save_cache(StructuralIndex.build)
                     else
@@ -39,7 +40,7 @@ module Legion
             result = StructuralIndex.filter(index, extension: extension, type: type)
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.structural_index.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.structural_index.call')
             log.warn("StructuralIndexTool#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end

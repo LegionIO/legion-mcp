@@ -6,10 +6,11 @@ module Legion
       MAX_SNAPSHOTS = 50
 
       extend Legion::Logging::Helper
+
       module_function
 
       def snapshot
-        log.info("Starting legion.mcp.state_tracker.snapshot")
+        log.info('Starting legion.mcp.state_tracker.snapshot')
         state = collect_state
         timestamp = Time.now.floor
 
@@ -22,7 +23,7 @@ module Legion
       end
 
       def diff(since:)
-        log.info("Starting legion.mcp.state_tracker.diff")
+        log.info('Starting legion.mcp.state_tracker.diff')
         since_time = parse_time(since)
         return { error: 'invalid timestamp' } unless since_time
 
@@ -53,7 +54,7 @@ module Legion
         stats = Observer.stats
         { total_calls: stats[:total_calls], tool_count: stats[:tool_count], failure_rate: stats[:failure_rate] }
       rescue StandardError => e
-        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.collect_observer_stats")
+        handle_exception(e, level: :debug, operation: 'legion.mcp.state_tracker.collect_observer_stats')
         {}
       end
 
@@ -62,7 +63,7 @@ module Legion
 
         PatternStore.respond_to?(:size) ? PatternStore.size : 0
       rescue StandardError => e
-        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.collect_pattern_count")
+        handle_exception(e, level: :debug, operation: 'legion.mcp.state_tracker.collect_pattern_count')
         0
       end
 
@@ -76,7 +77,7 @@ module Legion
                      end
         extensions&.size || 0
       rescue StandardError => e
-        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.collect_extension_count")
+        handle_exception(e, level: :debug, operation: 'legion.mcp.state_tracker.collect_extension_count')
         0
       end
 
@@ -117,7 +118,7 @@ module Legion
           Time.at(value)
         end
       rescue ArgumentError => e
-        handle_exception(e, level: :debug, operation: "legion.mcp.state_tracker.parse_time")
+        handle_exception(e, level: :debug, operation: 'legion.mcp.state_tracker.parse_time')
         nil
       end
 

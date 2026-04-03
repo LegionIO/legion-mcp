@@ -8,6 +8,7 @@ module Legion
       CORROBORATION_BOOST = 0.3
 
       extend Legion::Logging::Helper
+
       module_function
 
       def publish_confirmation(tool:, lex:, confidence:, tests:)
@@ -29,7 +30,7 @@ module Legion
           }
         ).publish
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.override_broadcast.publish_confirmation")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.override_broadcast.publish_confirmation')
         log.warn("Override broadcast failed: #{e.message}")
       end
 
@@ -47,7 +48,7 @@ module Legion
 
         store_to_apollo(tool: tool, lex: lex, confidence: confidence, tests: tests, node: node)
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.override_broadcast.receive_confirmation")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.override_broadcast.receive_confirmation')
         log.warn("Override receive failed: #{e.message}")
       end
 
@@ -62,7 +63,7 @@ module Legion
           knowledge_domain: 'system'
         )
       rescue StandardError => e
-        handle_exception(e, level: :warn, operation: "legion.mcp.override_broadcast.store_to_apollo")
+        handle_exception(e, level: :warn, operation: 'legion.mcp.override_broadcast.store_to_apollo')
         log.warn("OverrideBroadcast#store_to_apollo failed: #{e.message}")
         nil
       end

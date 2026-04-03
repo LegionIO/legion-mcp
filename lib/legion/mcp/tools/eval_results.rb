@@ -16,8 +16,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(experiment_name:)
-            log.info("Starting legion.mcp.tools.eval_results.call")
+            log.info('Starting legion.mcp.tools.eval_results.call')
             return error_response('lex-dataset is not loaded') unless extension_loaded?('dataset')
 
             require 'legion/extensions/dataset/client'
@@ -25,7 +26,7 @@ module Legion
             result = fetch_experiment(client, experiment_name)
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.eval_results.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.eval_results.call')
             log.warn("EvalResults#call failed: #{e.message}")
             error_response("Failed to fetch eval results: #{e.message}")
           end
@@ -48,7 +49,7 @@ module Legion
             summary = begin
               ::JSON.parse(exp[:summary], symbolize_names: true)
             rescue StandardError => e
-              handle_exception(e, level: :debug, operation: "legion.mcp.tools.eval_results.fetch_experiment")
+              handle_exception(e, level: :debug, operation: 'legion.mcp.tools.eval_results.fetch_experiment')
               log.debug("EvalResults#fetch_experiment summary parse failed: #{e.message}")
               {}
             end
@@ -62,7 +63,7 @@ module Legion
             require "legion/extensions/#{name}"
             true
           rescue LoadError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.eval_results.extension_loaded?")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.eval_results.extension_loaded?')
             log.debug("EvalResults#extension_loaded? #{name} not available: #{e.message}")
             false
           end

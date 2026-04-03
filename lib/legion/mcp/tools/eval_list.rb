@@ -11,8 +11,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call
-            log.info("Starting legion.mcp.tools.eval_list.call")
+            log.info('Starting legion.mcp.tools.eval_list.call')
             return error_response('lex-eval is not loaded') unless extension_loaded?('eval')
 
             require 'legion/extensions/eval/client'
@@ -20,7 +21,7 @@ module Legion
             result = client.list_evaluators
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.eval_list.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.eval_list.call')
             log.warn("EvalList#call failed: #{e.message}")
             error_response("Failed to list evaluators: #{e.message}")
           end
@@ -31,7 +32,7 @@ module Legion
             require "legion/extensions/#{name}"
             true
           rescue LoadError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.eval_list.extension_loaded?")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.eval_list.extension_loaded?')
             log.debug("EvalList#extension_loaded? #{name} not available: #{e.message}")
             false
           end

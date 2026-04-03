@@ -16,8 +16,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(id:)
-            log.info("Starting legion.mcp.tools.delete_task.call")
+            log.info('Starting legion.mcp.tools.delete_task.call')
             return error_response('legion-data is not connected') unless data_connected?
 
             task = Legion::Data::Model::Task[id.to_i]
@@ -26,7 +27,7 @@ module Legion
             task.delete
             text_response({ deleted: true, id: id })
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.delete_task.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_task.call')
             log.warn("DeleteTask#call failed: #{e.message}")
             error_response("Failed to delete task: #{e.message}")
           end
@@ -36,7 +37,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.delete_task.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_task.data_connected?')
             log.warn("DeleteTask#data_connected? failed: #{e.message}")
             false
           end

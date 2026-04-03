@@ -17,8 +17,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(team: nil, role: nil, principal: nil)
-            log.info("Starting legion.mcp.tools.rbac_assignments.call")
+            log.info('Starting legion.mcp.tools.rbac_assignments.call')
             return error_response('legion-rbac not installed') unless defined?(Legion::Rbac)
             return error_response('legion-data not connected') unless Legion::Rbac::Store.db_available?
 
@@ -28,7 +29,7 @@ module Legion
             ds = ds.where(principal_id: principal) if principal
             text_response(ds.all.map(&:values))
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.rbac_assignments.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.rbac_assignments.call')
             log.warn("RbacAssignments#call failed: #{e.message}")
             error_response("Failed to list assignments: #{e.message}")
           end

@@ -36,7 +36,6 @@ module Legion
         def action(_payload = nil)
           SelfGenerate.run_cycle
         end
-
       end
     end
   end

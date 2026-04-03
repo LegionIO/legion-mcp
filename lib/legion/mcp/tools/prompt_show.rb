@@ -18,8 +18,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(name:, version: nil, tag: nil)
-            log.info("Starting legion.mcp.tools.prompt_show.call")
+            log.info('Starting legion.mcp.tools.prompt_show.call')
             return error_response('lex-prompt is not loaded') unless extension_loaded?('prompt')
 
             require 'legion/extensions/prompt/client'
@@ -27,7 +28,7 @@ module Legion
             result = client.get_prompt(name: name, version: version, tag: tag)
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.prompt_show.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.prompt_show.call')
             log.warn("PromptShow#call failed: #{e.message}")
             error_response("Failed to fetch prompt: #{e.message}")
           end
@@ -38,7 +39,7 @@ module Legion
             require "legion/extensions/#{name}"
             true
           rescue LoadError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.prompt_show.extension_loaded?")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.prompt_show.extension_loaded?')
             log.debug("PromptShow#extension_loaded? #{name} not available: #{e.message}")
             false
           end

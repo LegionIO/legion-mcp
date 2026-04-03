@@ -11,35 +11,36 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call
-            log.info("Starting legion.mcp.tools.get_status.call")
+            log.info('Starting legion.mcp.tools.get_status.call')
             status = {
               version:    Legion::VERSION,
               ready:      begin
                 Legion::Readiness.ready?
               rescue StandardError => e
-                handle_exception(e, level: :debug, operation: "legion.mcp.tools.get_status.call")
+                handle_exception(e, level: :debug, operation: 'legion.mcp.tools.get_status.call')
                 log.debug("GetStatus#call Readiness.ready? failed: #{e.message}")
                 false
               end,
               components: begin
                 Legion::Readiness.to_h
               rescue StandardError => e
-                handle_exception(e, level: :debug, operation: "legion.mcp.tools.get_status.call")
+                handle_exception(e, level: :debug, operation: 'legion.mcp.tools.get_status.call')
                 log.debug("GetStatus#call Readiness.to_h failed: #{e.message}")
                 {}
               end,
               node:       begin
                 Legion::Settings[:client][:name]
               rescue StandardError => e
-                handle_exception(e, level: :debug, operation: "legion.mcp.tools.get_status.call")
+                handle_exception(e, level: :debug, operation: 'legion.mcp.tools.get_status.call')
                 log.debug("GetStatus#call Settings[:client][:name] failed: #{e.message}")
                 'unknown'
               end
             }
             text_response(status)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.get_status.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.get_status.call')
             log.warn("GetStatus#call failed: #{e.message}")
             error_response("Failed to get status: #{e.message}")
           end

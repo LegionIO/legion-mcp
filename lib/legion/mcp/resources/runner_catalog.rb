@@ -13,8 +13,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def register(server)
-            log.info("Starting legion.mcp.resources.runner_catalog.register")
+            log.info('Starting legion.mcp.resources.runner_catalog.register')
             server.resources << RESOURCE
 
             server.resources_read_handler do |params|
@@ -50,7 +51,7 @@ module Legion
 
             Legion::JSON.dump(catalog)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.resources.runner_catalog.catalog_json")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.resources.runner_catalog.catalog_json')
             log.warn("RunnerCatalog#catalog_json failed: #{e.message}")
             Legion::JSON.dump({ error: "Failed to build catalog: #{e.message}" })
           end
@@ -58,7 +59,7 @@ module Legion
           def data_connected?
             Legion::Settings[:data][:connected]
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.resources.runner_catalog.data_connected?")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.resources.runner_catalog.data_connected?')
             log.warn("RunnerCatalog#data_connected? failed: #{e.message}")
             false
           end

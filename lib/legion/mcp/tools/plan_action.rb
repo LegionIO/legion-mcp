@@ -17,8 +17,9 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call(goal:, context: {}) # rubocop:disable Lint/UnusedMethodArgument
-            log.info("Starting legion.mcp.tools.plan_action.call")
+            log.info('Starting legion.mcp.tools.plan_action.call')
             matched = ContextCompiler.match_tools(goal, limit: 10)
             steps = matched.map.with_index(1) do |tool, idx|
               { step: idx, tool: tool[:name], relevance: tool[:score].round(3) }
@@ -31,7 +32,7 @@ module Legion
 
             text_response(plan)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.plan_action.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.plan_action.call')
             log.warn("PlanAction#call failed: #{e.message}")
             error_response("Plan failed: #{e.message}")
           end
@@ -43,7 +44,7 @@ module Legion
             Legion::LLM.ask("Create a brief execution plan for: #{goal}. Available tools: #{tool_list}",
                             caller: { extension: 'legion-mcp', tool: 'plan_action' })
           rescue StandardError => e
-            handle_exception(e, level: :debug, operation: "legion.mcp.tools.plan_action.generate_narrative")
+            handle_exception(e, level: :debug, operation: 'legion.mcp.tools.plan_action.generate_narrative')
             log.debug("PlanAction#generate_narrative failed: #{e.message}")
             nil
           end

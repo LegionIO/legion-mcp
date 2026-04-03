@@ -11,14 +11,15 @@ module Legion
 
         class << self
           include Legion::Logging::Helper
+
           def call
-            log.info("Starting legion.mcp.tools.mesh_status.call")
+            log.info('Starting legion.mcp.tools.mesh_status.call')
             return error_response('lex-mesh is not available') unless mesh_available?
 
             result = mesh_client.mesh_status
             text_response(result)
           rescue StandardError => e
-            handle_exception(e, level: :warn, operation: "legion.mcp.tools.mesh_status.call")
+            handle_exception(e, level: :warn, operation: 'legion.mcp.tools.mesh_status.call')
             log.warn("MeshStatus#call failed: #{e.message}")
             error_response("Failed to get mesh status: #{e.message}")
           end
