@@ -120,6 +120,7 @@ module Legion
             end
 
             DeferredRegistry.reset_cache! if defined?(DeferredRegistry) && DeferredRegistry.respond_to?(:reset_cache!)
+            reset_caches!
           end
         end
 
@@ -156,6 +157,7 @@ module Legion
 
         def build(identity: nil) # rubocop:disable Metrics/MethodLength
           rebuild_tool_registry
+          register_catalog_listener
 
           LoggingSupport.info(
             'server.build.start',
@@ -188,7 +190,7 @@ module Legion
 
           PatternStore.hydrate_from_l2 if defined?(PatternStore)
           ColdStart.load_community_patterns if defined?(ColdStart)
-          FunctionDiscovery.discover_and_register if defined?(Legion::Extensions)
+          run_function_discovery
           populate_embedding_index
 
           Resources::RunnerCatalog.register(server)
@@ -312,6 +314,13 @@ module Legion
         end
 
         private
+
+        def run_function_discovery
+          return unless defined?(Legion::Extensions)
+
+          FunctionDiscovery.reset_discovery!
+          FunctionDiscovery.discover_and_register
+        end
 
         def hydrate_override_confidence
           return unless defined?(Legion::LLM::OverrideConfidence)
