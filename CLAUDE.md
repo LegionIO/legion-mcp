@@ -7,7 +7,7 @@
 Standalone gem providing the Model Context Protocol (MCP) server for LegionIO. Extracted from LegionIO to enable independent versioning and reuse. Includes semantic tool matching, observation pipeline, context compilation, tiered inference (Tier 0/1/2), and tool governance.
 
 **GitHub**: https://github.com/LegionIO/legion-mcp
-**Version**: 0.7.3
+**Version**: 0.7.4
 **License**: Apache-2.0
 **Ruby**: >= 3.4
 
