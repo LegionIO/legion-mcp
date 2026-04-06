@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+- `Legion::MCP::ToolAdapter` - wraps Tools::Base into MCP::Tool
+- `rebuild_tool_registry` method for dynamic tool registration
+
+### Changed
+- Tool registry populated from `Legion::Tools::Registry` via ToolAdapter
+- `DeferredRegistry` reads canonical classification with `reset_cache!`
+- `EmbeddingIndex` uses `Tools::EmbeddingCache` for persistent caching
+- `FunctionDiscovery` delegates to `Tools::Discovery` with double-fire guard
+
+### Removed
+- Direct tool ownership (tools live in LegionIO now)
+
 ## [0.7.2] - 2026-04-03
 
 ### Fixed

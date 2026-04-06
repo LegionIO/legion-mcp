@@ -10,9 +10,25 @@ module Legion
       def build_from_tool_data(tool_data, embedder: default_embedder)
         @embedder = embedder
         mutex.synchronize do
-          tool_data.each do |tool|
-            composite = build_composite(tool[:name], tool[:description], tool[:params])
+          composites = tool_data.to_h do |tool|
+            [tool[:name], build_composite(tool[:name], tool[:description], tool[:params])]
+          end
+
+          cached_vectors = bulk_cache_lookup(composites.values)
+
+          uncached_names = composites.keys.reject { |name| cached_vectors.key?(composites[name]) }
+          newly_embedded = {}
+          uncached_names.each do |name|
+            composite = composites[name]
             vector = safe_embed(composite, embedder)
+            newly_embedded[composite] = vector if vector
+          end
+
+          bulk_cache_store(newly_embedded) unless newly_embedded.empty?
+
+          tool_data.each do |tool|
+            composite = composites[tool[:name]]
+            vector = cached_vectors[composite] || newly_embedded[composite]
             next unless vector
 
             index[tool[:name]] = {
@@ -84,6 +100,26 @@ module Legion
 
       def mutex
         @mutex ||= Mutex.new
+      end
+
+      def bulk_cache_lookup(composite_texts)
+        return {} unless defined?(Legion::Tools::EmbeddingCache) &&
+                         Legion::Tools::EmbeddingCache.respond_to?(:bulk_lookup)
+
+        Legion::Tools::EmbeddingCache.bulk_lookup(composite_texts)
+      rescue StandardError => e
+        handle_exception(e, level: :debug, operation: 'legion.mcp.embedding_index.bulk_cache_lookup')
+        {}
+      end
+
+      def bulk_cache_store(composite_to_vector)
+        return unless defined?(Legion::Tools::EmbeddingCache) &&
+                      Legion::Tools::EmbeddingCache.respond_to?(:bulk_store)
+
+        Legion::Tools::EmbeddingCache.bulk_store(composite_to_vector)
+      rescue StandardError => e
+        handle_exception(e, level: :debug, operation: 'legion.mcp.embedding_index.bulk_cache_store')
+        nil
       end
 
       def build_composite(name, description, params)
