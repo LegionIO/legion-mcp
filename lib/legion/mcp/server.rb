@@ -90,6 +90,7 @@ module Legion
         end
 
         def build(identity: nil) # rubocop:disable Metrics/MethodLength
+          run_function_discovery
           rebuild_tool_registry
 
           LoggingSupport.info(
@@ -123,7 +124,6 @@ module Legion
 
           PatternStore.hydrate_from_l2 if defined?(PatternStore)
           ColdStart.load_community_patterns if defined?(ColdStart)
-          run_function_discovery
           populate_embedding_index
 
           Resources::RunnerCatalog.register(server)
