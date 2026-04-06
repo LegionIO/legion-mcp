@@ -1,19 +1,15 @@
 # legion-mcp Changelog
 
-## [Unreleased]
-
-### Added
-- `Legion::MCP::ToolAdapter` - wraps Tools::Base into MCP::Tool
-- `rebuild_tool_registry` method for dynamic tool registration
+## [0.7.4] - 2026-04-06
 
 ### Changed
-- Tool registry populated from `Legion::Tools::Registry` via ToolAdapter
-- `DeferredRegistry` reads canonical classification with `reset_cache!`
-- `EmbeddingIndex` uses `Tools::EmbeddingCache` for persistent caching
-- `FunctionDiscovery` delegates to `Tools::Discovery` with double-fire guard
+- `STATIC_TOOLS` renamed to `MCP_SPECIFIC_TOOLS` (6 MCP-only tools)
+- `Catalog::Registry` calls replaced with `Tools::Registry` in catalog_dispatcher
 
 ### Removed
-- Direct tool ownership (tools live in LegionIO now)
+- `CatalogBridge` module (replaced by `Tools::Registry`)
+- `dynamic_tool_list`, `dispatch_catalog_tool`, `register_catalog_listener` from server.rb
+- Stale spec files for catalog integration
 
 ## [0.7.2] - 2026-04-03
 
