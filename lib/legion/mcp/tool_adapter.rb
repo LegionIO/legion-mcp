@@ -21,7 +21,8 @@ module Legion
                 ::MCP::Tool::Response.new(content, error: result[:error] || false)
               else
                 text = result.is_a?(String) ? result : Legion::JSON.dump(result)
-                ::MCP::Tool::Response.new([{ type: 'text', text: text }])
+                error = result.is_a?(Hash) ? !!result[:error] : false
+                ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
               end
             rescue StandardError => e
               ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ error: e.message }) }], error: true)
