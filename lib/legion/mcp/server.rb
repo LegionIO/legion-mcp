@@ -3,6 +3,7 @@
 require_relative 'observer'
 require_relative 'logging_support'
 require_relative 'usage_filter'
+require_relative 'tools_loader'
 require_relative 'tool_adapter'
 require_relative 'context_compiler'
 require_relative 'embedding_index'
@@ -23,15 +24,6 @@ require_relative 'resources/extension_info'
 module Legion
   module MCP
     module Server # rubocop:disable Metrics/ModuleLength
-      MCP_SPECIFIC_TOOLS = [
-        Tools::PlanAction,
-        Tools::DiscoverTools,
-        Tools::StateDiff,
-        Tools::StructuralIndexTool,
-        Tools::ToolAudit,
-        Tools::SearchSessions
-      ].freeze
-
       # All built-in tool classes loaded via tools_loader.rb
       STATIC_TOOLS = [
         Tools::RunTask,
@@ -316,8 +308,6 @@ module Legion
         private
 
         def run_function_discovery
-          return unless defined?(Legion::Extensions)
-
           FunctionDiscovery.reset_discovery!
           FunctionDiscovery.discover_and_register
         end

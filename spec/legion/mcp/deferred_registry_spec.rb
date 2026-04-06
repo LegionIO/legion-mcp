@@ -21,6 +21,7 @@ RSpec.describe Legion::MCP::DeferredRegistry do
   end
 
   before do
+    described_class.reset_cache!
     allow(Legion::Settings).to receive(:dig).and_return(nil)
   end
 
