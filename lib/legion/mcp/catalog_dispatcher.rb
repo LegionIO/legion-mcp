@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'logging_support'
+require_relative 'tool_adapter'
 
 module Legion
   module MCP

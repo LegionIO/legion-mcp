@@ -27,7 +27,7 @@ Legion::MCP
 ├── ContextGuard        # Staleness, rapid-fire, anomaly detection guards
 ├── ToolAdapter         # Adapts Legion::Tools::Base subclasses to MCP SDK format (McpToolAdapter kept as alias)
 ├── DeferredRegistry    # Reads deferred tools from Legion::Tools::Registry at request time
-├── Tools/              # MCP_SPECIFIC_TOOLS only (6 tools); 57 individual tool files removed — extension tools discovered via Legion::Tools::Discovery
+├── Tools/              # MCP_SPECIFIC_TOOLS only (6 registered); remaining tool files exist but are not registered in Server.tool_registry — extension tools discovered via Legion::Tools::Discovery
 └── Resources/          # RunnerCatalog, ExtensionInfo
 ```
 
@@ -87,7 +87,7 @@ All optional dependencies use `defined?()` guards:
 | `lib/legion/mcp/context_guard.rb` | Staleness, rapid-fire, anomaly detection |
 | `lib/legion/mcp/tool_adapter.rb` | MCP::ToolAdapter — wraps Legion::Tools::Base for MCP SDK (McpToolAdapter kept as alias) |
 | `lib/legion/mcp/deferred_registry.rb` | DeferredRegistry — reads deferred tools from Legion::Tools::Registry at request time |
-| `lib/legion/mcp/tools/` | MCP_SPECIFIC_TOOLS only (6 tools); 57 extension tool files removed |
+| `lib/legion/mcp/tools/` | All tool implementations; only MCP_SPECIFIC_TOOLS (6 tools) registered in Server.tool_registry — extension tools sourced via Legion::Tools::Discovery |
 | `lib/legion/mcp/tools/do_action.rb` | Natural language intent routing with Tier 0 fast path |
 | `lib/legion/mcp/tools/discover_tools.rb` | Dynamic tool discovery with context |
 | `lib/legion/mcp/tools/run_task.rb` | Execute runner function via dot notation |

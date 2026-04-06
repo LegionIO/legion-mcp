@@ -4,9 +4,16 @@ module Legion
   module MCP
     class ToolAdapter < ::MCP::Tool
       class << self
+        MCP_NAME_PATTERN = /[^a-zA-Z0-9_-]/
+
+        def sanitize_tool_name(name)
+          name.to_s.gsub(MCP_NAME_PATTERN, '_').slice(0, 64)
+        end
+
         def from_legion_tool(tool_class)
+          safe_name = sanitize_tool_name(tool_class.tool_name)
           Class.new(::MCP::Tool) do
-            tool_name tool_class.tool_name
+            tool_name safe_name
             description tool_class.description
             input_schema(tool_class.input_schema || { properties: {} })
 
