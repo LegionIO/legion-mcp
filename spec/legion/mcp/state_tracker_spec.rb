@@ -13,7 +13,7 @@ RSpec.describe Legion::MCP::StateTracker do
     it 'returns a hash with tool_count' do
       state = described_class.collect_state
       expect(state[:tool_count]).to be_a(Integer)
-      expect(state[:tool_count]).to be >= 60
+      expect(state[:tool_count]).to be >= 6
     end
 
     it 'includes observer_stats' do

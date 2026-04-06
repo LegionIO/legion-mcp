@@ -98,23 +98,33 @@ RSpec.describe Legion::MCP::ToolQuality do
       expect(matrix.length).to eq(Legion::MCP::Server.tool_registry.size)
     end
 
-    it 'includes reads and writes flags' do
+    it 'includes reads and writes flags for each entry' do
       matrix = described_class.capability_matrix
-      run_task = matrix.find { |e| e[:name] == 'legion.run_task' }
-      expect(run_task).to have_key(:reads)
-      expect(run_task).to have_key(:writes)
+      expect(matrix).to all(include(:reads, :writes))
     end
 
-    it 'marks list tools as readers' do
+    it 'marks tools with list_ prefix as readers' do
+      list_tool = Class.new(MCP::Tool) do
+        tool_name 'legion.list_things'
+        description 'List all the things.'
+        input_schema(properties: {})
+      end
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return([list_tool])
       matrix = described_class.capability_matrix
-      list_tasks = matrix.find { |e| e[:name] == 'legion.list_tasks' }
-      expect(list_tasks[:reads]).to be true
+      entry = matrix.find { |e| e[:name] == 'legion.list_things' }
+      expect(entry[:reads]).to be true
     end
 
-    it 'marks create tools as writers' do
+    it 'marks tools with create_ prefix as writers' do
+      create_tool = Class.new(MCP::Tool) do
+        tool_name 'legion.create_thing'
+        description 'Create a thing.'
+        input_schema(properties: {})
+      end
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return([create_tool])
       matrix = described_class.capability_matrix
-      create_chain = matrix.find { |e| e[:name] == 'legion.create_chain' }
-      expect(create_chain[:writes]).to be true
+      entry = matrix.find { |e| e[:name] == 'legion.create_thing' }
+      expect(entry[:writes]).to be true
     end
   end
 

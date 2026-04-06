@@ -16,27 +16,27 @@ RSpec.describe 'Tier 0 Integration' do
   describe 'full lifecycle: observe -> promote -> serve' do
     let(:mock_tool_class) do
       Class.new do
-        def self.tool_name = 'legion.get_status'
+        def self.tool_name = 'legion.tool_audit'
         def self.call(**_args) = ::MCP::Tool::Response.new([{ type: 'text', text: '{"status":"ok"}' }])
       end
     end
 
     before do
-      stub_const('Legion::MCP::Server::TOOL_CLASSES', [mock_tool_class])
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return([mock_tool_class])
     end
 
     it 'promotes after 3 observations and serves tier 0' do
       # Phase 1: Record 3 successful observations
       3.times do
         Legion::MCP::Observer.record_intent_with_result(
-          intent:    'check system status',
-          tool_name: 'legion.get_status',
+          intent:    'audit the tools',
+          tool_name: 'legion.tool_audit',
           success:   true
         )
       end
 
       # Pattern should now exist
-      hash = Digest::SHA256.hexdigest('check system status')
+      hash = Digest::SHA256.hexdigest('audit the tools')
       pattern = Legion::MCP::PatternStore.lookup(hash)
       expect(pattern).not_to be_nil
       expect(pattern[:confidence]).to eq(0.5)
@@ -47,7 +47,7 @@ RSpec.describe 'Tier 0 Integration' do
       Legion::MCP::PatternStore.store(pattern)
 
       # Phase 3: Route should return Tier 0
-      result = Legion::MCP::TierRouter.route(intent: 'check system status')
+      result = Legion::MCP::TierRouter.route(intent: 'audit the tools')
       expect(result[:tier]).to eq(0)
       expect(result[:response]).not_to be_nil
     end
@@ -58,16 +58,16 @@ RSpec.describe 'Tier 0 Integration' do
       Legion::MCP::PatternStore.store(
         intent_hash: Digest::SHA256.hexdigest('test intent'),
         intent_text: 'test intent',
-        tool_chain:  ['legion.get_status'],
+        tool_chain:  ['legion.tool_audit'],
         confidence:  0.9, hit_count: 5, miss_count: 0,
         created_at:  Time.now, last_hit_at: Time.now - 30
       )
 
       mock_tool = Class.new do
-        def self.tool_name = 'legion.get_status'
+        def self.tool_name = 'legion.tool_audit'
         def self.call(**_args) = ::MCP::Tool::Response.new([{ type: 'text', text: '{"ok":true}' }])
       end
-      stub_const('Legion::MCP::Server::TOOL_CLASSES', [mock_tool])
+      allow(Legion::MCP::Server).to receive(:tool_registry).and_return([mock_tool])
 
       result = Legion::MCP::TierRouter.route(intent: 'test intent')
       expect(result[:tier]).to eq(0)

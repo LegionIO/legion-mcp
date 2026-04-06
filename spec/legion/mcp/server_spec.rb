@@ -26,21 +26,16 @@ RSpec.describe Legion::MCP::Server do
       expect(server.version).to eq(Legion::VERSION)
     end
 
-    it 'registers all tool classes' do
+    it 'registers the MCP-specific tools' do
       expected = %w[
-        legion.run_task legion.describe_runner
-        legion.list_tasks legion.get_task legion.delete_task legion.get_task_logs
-        legion.list_chains legion.create_chain legion.update_chain legion.delete_chain
-        legion.list_relationships legion.create_relationship legion.update_relationship legion.delete_relationship
-        legion.list_extensions legion.get_extension legion.enable_extension legion.disable_extension
-        legion.list_schedules legion.create_schedule legion.update_schedule legion.delete_schedule
-        legion.get_status legion.get_config
+        legion.plan legion.tools legion.structural_index
+        legion.tool_audit legion.state_diff legion.search_sessions
       ]
       expect(server.tools.keys).to include(*expected)
     end
 
-    it 'registers at least 64 static tools' do
-      expect(server.tools.size).to be >= 64
+    it 'registers at least 6 MCP-specific tools' do
+      expect(server.tools.size).to be >= 6
     end
 
     it 'includes instructions' do
@@ -96,22 +91,22 @@ RSpec.describe Legion::MCP::Server do
         expect(server.tools.keys & high_tools).to be_empty
       end
 
-      it 'includes high-tier tools for high-tier identity' do
+      it 'includes all MCP-specific tools for high-tier identity' do
         server = described_class.build(identity: { risk_tier: :high })
-        expect(server.tools.keys).to include('legion.worker_lifecycle')
+        expect(server.tools.keys).to include('legion.plan', 'legion.tools')
       end
     end
   end
 
   describe '.tool_registry' do
-    it 'returns an array containing all static tools' do
+    it 'returns an array containing MCP-specific tools' do
       registry = Legion::MCP::Server.tool_registry
-      expect(registry).to include(Legion::MCP::Tools::RunTask)
-      expect(registry).to include(Legion::MCP::Tools::ListTasks)
+      expect(registry).to include(Legion::MCP::Tools::PlanAction)
+      expect(registry).to include(Legion::MCP::Tools::DiscoverTools)
     end
 
-    it 'has at least 59 static tools' do
-      expect(Legion::MCP::Server.tool_registry.size).to be >= 59
+    it 'has at least 6 MCP-specific tools' do
+      expect(Legion::MCP::Server.tool_registry.size).to be >= 6
     end
   end
 

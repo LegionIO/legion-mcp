@@ -21,10 +21,10 @@ RSpec.describe Legion::MCP::StructuralIndex do
       expect(result[:extensions]).to eq([])
     end
 
-    it 'includes tools from tool_registry' do
+    it 'includes MCP-specific tools from tool_registry' do
       result = described_class.build
       names = result[:tools].map { |t| t[:name] }
-      expect(names).to include('legion.do', 'legion.tools', 'legion.run_task')
+      expect(names).to include('legion.tools', 'legion.plan', 'legion.tool_audit')
     end
   end
 
@@ -39,8 +39,8 @@ RSpec.describe Legion::MCP::StructuralIndex do
 
     it 'marks standard tools as non-catalog' do
       tools = described_class.scan_tools
-      run_task = tools.find { |t| t[:name] == 'legion.run_task' }
-      expect(run_task[:catalog]).to be false
+      plan = tools.find { |t| t[:name] == 'legion.plan' }
+      expect(plan[:catalog]).to be false
     end
   end
 
