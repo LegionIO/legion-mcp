@@ -7,7 +7,16 @@ module Legion
 
       module_function
 
-      def discover_and_register
+      def discover_and_register # rubocop:disable Metrics/PerceivedComplexity
+        return if @discovery_fired
+
+        @discovery_fired = true
+
+        if defined?(Legion::Tools::Discovery) && Legion::Tools::Discovery.respond_to?(:discover_and_register)
+          Legion::Tools::Discovery.discover_and_register
+          return
+        end
+
         return unless defined?(Legion::Extensions)
 
         extensions =
@@ -24,6 +33,10 @@ module Legion
           handle_exception(e, level: :debug, operation: 'legion.mcp.function_discovery.discover_and_register')
           log.debug("FunctionDiscovery: skipping #{ext}: #{e.message}")
         end
+      end
+
+      def reset_discovery!
+        @discovery_fired = false
       end
 
       def build_tools_from_runner(runner_module)

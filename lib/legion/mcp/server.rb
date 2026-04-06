@@ -3,76 +3,13 @@
 require_relative 'observer'
 require_relative 'logging_support'
 require_relative 'usage_filter'
-require_relative 'tools/run_task'
-require_relative 'tools/describe_runner'
-require_relative 'tools/list_tasks'
-require_relative 'tools/get_task'
-require_relative 'tools/delete_task'
-require_relative 'tools/get_task_logs'
-require_relative 'tools/list_chains'
-require_relative 'tools/create_chain'
-require_relative 'tools/update_chain'
-require_relative 'tools/delete_chain'
-require_relative 'tools/list_relationships'
-require_relative 'tools/create_relationship'
-require_relative 'tools/update_relationship'
-require_relative 'tools/delete_relationship'
-require_relative 'tools/list_extensions'
-require_relative 'tools/get_extension'
-require_relative 'tools/enable_extension'
-require_relative 'tools/disable_extension'
-require_relative 'tools/list_schedules'
-require_relative 'tools/create_schedule'
-require_relative 'tools/update_schedule'
-require_relative 'tools/delete_schedule'
-require_relative 'tools/get_status'
-require_relative 'tools/get_config'
-require_relative 'tools/list_workers'
-require_relative 'tools/show_worker'
-require_relative 'tools/worker_lifecycle'
-require_relative 'tools/worker_costs'
-require_relative 'tools/team_summary'
-require_relative 'tools/routing_stats'
-require_relative 'tools/rbac_check'
-require_relative 'tools/rbac_assignments'
-require_relative 'tools/rbac_grants'
-require_relative 'tools/prompt_list'
-require_relative 'tools/prompt_show'
-require_relative 'tools/prompt_run'
-require_relative 'tools/dataset_list'
-require_relative 'tools/dataset_show'
-require_relative 'tools/experiment_results'
-require_relative 'tools/eval_list'
-require_relative 'tools/eval_run'
-require_relative 'tools/eval_results'
+require_relative 'tool_adapter'
 require_relative 'context_compiler'
 require_relative 'embedding_index'
 require_relative 'cold_start'
 require_relative 'gap_detector'
 require_relative 'function_discovery'
 require_relative 'self_generate'
-require_relative 'tools/do_action'
-require_relative 'tools/plan_action'
-require_relative 'tools/discover_tools'
-require_relative 'tools/ask_peer'
-require_relative 'tools/list_peers'
-require_relative 'tools/notify_peer'
-require_relative 'tools/broadcast_peers'
-require_relative 'tools/mesh_status'
-require_relative 'tools/mind_growth_status'
-require_relative 'tools/mind_growth_propose'
-require_relative 'tools/mind_growth_approve'
-require_relative 'tools/mind_growth_build_queue'
-require_relative 'tools/mind_growth_cognitive_profile'
-require_relative 'tools/mind_growth_health'
-require_relative 'tools/query_knowledge'
-require_relative 'tools/knowledge_health'
-require_relative 'tools/knowledge_context'
-require_relative 'tools/absorb'
-require_relative 'tools/structural_index'
-require_relative 'tools/tool_audit'
-require_relative 'tools/state_diff'
-require_relative 'tools/search_sessions'
 require_relative 'structural_index'
 require_relative 'state_tracker'
 require_relative 'tool_quality'
@@ -85,7 +22,17 @@ require_relative 'resources/extension_info'
 
 module Legion
   module MCP
-    module Server
+    module Server # rubocop:disable Metrics/ModuleLength
+      MCP_SPECIFIC_TOOLS = [
+        Tools::PlanAction,
+        Tools::DiscoverTools,
+        Tools::StateDiff,
+        Tools::StructuralIndexTool,
+        Tools::ToolAudit,
+        Tools::SearchSessions
+      ].freeze
+
+      # All built-in tool classes loaded via tools_loader.rb
       STATIC_TOOLS = [
         Tools::RunTask,
         Tools::DescribeRunner,
@@ -157,9 +104,24 @@ module Legion
       @tool_registry_lock = Mutex.new
 
       class << self # rubocop:disable Metrics/ClassLength
-        include CatalogBridge
-
         attr_reader :tool_registry
+
+        def rebuild_tool_registry
+          @tool_registry_lock.synchronize do
+            @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
+
+            if defined?(Legion::Tools::Registry) && Legion::Tools::Registry.respond_to?(:all_tools)
+              Legion::Tools::Registry.all_tools.each do |legion_tool_class|
+                next if @tool_registry.any? { |tc| tc.tool_name == legion_tool_class.tool_name }
+
+                adapted = ToolAdapter.from_legion_tool(legion_tool_class)
+                @tool_registry << adapted
+              end
+            end
+
+            DeferredRegistry.reset_cache! if defined?(DeferredRegistry) && DeferredRegistry.respond_to?(:reset_cache!)
+          end
+        end
 
         def register_tool(tool_class)
           @tool_registry_lock.synchronize do
@@ -192,7 +154,9 @@ module Legion
           EmbeddingIndex.reset! if defined?(EmbeddingIndex) && EmbeddingIndex.respond_to?(:reset!)
         end
 
-        def build(identity: nil) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        def build(identity: nil) # rubocop:disable Metrics/MethodLength
+          rebuild_tool_registry
+
           LoggingSupport.info(
             'server.build.start',
             identity:      LoggingSupport.summarize_identity(identity),
@@ -225,13 +189,11 @@ module Legion
           PatternStore.hydrate_from_l2 if defined?(PatternStore)
           ColdStart.load_community_patterns if defined?(ColdStart)
           FunctionDiscovery.discover_and_register if defined?(Legion::Extensions)
-          register_catalog_tools
           populate_embedding_index
 
           Resources::RunnerCatalog.register(server)
           Resources::ExtensionInfo.register_read_handler(server)
 
-          register_catalog_listener
           hydrate_override_confidence
 
           LoggingSupport.info(
@@ -307,7 +269,57 @@ module Legion
           end
         end
 
+        def dynamic_tool_list
+          static = tool_registry.map do |klass|
+            { name: klass.tool_name, description: klass.description,
+              input_schema: klass.input_schema, source: :builtin, klass: klass }
+          end
+
+          dynamic = if defined?(Legion::Extensions::Catalog::Registry)
+                      Legion::Extensions::Catalog::Registry.for_mcp.map(&:to_mcp_tool)
+                    else
+                      []
+                    end
+
+          static + dynamic
+        end
+
+        def dispatch_catalog_tool(tool_name, arguments)
+          return nil unless defined?(Legion::Extensions::Catalog::Registry)
+
+          cap = Legion::Extensions::Catalog::Registry.find_by_mcp_name(tool_name)
+          return nil unless cap
+
+          segments = cap.extension.delete_prefix('lex-').split('-')
+          runner_path = (%w[Legion Extensions] + segments.map(&:capitalize) + ['Runners', cap.runner]).join('::')
+          runner = Kernel.const_get(runner_path)
+          fn = cap.function.to_sym
+          result = runner.send(fn, **(arguments || {}).transform_keys(&:to_sym))
+          { status: :success, result: result, source: :catalog }
+        rescue NameError => e
+          handle_exception(e, level: :warn, operation: 'legion.mcp.server.dispatch_catalog_tool')
+          nil
+        rescue StandardError => e
+          handle_exception(e, level: :error, operation: 'legion.mcp.server.dispatch_catalog_tool')
+          { status: :error, error: e.message, source: :catalog }
+        end
+
+        def register_catalog_listener
+          return unless defined?(Legion::Extensions::Catalog::Registry)
+          return unless Legion::Extensions::Catalog::Registry.respond_to?(:on_change)
+
+          Legion::Extensions::Catalog::Registry.on_change { Legion::MCP.reset! }
+        end
+
         private
+
+        def hydrate_override_confidence
+          return unless defined?(Legion::LLM::OverrideConfidence)
+          return unless Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_l2)
+
+          Legion::LLM::OverrideConfidence.hydrate_from_l2
+          Legion::LLM::OverrideConfidence.hydrate_from_apollo if Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_apollo)
+        end
 
         def install_deferred_tools_list_handler(server)
           handlers = server.instance_variable_get(:@handlers)

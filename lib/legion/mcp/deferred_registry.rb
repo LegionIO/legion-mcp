@@ -23,14 +23,23 @@ module Legion
 
       module_function
 
+      def reset_cache!
+        @always_loaded_cache = nil
+      end
+
       def enabled?
         setting = Legion::Settings.dig(:mcp, :deferred_loading, :enabled)
         setting.nil? || setting
       end
 
       def always_loaded_tools
+        base = ALWAYS_LOADED.dup
+        if defined?(Legion::Tools::Registry) && Legion::Tools::Registry.respond_to?(:tools)
+          registry_always = Legion::Tools::Registry.tools(:always)
+          base |= registry_always.map(&:tool_name) if registry_always.is_a?(Array)
+        end
         custom = Legion::Settings.dig(:mcp, :deferred_loading, :always_loaded)
-        custom.is_a?(Array) ? (ALWAYS_LOADED | custom) : ALWAYS_LOADED
+        custom.is_a?(Array) ? (base | custom) : base
       end
 
       def deferred?(tool_class)
