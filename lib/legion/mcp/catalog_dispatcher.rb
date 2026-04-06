@@ -113,34 +113,15 @@ module Legion
       end
 
       def generate_tools_from_catalog
-        return [] unless defined?(Legion::Extensions::Catalog::Registry)
-        return [] unless Legion::Extensions::Catalog::Registry.respond_to?(:for_mcp)
+        return [] unless defined?(Legion::Tools::Registry)
+        return [] unless Legion::Tools::Registry.respond_to?(:all_tools)
 
-        Legion::Extensions::Catalog::Registry.for_mcp.filter_map do |cap|
-          raw_name = cap.respond_to?(:mcp_name) ? cap.mcp_name : "legion.catalog.#{cap.function}"
-          build_tool_class(
-            runner_class: resolve_runner_class(cap),
-            function:     cap.function,
-            tool_name:    sanitize_tool_name(raw_name),
-            description:  cap.respond_to?(:description) ? cap.description : "Auto-generated: #{cap.function}",
-            input_schema: cap.respond_to?(:input_schema) ? cap.input_schema : { properties: {} },
-            category:     cap.respond_to?(:category) ? cap.category : nil,
-            tier:         cap.respond_to?(:tier) ? cap.tier : nil
-          )
+        Legion::Tools::Registry.all_tools.filter_map do |tool_class|
+          ToolAdapter.from_legion_tool(tool_class) if defined?(ToolAdapter) && ToolAdapter.respond_to?(:from_legion_tool)
         rescue StandardError => e
           handle_exception(e, level: :debug, operation: 'legion.mcp.catalog_dispatcher.generate_tools_from_catalog')
-          log.debug("CatalogDispatcher: skipping #{cap}: #{e.message}")
           nil
         end
-      end
-
-      def resolve_runner_class(cap)
-        segments = cap.extension.delete_prefix('lex-').split('-')
-        (%w[Legion Extensions] + segments.map(&:capitalize) + ['Runners', cap.runner]).join('::')
-      end
-
-      def sanitize_tool_name(name)
-        name.gsub(/[^A-Za-z0-9_.-]/, '')
       end
     end
   end

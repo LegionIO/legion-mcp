@@ -32,7 +32,8 @@ RSpec.describe 'EmbeddingIndex integration' do
     it 'stores vectors for each tool' do
       fake_embedder = ->(text) { ('a'..'z').map { |c| text.downcase.count(c).to_f } }
       Legion::MCP::Server.populate_embedding_index(embedder: fake_embedder)
-      entry = Legion::MCP::EmbeddingIndex.entry('legion.run_task')
+      first_tool_name = Legion::MCP::Server.tool_registry.first.tool_name
+      entry = Legion::MCP::EmbeddingIndex.entry(first_tool_name)
       expect(entry).not_to be_nil
       expect(entry[:vector]).to be_an(Array)
     end

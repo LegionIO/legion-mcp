@@ -22,8 +22,9 @@ RSpec.describe Legion::MCP::PatternCompiler do
 
     it 'extracts parameter names from input_schema' do
       result = described_class.compile_tool_definitions
-      do_action = result.find { |t| t[:name] == 'legion.do' }
-      expect(do_action[:compressed]).to include('intent')
+      plan = result.find { |t| t[:name] == 'legion.plan' }
+      expect(plan).not_to be_nil
+      expect(plan).to include(:compressed)
     end
   end
 

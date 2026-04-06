@@ -150,11 +150,23 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
   end
 
   describe '.generate_tools_from_catalog' do
-    context 'when Catalog::Registry has no capabilities' do
+    context 'when Legion::Tools::Registry is not defined' do
+      before { hide_const('Legion::Tools::Registry') }
+
+      it 'returns empty array' do
+        expect(described_class.generate_tools_from_catalog).to eq([])
+      end
+    end
+
+    context 'when Legion::Tools::Registry has no tools' do
       before do
-        if defined?(Legion::Extensions::Catalog::Registry)
-          allow(Legion::Extensions::Catalog::Registry).to receive(:for_mcp).and_return([])
-        end
+        stub_const('Legion::Tools::Registry', Module.new do
+          module_function
+
+          def all_tools
+            []
+          end
+        end)
       end
 
       it 'returns empty array' do

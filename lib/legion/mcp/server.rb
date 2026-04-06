@@ -17,82 +17,24 @@ require_relative 'tool_quality'
 require_relative 'deferred_registry'
 require_relative 'catalog_dispatcher'
 require_relative 'dynamic_injector'
-require_relative 'catalog_bridge'
 require_relative 'resources/runner_catalog'
 require_relative 'resources/extension_info'
 
 module Legion
   module MCP
-    module Server # rubocop:disable Metrics/ModuleLength
-      # All built-in tool classes loaded via tools_loader.rb
-      STATIC_TOOLS = [
-        Tools::RunTask,
-        Tools::DescribeRunner,
-        Tools::ListTasks,
-        Tools::GetTask,
-        Tools::DeleteTask,
-        Tools::GetTaskLogs,
-        Tools::ListChains,
-        Tools::CreateChain,
-        Tools::UpdateChain,
-        Tools::DeleteChain,
-        Tools::ListRelationships,
-        Tools::CreateRelationship,
-        Tools::UpdateRelationship,
-        Tools::DeleteRelationship,
-        Tools::ListExtensions,
-        Tools::GetExtension,
-        Tools::EnableExtension,
-        Tools::DisableExtension,
-        Tools::ListSchedules,
-        Tools::CreateSchedule,
-        Tools::UpdateSchedule,
-        Tools::DeleteSchedule,
-        Tools::GetStatus,
-        Tools::GetConfig,
-        Tools::ListWorkers,
-        Tools::ShowWorker,
-        Tools::WorkerLifecycle,
-        Tools::WorkerCosts,
-        Tools::TeamSummary,
-        Tools::RoutingStats,
-        Tools::RbacCheck,
-        Tools::RbacAssignments,
-        Tools::RbacGrants,
-        Tools::PromptList,
-        Tools::PromptShow,
-        Tools::PromptRun,
-        Tools::DatasetList,
-        Tools::DatasetShow,
-        Tools::ExperimentResults,
-        Tools::EvalList,
-        Tools::EvalRun,
-        Tools::EvalResults,
-        Tools::DoAction,
+    module Server
+      # MCP-specific tools not owned by any extension.
+      # All extension-owned tools are discovered via Legion::Tools::Registry.
+      MCP_SPECIFIC_TOOLS = [
         Tools::PlanAction,
         Tools::DiscoverTools,
-        Tools::AskPeer,
-        Tools::ListPeers,
-        Tools::NotifyPeer,
-        Tools::BroadcastPeers,
-        Tools::MeshStatus,
-        Tools::MindGrowthStatus,
-        Tools::MindGrowthPropose,
-        Tools::MindGrowthApprove,
-        Tools::MindGrowthBuildQueue,
-        Tools::MindGrowthCognitiveProfile,
-        Tools::MindGrowthHealth,
-        Tools::QueryKnowledge,
-        Tools::KnowledgeHealth,
-        Tools::KnowledgeContext,
-        Tools::Absorb,
         Tools::StructuralIndexTool,
         Tools::ToolAudit,
         Tools::StateDiff,
         Tools::SearchSessions
       ].freeze
 
-      @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
+      @tool_registry = Concurrent::Array.new(MCP_SPECIFIC_TOOLS)
       @tool_registry_lock = Mutex.new
 
       class << self # rubocop:disable Metrics/ClassLength
@@ -100,7 +42,7 @@ module Legion
 
         def rebuild_tool_registry
           @tool_registry_lock.synchronize do
-            @tool_registry = Concurrent::Array.new(STATIC_TOOLS)
+            @tool_registry = Concurrent::Array.new(MCP_SPECIFIC_TOOLS)
 
             if defined?(Legion::Tools::Registry) && Legion::Tools::Registry.respond_to?(:all_tools)
               Legion::Tools::Registry.all_tools.each do |legion_tool_class|
@@ -149,7 +91,6 @@ module Legion
 
         def build(identity: nil) # rubocop:disable Metrics/MethodLength
           rebuild_tool_registry
-          register_catalog_listener
 
           LoggingSupport.info(
             'server.build.start',
@@ -261,48 +202,6 @@ module Legion
               (tc.respond_to?(:tool_name) ? tc.tool_name : tc.name) == name
             end
           end
-        end
-
-        def dynamic_tool_list
-          static = tool_registry.map do |klass|
-            { name: klass.tool_name, description: klass.description,
-              input_schema: klass.input_schema, source: :builtin, klass: klass }
-          end
-
-          dynamic = if defined?(Legion::Extensions::Catalog::Registry)
-                      Legion::Extensions::Catalog::Registry.for_mcp.map(&:to_mcp_tool)
-                    else
-                      []
-                    end
-
-          static + dynamic
-        end
-
-        def dispatch_catalog_tool(tool_name, arguments)
-          return nil unless defined?(Legion::Extensions::Catalog::Registry)
-
-          cap = Legion::Extensions::Catalog::Registry.find_by_mcp_name(tool_name)
-          return nil unless cap
-
-          segments = cap.extension.delete_prefix('lex-').split('-')
-          runner_path = (%w[Legion Extensions] + segments.map(&:capitalize) + ['Runners', cap.runner]).join('::')
-          runner = Kernel.const_get(runner_path)
-          fn = cap.function.to_sym
-          result = runner.send(fn, **(arguments || {}).transform_keys(&:to_sym))
-          { status: :success, result: result, source: :catalog }
-        rescue NameError => e
-          handle_exception(e, level: :warn, operation: 'legion.mcp.server.dispatch_catalog_tool')
-          nil
-        rescue StandardError => e
-          handle_exception(e, level: :error, operation: 'legion.mcp.server.dispatch_catalog_tool')
-          { status: :error, error: e.message, source: :catalog }
-        end
-
-        def register_catalog_listener
-          return unless defined?(Legion::Extensions::Catalog::Registry)
-          return unless Legion::Extensions::Catalog::Registry.respond_to?(:on_change)
-
-          Legion::Extensions::Catalog::Registry.on_change { Legion::MCP.reset! }
         end
 
         private
