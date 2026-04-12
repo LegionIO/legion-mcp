@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'securerandom'
+
 module Legion
   module MCP
     module Tools
@@ -13,6 +15,7 @@ module Legion
           include Legion::Logging::Helper
 
           def call
+            log.info('Starting legion.mcp.tools.skill_list.call')
             return error_response('Skills not available: legion-llm not loaded') unless defined?(Legion::LLM::Skills::Registry)
 
             skills = Legion::LLM::Skills::Registry.all.map do |s|
@@ -27,6 +30,7 @@ module Legion
             text_response({ skills: skills, count: skills.size })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_list.call')
+            log.warn("SkillList#call failed: #{e.message}")
             error_response("Failed to list skills: #{e.message}")
           end
 
@@ -60,6 +64,7 @@ module Legion
           include Legion::Logging::Helper
 
           def call(name:)
+            log.info('Starting legion.mcp.tools.skill_describe.call')
             return error_response('Skills not available: legion-llm not loaded') unless defined?(Legion::LLM::Skills::Registry)
 
             skill = find_skill(name)
@@ -76,6 +81,7 @@ module Legion
                           })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_describe.call')
+            log.warn("SkillDescribe#call failed: #{e.message}")
             error_response("Failed to describe skill: #{e.message}")
           end
 
@@ -125,6 +131,7 @@ module Legion
           include Legion::Logging::Helper
 
           def call(name:, conversation_id: nil, initial_message: nil)
+            log.info('Starting legion.mcp.tools.skill_invoke.call')
             return error_response('Skills not available: legion-llm not loaded') unless defined?(Legion::LLM::Skills::Registry)
 
             skill = Legion::LLM::Skills::Registry.find(name)
@@ -134,15 +141,19 @@ module Legion
             invoke_skill(name, conv_id, initial_message)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_invoke.call')
+            log.warn("SkillInvoke#call failed: #{e.message}")
             error_response("Failed to invoke skill: #{e.message}")
           end
 
           private
 
           def invoke_skill(name, conv_id, initial_message)
-            unless defined?(Legion::LLM::ConversationStore) && defined?(Legion::LLM::Pipeline::Executor)
-              return text_response({ invoked: true, skill: name, conversation_id: conv_id,
-                                     note: 'pipeline not available — skill state queued' })
+            return error_response('ConversationStore not available — cannot invoke skill') unless defined?(Legion::LLM::ConversationStore)
+
+            unless defined?(Legion::LLM::Pipeline::Executor) && defined?(Legion::LLM::Pipeline::Request)
+              Legion::LLM::ConversationStore.set_skill_state(conv_id, skill_key: name, resume_at: 0)
+              return text_response({ invoked: false, skill: name, conversation_id: conv_id,
+                                     note: 'skill state queued — pipeline executor not available' })
             end
 
             Legion::LLM::ConversationStore.set_skill_state(conv_id, skill_key: name, resume_at: 0)
@@ -188,6 +199,7 @@ module Legion
           include Legion::Logging::Helper
 
           def call(conversation_id:)
+            log.info('Starting legion.mcp.tools.skill_cancel.call')
             return error_response('ConversationStore not available') unless defined?(Legion::LLM::ConversationStore)
 
             result = Legion::LLM::ConversationStore.cancel_skill!(conversation_id)
@@ -198,6 +210,7 @@ module Legion
             end
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_cancel.call')
+            log.warn("SkillCancel#call failed: #{e.message}")
             error_response("Failed to cancel skill: #{e.message}")
           end
 

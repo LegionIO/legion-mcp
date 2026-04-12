@@ -152,15 +152,28 @@ RSpec.describe 'MCP skill tools' do
       expect(data[:conversation_id]).to eq('conv_abc')
     end
 
-    it 'returns queued note when pipeline is unavailable' do
+    it 'returns error when ConversationStore is unavailable' do
       sc = skill_class
       allow(Legion::LLM::Skills::Registry).to receive(:find).with('superpowers:brainstorming').and_return(sc)
       response = described_class.call(name: 'superpowers:brainstorming', conversation_id: 'conv_abc')
       expect(response).to be_a(MCP::Tool::Response)
+      expect(response.error?).to be true
+      data = parse_response(response)
+      expect(data[:error]).to match(/ConversationStore not available/)
+    end
+
+    it 'returns queued note when ConversationStore exists but pipeline executor is unavailable' do
+      sc = skill_class
+      allow(Legion::LLM::Skills::Registry).to receive(:find).with('superpowers:brainstorming').and_return(sc)
+      stub_const('Legion::LLM::ConversationStore', Module.new do
+        def self.set_skill_state(_id, **); end
+      end)
+      response = described_class.call(name: 'superpowers:brainstorming', conversation_id: 'conv_abc')
+      expect(response).to be_a(MCP::Tool::Response)
       expect(response.error?).to be false
       data = parse_response(response)
-      expect(data[:invoked]).to be true
-      expect(data[:note]).to match(/pipeline not available/)
+      expect(data[:invoked]).to be false
+      expect(data[:note]).to match(/pipeline executor not available/)
     end
   end
 
