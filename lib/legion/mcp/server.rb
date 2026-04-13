@@ -31,7 +31,11 @@ module Legion
         Tools::StructuralIndexTool,
         Tools::ToolAudit,
         Tools::StateDiff,
-        Tools::SearchSessions
+        Tools::SearchSessions,
+        Tools::SkillList,
+        Tools::SkillDescribe,
+        Tools::SkillInvoke,
+        Tools::SkillCancel
       ].freeze
 
       @tool_registry = Concurrent::Array.new(MCP_SPECIFIC_TOOLS)

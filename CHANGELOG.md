@@ -1,5 +1,15 @@
 # legion-mcp Changelog
 
+## [0.8.0] - 2026-04-12
+
+### Added
+- `Tools::SkillList` (`legion.skill.list`) — MCP tool to list all skills registered in the Legion daemon with name, namespace, description, trigger words, and trigger type
+- `Tools::SkillDescribe` (`legion.skill.describe`) — MCP tool to get full detail for a named skill (`namespace:name` or bare `name`)
+- `Tools::SkillInvoke` (`legion.skill.invoke`) — MCP tool to invoke a skill by name with optional `conversation_id` context
+- `Tools::SkillCancel` (`legion.skill.cancel`) — MCP tool to cancel an active skill for a given conversation
+- All four skill tools registered in `MCP_SPECIFIC_TOOLS` (now 10 total)
+- `require_relative 'tools/skills'` added to `tools_loader.rb`
+
 ## [0.7.4] - 2026-04-06
 
 ### Changed
