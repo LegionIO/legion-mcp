@@ -122,6 +122,45 @@ RSpec.describe Legion::MCP::Tools::DoAction do
       end
     end
 
+    context 'when matched tool has required params but none are provided' do
+      let(:tool_requiring_params) do
+        klass = Class.new(::MCP::Tool) do
+          tool_name 'legion.stub_required_params'
+          description 'stub tool with required params'
+          input_schema(
+            properties: {
+              owner:       { type: 'string' },
+              repo:        { type: 'string' },
+              pull_number: { type: 'integer' }
+            },
+            required:   %w[owner repo pull_number]
+          )
+        end
+        allow(klass).to receive(:call).and_raise(ArgumentError, 'missing keywords: :owner, :repo, :pull_number')
+        klass
+      end
+
+      before do
+        allow(Legion::MCP::ContextCompiler).to receive(:match_tool).and_return(tool_requiring_params)
+      end
+
+      it 'returns an error response instead of propagating ArgumentError' do
+        response = described_class.call(intent: 'review pull request')
+        expect(response).to be_a(MCP::Tool::Response)
+        expect(response.error?).to be true
+      end
+
+      it 'includes the missing param names in the error message' do
+        response = described_class.call(intent: 'review pull request')
+        data = Legion::JSON.load(response.content.first[:text])
+        expect(data[:error]).to include('owner', 'repo', 'pull_number')
+      end
+
+      it 'does not raise ArgumentError to the caller' do
+        expect { described_class.call(intent: 'review pull request') }.not_to raise_error
+      end
+    end
+
     describe 'observer feedback' do
       before do
         Legion::MCP::Observer.reset!

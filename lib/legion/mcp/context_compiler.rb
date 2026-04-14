@@ -71,6 +71,10 @@ module Legion
           tools:   %w[legion.eval_list legion.eval_run legion.eval_results],
           summary: 'Evaluation management - list evaluators, run evaluations, view results.'
         },
+        skills:        {
+          tools:   %w[legion.skill.list legion.skill.describe legion.skill.invoke legion.skill.cancel],
+          summary: 'Skill management - list, describe, invoke, and cancel LLM skills.'
+        },
         meta:          {
           tools:   %w[legion.do legion.tools legion.plan_action legion.structural_index],
           summary: 'Meta-tools - natural language routing, tool discovery, planning, structural index.'
@@ -214,6 +218,8 @@ module Legion
         tool_index.values.to_h do |entry|
           haystack = "#{entry[:name].downcase} #{entry[:description].downcase}"
           score = keywords.count { |kw| haystack.include?(kw) }
+          name_terms = entry[:name].downcase.tr('.', ' ').split
+          score += (keywords & name_terms).length * 3
           [entry[:name], score]
         end
       end
