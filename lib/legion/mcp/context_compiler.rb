@@ -218,7 +218,7 @@ module Legion
         tool_index.values.to_h do |entry|
           haystack = "#{entry[:name].downcase} #{entry[:description].downcase}"
           score = keywords.count { |kw| haystack.include?(kw) }
-          name_terms = entry[:name].downcase.tr('.', ' ').split
+          name_terms = entry[:name].downcase.tr('._-', ' ').split
           score += (keywords & name_terms).length * 3
           [entry[:name], score]
         end
