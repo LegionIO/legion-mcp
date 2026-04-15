@@ -102,9 +102,33 @@ RSpec.describe Legion::MCP::ContextCompiler do
     end
   end
 
+  let(:stub_skill_list) do
+    Class.new(MCP::Tool) do
+      tool_name 'legion.skill.list'
+      description 'List all skills available in this Legion instance.'
+      input_schema(properties: {})
+    end
+  end
+
+  let(:stub_pr_reviewer) do
+    Class.new(MCP::Tool) do
+      tool_name 'legion-swarm_github-pull_request_reviewer-review_pull_request'
+      description 'swarm_github#review_pull_request'
+      input_schema(
+        properties: {
+          owner:       { type: 'string' },
+          repo:        { type: 'string' },
+          pull_number: { type: 'integer' }
+        },
+        required:   %w[owner repo pull_number]
+      )
+    end
+  end
+
   let(:stub_tool_classes) do
     [stub_run_task, stub_list_tasks, stub_get_task, stub_list_extensions,
-     stub_get_extension, stub_list_workers, stub_get_status, stub_rbac_check]
+     stub_get_extension, stub_list_workers, stub_get_status, stub_rbac_check,
+     stub_skill_list, stub_pr_reviewer]
   end
 
   before(:each) do
@@ -132,6 +156,19 @@ RSpec.describe Legion::MCP::ContextCompiler do
 
     it 'tasks category lists run_task' do
       expect(categories[:tasks][:tools]).to include('legion.run_task')
+    end
+
+    it 'contains a :skills category' do
+      expect(categories.keys).to include(:skills)
+    end
+
+    it 'skills category lists all four skill tools' do
+      expect(categories[:skills][:tools]).to include(
+        'legion.skill.list',
+        'legion.skill.describe',
+        'legion.skill.invoke',
+        'legion.skill.cancel'
+      )
     end
   end
 
@@ -260,6 +297,12 @@ RSpec.describe Legion::MCP::ContextCompiler do
     it 'returns nil when no keywords match' do
       result = described_class.match_tool('xyzzy florp quux')
       expect(result).to be_nil
+    end
+
+    it 'finds legion.skill.list for "list all skills", not the swarm-github pr reviewer' do
+      result = described_class.match_tool('list all skills')
+      expect(result).not_to be_nil
+      expect(result.tool_name).to eq('legion.skill.list')
     end
 
     it 'returns a class (not an instance)' do

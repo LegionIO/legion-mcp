@@ -1,5 +1,11 @@
 # legion-mcp Changelog
 
+## [0.8.1] - 2026-04-14
+
+### Fixed
+- `ContextCompiler::CATEGORIES` now includes a `:skills` category listing all four `legion.skill.*` tools (`legion.skill.list`, `legion.skill.describe`, `legion.skill.invoke`, `legion.skill.cancel`). Previously they were absent from `CATEGORIES` so `compressed_catalog` never surfaced them and `legion.do intent:"list all skills"` would misroute to an auto-discovered swarm-github runner, returning "missing keywords: :owner, :repo, :pull_number"
+- `ContextCompiler#keyword_score_map` now adds a +3 bonus per intent keyword that matches tool name terms (split on `.`), preventing semantic-score drift from lifting generic runner stubs above correctly-named skill tools when embeddings are active
+
 ## [0.8.0] - 2026-04-12
 
 ### Added
