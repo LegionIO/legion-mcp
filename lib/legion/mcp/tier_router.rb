@@ -53,6 +53,8 @@ module Legion
           return tier2_response('no matching pattern')
         end
 
+        # After semantic lookup, track against the matched pattern's hash, not the incoming intent hash
+        matched_hash = pattern[:intent_hash] || intent_hash
         confidence = pattern[:confidence] || 0.0
 
         if confidence < CONFIDENCE_TIER1
@@ -107,8 +109,8 @@ module Legion
 
           results = execute_tool_chain(pattern[:tool_chain], params, request_id: request_id)
           response = generate_response(results, pattern)
-          PatternStore.record_hit(intent_hash, request_id: request_id)
-          PatternStore.learn_response_template(intent_hash, results.first, request_id: request_id) if results.size == 1
+          PatternStore.record_hit(matched_hash, request_id: request_id)
+          PatternStore.learn_response_template(matched_hash, results.first, request_id: request_id) if results.size == 1
 
           elapsed_ms = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(2)
           LoggingSupport.info(
@@ -133,7 +135,7 @@ module Legion
             error:      e.message,
             tool_chain: Array(pattern[:tool_chain])
           )
-          PatternStore.record_miss(intent_hash, request_id: request_id)
+          PatternStore.record_miss(matched_hash, request_id: request_id)
           tier1_response(pattern, "tool chain failed: #{e.message}")
         end
       end

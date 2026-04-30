@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'shellwords'
 require_relative '../logging_support'
 
 module Legion
@@ -19,6 +20,8 @@ module Legion
           @tools_cache = nil
           @tools_cached_at = nil
           @connected = false
+          @mcp_client = nil
+          @mcp_transport = nil
           @mutex = Mutex.new
         end
 
@@ -44,6 +47,9 @@ module Legion
             else
               raise ArgumentError, "Unknown transport: #{@transport_type}"
             end
+
+            verify_connection!
+
             @connected = true
             LoggingSupport.info(
               'client.connect.complete',
@@ -59,8 +65,10 @@ module Legion
 
         def disconnect
           @mutex.synchronize do
-            @transport&.close if @transport.respond_to?(:close)
+            @mcp_transport&.close if @mcp_transport.respond_to?(:close)
             @connected = false
+            @mcp_client = nil
+            @mcp_transport = nil
             @tools_cache = nil
           end
         end
@@ -129,23 +137,76 @@ module Legion
         private
 
         def connect_stdio
-          @transport = { type: :stdio, command: @config[:command], pid: nil }
+          command = @config[:command]
+          raise ArgumentError, 'stdio transport requires a :command config key' unless command
+
+          parts = command.is_a?(Array) ? command : Shellwords.split(command)
+          cmd = parts.shift
+          @mcp_transport = ::MCP::Client::Stdio.new(command: cmd, args: parts)
+          @mcp_client = ::MCP::Client.new(transport: @mcp_transport)
         end
 
         def connect_http
-          @transport = { type: :http, url: @config[:url], auth: @config[:auth] }
+          url = @config[:url]
+          raise ArgumentError, 'http transport requires a :url config key' unless url
+
+          headers = @config[:headers] || {}
+          headers['Authorization'] ||= @config[:auth] if @config[:auth]
+
+          @mcp_transport = ::MCP::Client::HTTP.new(url: url, headers: headers)
+          @mcp_client = ::MCP::Client.new(transport: @mcp_transport)
+        end
+
+        # Verify the connection by requesting the tool list. This triggers
+        # the MCP initialize handshake on stdio transports and confirms the
+        # HTTP endpoint is reachable. The result seeds the tools cache.
+        def verify_connection!
+          raw_tools = @mcp_client.tools
+          @tools_cache = raw_tools.map do |tool|
+            {
+              name:         tool.name,
+              description:  tool.description,
+              input_schema: tool.input_schema
+            }
+          end
+          @tools_cached_at = Time.now
+        rescue ::MCP::Client::ServerError, ::MCP::Client::RequestHandlerError => e
+          raise ConnectionError, "MCP handshake failed for #{@name}: #{e.message}"
         end
 
         def fetch_tools
           connect unless connected?
-          []
+
+          raw_tools = @mcp_client.tools
+          raw_tools.map do |tool|
+            {
+              name:         tool.name,
+              description:  tool.description,
+              input_schema: tool.input_schema
+            }
+          end
+        rescue ::MCP::Client::ServerError, ::MCP::Client::RequestHandlerError => e
+          raise ConnectionError, "Failed to fetch tools from #{@name}: #{e.message}"
         end
 
-        def execute_tool_call(_name:, _arguments:)
+        def execute_tool_call(name:, arguments:)
           connect unless connected?
-          { content: [], error: false }
+
+          response = @mcp_client.call_tool(name: name, arguments: arguments)
+          result = response.is_a?(Hash) ? response['result'] || response : response
+
+          content = result.is_a?(Hash) ? result['content'] || result.fetch('content', []) : []
+          is_error = result.is_a?(Hash) ? result.fetch('isError', false) : false
+
+          { content: content, error: is_error }
+        rescue ::MCP::Client::ServerError => e
+          { content: [{ type: 'text', text: e.message }], error: true }
+        rescue ::MCP::Client::RequestHandlerError => e
+          raise ConnectionError, "Tool call failed on #{@name}: #{e.message}"
         end
       end
+
+      class ConnectionError < StandardError; end
     end
   end
 end
