@@ -153,11 +153,11 @@ RSpec.describe Legion::MCP::FunctionDiscovery do
   end
 
   describe '.settings_extensions_available?' do
-    it 'returns falsy when Settings::Extensions is not defined' do
+    it 'returns falsy when the Settings::Extensions registry has no tools' do
       expect(described_class.settings_extensions_available?).to be_falsey
     end
 
-    context 'when Settings::Extensions is defined' do
+    context 'when Settings::Extensions has tools registered' do
       let(:mock_extensions) do
         Module.new do
           def self.tools

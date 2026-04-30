@@ -34,7 +34,7 @@ RSpec.describe Legion::MCP::Resources::RunnerCatalog do
       end
     end
 
-    context 'when Settings::Extensions is not defined' do
+    context 'when Settings::Extensions has no runners registered' do
       before do
         allow(described_class).to receive(:data_connected?).and_return(false)
       end
@@ -69,7 +69,7 @@ RSpec.describe Legion::MCP::Resources::RunnerCatalog do
   end
 
   describe '#settings_extensions_runners_available? (private)' do
-    it 'returns falsy when Settings::Extensions is not defined' do
+    it 'returns falsy when the Settings::Extensions registry has no runners' do
       expect(described_class.send(:settings_extensions_runners_available?)).to be_falsey
     end
 

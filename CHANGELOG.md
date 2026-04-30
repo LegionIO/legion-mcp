@@ -6,7 +6,7 @@
 - `FunctionDiscovery.discover_and_register` now prefers reading tools from `Legion::Settings::Extensions` (the centralized registry in `legion-settings`) when available and populated, falling back to existing `Legion::Tools::Discovery` and runner-module discovery paths for backward compatibility
 - `ToolAdapter.from_registry_entry` builds MCP tool classes from registry entry hashes; delegates to `from_legion_tool` when the entry contains a loaded tool class, otherwise builds a thin metadata-driven adapter
 - `Resources::RunnerCatalog#catalog_json` reads from `Settings::Extensions.runners` when available, falling back to the existing `legion-data` database query path
-- Bumped `legion-settings` dependency floor to `>= 1.3.20` (requires `Settings::Extensions` module)
+- Bumped `legion-settings` dependency floor to `>= 1.4.0` (requires `Settings::Extensions` module)
 
 ### Added
 - `FunctionDiscovery.settings_extensions_available?` — guard method checking if `Settings::Extensions` is defined and populated
