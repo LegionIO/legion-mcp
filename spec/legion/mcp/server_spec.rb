@@ -8,7 +8,7 @@ RSpec.describe Legion::MCP::Server do
 
   before do
     allow(Legion::Settings).to receive(:dig).and_return(nil)
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+    allow(Legion::MCP::Server).to receive(:log).and_return(logger)
   end
 
   describe '.build' do

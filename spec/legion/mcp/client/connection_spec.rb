@@ -6,7 +6,7 @@ RSpec.describe Legion::MCP::Client::Connection do
   let(:logger) { spy('logger') }
 
   before do
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+    allow_any_instance_of(described_class).to receive(:log).and_return(logger)
   end
 
   describe '#initialize' do

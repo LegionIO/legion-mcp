@@ -8,7 +8,7 @@ RSpec.describe Legion::MCP::PatternStore do
 
   before do
     described_class.reset!
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+    allow(described_class).to receive(:log).and_return(logger)
   end
 
   describe '.store and .lookup' do

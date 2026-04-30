@@ -9,7 +9,6 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
   before do
     allow(Legion::Settings).to receive(:dig).and_return(nil)
     allow(described_class).to receive(:log).and_return(logger)
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
   end
 
   describe '.dispatch' do

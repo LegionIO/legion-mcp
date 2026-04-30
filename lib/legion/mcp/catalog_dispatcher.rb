@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'logging_support'
+require_relative 'utils'
 require_relative 'tool_adapter'
 
 module Legion
@@ -11,20 +11,9 @@ module Legion
       module_function
 
       def dispatch(runner_class:, function:, params:, source: :mcp) # rubocop:disable Metrics/MethodLength
-        LoggingSupport.info(
-          'catalog.dispatch.start',
-          runner_class: runner_class,
-          function:     function,
-          source:       source,
-          params:       LoggingSupport.summarize_params(params)
-        )
+        log.info("[mcp] catalog.dispatch.start #{Utils.format_fields(runner_class: runner_class, function: function, source: source, params: Utils.summarize_params(params))}")
         unless defined?(Legion::Ingress)
-          LoggingSupport.warn(
-            'catalog.dispatch.skipped',
-            runner_class: runner_class,
-            function:     function,
-            reason:       'ingress unavailable'
-          )
+          log.warn("[mcp] catalog.dispatch.skipped #{Utils.format_fields(runner_class: runner_class, function: function, reason: 'ingress unavailable')}")
           return nil
         end
 
@@ -36,13 +25,7 @@ module Legion
           check_subtask: true,
           generate_task: true
         )
-        LoggingSupport.info(
-          'catalog.dispatch.complete',
-          runner_class: runner_class,
-          function:     function,
-          source:       source,
-          result:       LoggingSupport.summarize_result(result)
-        )
+        log.info("[mcp] catalog.dispatch.complete #{Utils.format_fields(runner_class: runner_class, function: function, source: source, result: Utils.summarize_result(result))}")
         result
       end
 
@@ -71,13 +54,7 @@ module Legion
 
       def wire_dispatch(klass, runner_class_str, function_name, tool_name_val) # rubocop:disable Metrics/MethodLength
         klass.define_singleton_method(:call) do |**params| # rubocop:disable Metrics/BlockLength
-          LoggingSupport.info(
-            'catalog.tool_call.start',
-            tool_name:    tool_name_val,
-            runner_class: runner_class_str,
-            function:     function_name,
-            params:       LoggingSupport.summarize_params(params)
-          )
+          log.info("[mcp] catalog.tool_call.start #{Utils.format_fields(tool_name: tool_name_val, runner_class: runner_class_str, function: function_name, params: Utils.summarize_params(params))}")
           result = CatalogDispatcher.dispatch(
             runner_class: runner_class_str,
             function:     function_name,
@@ -90,24 +67,12 @@ module Legion
           else
             text = Legion::JSON.dump(result)
             response = ::MCP::Tool::Response.new([{ type: 'text', text: text }])
-            LoggingSupport.info(
-              'catalog.tool_call.complete',
-              tool_name:    tool_name_val,
-              runner_class: runner_class_str,
-              function:     function_name,
-              result:       LoggingSupport.summarize_result(response)
-            )
+            log.info("[mcp] catalog.tool_call.complete #{Utils.format_fields(tool_name: tool_name_val, runner_class: runner_class_str, function: function_name, result: Utils.summarize_result(response))}")
             response
           end
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.catalog_dispatcher.call')
-          LoggingSupport.warn(
-            'catalog.tool_call.failed',
-            tool_name:    tool_name_val,
-            runner_class: runner_class_str,
-            function:     function_name,
-            error:        e.message
-          )
+          log.warn("[mcp] catalog.tool_call.failed #{Utils.format_fields(tool_name: tool_name_val, runner_class: runner_class_str, function: function_name, error: e.message)}")
           text = Legion::JSON.dump({ error: e.message })
           ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: true)
         end

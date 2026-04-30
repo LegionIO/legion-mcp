@@ -2,7 +2,6 @@
 
 require 'concurrent-ruby'
 require 'digest'
-require_relative 'logging_support'
 
 module Legion
   module MCP
@@ -173,7 +172,7 @@ module Legion
         embedder.call(text)
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.observer.try_embed')
-        LoggingSupport.debug('observer.embed.failed', error: e.message)
+        log.debug("[mcp] observer.embed.failed #{Utils.format_fields(error: e.message)}")
         nil
       end
     end

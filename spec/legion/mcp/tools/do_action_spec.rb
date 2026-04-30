@@ -20,7 +20,9 @@ RSpec.describe Legion::MCP::Tools::DoAction do
 
   describe '.call' do
     before do
-      allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+      allow(Legion::MCP::Tools::DoAction).to receive(:log).and_return(logger)
+      allow(Legion::MCP::TierRouter).to receive(:log).and_return(logger) if defined?(Legion::MCP::TierRouter)
+      allow(Legion::MCP::PatternStore).to receive(:log).and_return(logger) if defined?(Legion::MCP::PatternStore)
     end
 
     context 'when no matching tool is found' do

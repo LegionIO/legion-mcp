@@ -1,25 +1,11 @@
 # frozen_string_literal: true
 
-require 'legion/logging'
-
 module Legion
   module MCP
-    module LoggingSupport
-      extend Legion::Logging::Helper
-
+    # Lightweight summarization and formatting helpers extracted from
+    # LoggingSupport.  These are pure functions — no logger dependency.
+    module Utils
       module_function
-
-      def info(event, **fields)
-        emit(:info, event, **fields)
-      end
-
-      def warn(event, **fields)
-        emit(:warn, event, **fields)
-      end
-
-      def debug(event, **fields)
-        emit(:debug, event, **fields)
-      end
 
       def request_id_from(*sources)
         sources.compact.each do |source|
@@ -95,18 +81,6 @@ module Legion
         else
           summarize_value(identity)
         end
-      end
-
-      def emit(level, event, **fields)
-        message = "[mcp] #{event}"
-        formatted = format_fields(fields)
-        message = "#{message} #{formatted}" unless formatted.empty?
-        logger = log
-        return unless logger.respond_to?(level)
-
-        logger.public_send(level, message)
-      rescue StandardError
-        nil
       end
 
       def format_fields(fields)

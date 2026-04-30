@@ -12,7 +12,8 @@ RSpec.describe Legion::MCP::TierRouter do
   before do
     Legion::MCP::PatternStore.reset!
     Legion::MCP::ContextGuard.reset!
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+    allow(Legion::MCP::TierRouter).to receive(:log).and_return(logger)
+    allow(Legion::MCP::PatternStore).to receive(:log).and_return(logger)
   end
 
   describe '.route' do

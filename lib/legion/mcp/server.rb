@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'observer'
-require_relative 'logging_support'
+require_relative 'utils'
 require_relative 'usage_filter'
 require_relative 'tools_loader'
 require_relative 'tool_adapter'
@@ -23,6 +23,8 @@ require_relative 'resources/extension_info'
 module Legion
   module MCP
     module Server
+      extend Legion::Logging::Helper
+
       # MCP-specific tools not owned by any extension.
       # All extension-owned tools are discovered via Legion::Settings::Extensions.
       MCP_SPECIFIC_TOOLS = [
@@ -59,11 +61,7 @@ module Legion
 
             tool_registry << tool_class
             reset_caches!
-            LoggingSupport.info(
-              'server.tool.registered',
-              tool_name:     tool_class.tool_name,
-              registry_size: tool_registry.size
-            )
+            log.info("[mcp] server.tool.registered #{Utils.format_fields(tool_name: tool_class.tool_name, registry_size: tool_registry.size)}")
           end
         end
 
@@ -71,11 +69,7 @@ module Legion
           @tool_registry_lock.synchronize do
             tool_registry.reject! { |tc| tc.tool_name == tool_name }
             reset_caches!
-            LoggingSupport.info(
-              'server.tool.unregistered',
-              tool_name:     tool_name,
-              registry_size: tool_registry.size
-            )
+            log.info("[mcp] server.tool.unregistered #{Utils.format_fields(tool_name: tool_name, registry_size: tool_registry.size)}")
           end
         end
 
@@ -89,12 +83,7 @@ module Legion
           rebuild_tool_registry
           @current_identity = identity
 
-          LoggingSupport.info(
-            'server.build.start',
-            identity:      LoggingSupport.summarize_identity(identity),
-            registry_size: tool_registry.size,
-            governance:    ToolGovernance.governance_enabled?
-          )
+          log.info("[mcp] server.build.start #{Utils.format_fields(identity: Utils.summarize_identity(identity), registry_size: tool_registry.size, governance: ToolGovernance.governance_enabled?)}")
           tools = ToolGovernance.filter_tools(tool_registry.dup, identity)
 
           server = ::MCP::Server.new(
@@ -124,13 +113,7 @@ module Legion
 
           hydrate_override_confidence
 
-          LoggingSupport.info(
-            'server.build.complete',
-            identity:       LoggingSupport.summarize_identity(identity),
-            tool_count:     tools.size,
-            registry_size:  tool_registry.size,
-            resource_count: server.resources.size
-          )
+          log.info("[mcp] server.build.complete #{Utils.format_fields(identity: Utils.summarize_identity(identity), tool_count: tools.size, registry_size: tool_registry.size, resource_count: server.resources.size)}")
           server
         end
 
@@ -139,29 +122,18 @@ module Legion
 
           tool_data = ContextCompiler.tool_index.values
           EmbeddingIndex.build_from_tool_data(tool_data, embedder: embedder)
-          LoggingSupport.info(
-            'server.embedding_index.populated',
-            tool_count: tool_data.size
-          )
+          log.info("[mcp] server.embedding_index.populated #{Utils.format_fields(tool_count: tool_data.size)}")
         end
 
-        def wire_observer(data)
+        def wire_observer(data) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
           return unless data[:method] == 'tools/call' && data[:tool_name]
 
           duration_ms = (data[:duration].to_f * 1000).to_i
           params_keys = data[:tool_arguments].respond_to?(:keys) ? data[:tool_arguments].keys : []
           success     = data[:error].nil?
-          request_id  = LoggingSupport.request_id_from(data[:tool_arguments])
+          request_id  = Utils.request_id_from(data[:tool_arguments])
 
-          LoggingSupport.info(
-            'server.tool_call.complete',
-            request_id:  request_id,
-            tool_name:   data[:tool_name],
-            success:     success,
-            duration_ms: duration_ms,
-            params_keys: params_keys,
-            error:       data[:error]
-          )
+          log.info("[mcp] server.tool_call.complete #{Utils.format_fields(request_id: request_id, tool_name: data[:tool_name], success: success, duration_ms: duration_ms, params_keys: params_keys, error: data[:error])}")
 
           Observer.record(
             tool_name:   data[:tool_name],
@@ -255,11 +227,7 @@ module Legion
 
           handlers[::MCP::Methods::TOOLS_LIST] = lambda { |_request|
             tool_list = DeferredRegistry.build_tools_list(build_filtered_tool_list)
-            LoggingSupport.info(
-              'server.tools.list',
-              total:         tool_list.size,
-              deferred_only: tool_list.count { |entry| !entry.key?(:inputSchema) && !entry.key?(:input_schema) }
-            )
+            log.info("[mcp] server.tools.list #{Utils.format_fields(total: tool_list.size, deferred_only: tool_list.count { |entry| !entry.key?(:inputSchema) && !entry.key?(:input_schema) })}")
             tool_list
           }
         end

@@ -3,7 +3,7 @@
 require 'digest'
 require_relative 'pattern_store'
 require_relative 'context_guard'
-require_relative 'logging_support'
+require_relative 'utils'
 
 module Legion
   module MCP
@@ -19,16 +19,9 @@ module Legion
         start_time = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
         normalized = normalize_intent(intent)
         intent_hash = Digest::SHA256.hexdigest(normalized)
-        request_id = LoggingSupport.request_id_from(context, params) || "route_#{intent_hash[0, 8]}"
+        request_id = Utils.request_id_from(context, params) || "route_#{intent_hash[0, 8]}"
 
-        LoggingSupport.info(
-          'tier_router.start',
-          request_id:   request_id,
-          intent_hash:  intent_hash[0, 12],
-          intent:       LoggingSupport.summarize_text(intent),
-          params:       LoggingSupport.summarize_params(params),
-          context_keys: context.respond_to?(:keys) ? context.keys.map(&:to_s) : []
-        )
+        log.info("[mcp] tier_router.start #{Utils.format_fields(request_id: request_id, intent_hash: intent_hash[0, 12], intent: Utils.summarize_text(intent), params: Utils.summarize_params(params), context_keys: context.respond_to?(:keys) ? context.keys.map(&:to_s) : [])}")
 
         ContextGuard.record_request(intent_hash)
 
@@ -40,16 +33,10 @@ module Legion
           lookup_source = pattern ? :semantic : :miss
         end
 
-        LoggingSupport.info(
-          'tier_router.lookup',
-          request_id: request_id,
-          source:     lookup_source,
-          confidence: pattern&.dig(:confidence)&.round(3),
-          tool_chain: Array(pattern&.dig(:tool_chain))
-        )
+        log.info("[mcp] tier_router.lookup #{Utils.format_fields(request_id: request_id, source: lookup_source, confidence: pattern&.dig(:confidence)&.round(3), tool_chain: Array(pattern&.dig(:tool_chain)))}")
 
         unless pattern
-          LoggingSupport.info('tier_router.decision', request_id: request_id, tier: 2, reason: 'no matching pattern')
+          log.info("[mcp] tier_router.decision #{Utils.format_fields(request_id: request_id, tier: 2, reason: 'no matching pattern')}")
           return tier2_response('no matching pattern')
         end
 
@@ -58,54 +45,24 @@ module Legion
         confidence = pattern[:confidence] || 0.0
 
         if confidence < CONFIDENCE_TIER1
-          LoggingSupport.info(
-            'tier_router.decision',
-            request_id: request_id,
-            tier:       2,
-            reason:     'low confidence',
-            confidence: confidence.round(3),
-            tool_chain: Array(pattern[:tool_chain])
-          )
+          log.info("[mcp] tier_router.decision #{Utils.format_fields(request_id: request_id, tier: 2, reason: 'low confidence', confidence: confidence.round(3), tool_chain: Array(pattern[:tool_chain]))}")
           return tier2_response('low confidence')
         end
 
         if confidence < CONFIDENCE_TIER0
-          LoggingSupport.info(
-            'tier_router.decision',
-            request_id: request_id,
-            tier:       1,
-            reason:     'confidence below tier 0 threshold',
-            confidence: confidence.round(3),
-            tool_chain: Array(pattern[:tool_chain])
-          )
+          log.info("[mcp] tier_router.decision #{Utils.format_fields(request_id: request_id, tier: 1, reason: 'confidence below tier 0 threshold', confidence: confidence.round(3), tool_chain: Array(pattern[:tool_chain]))}")
           return tier1_response(pattern, 'confidence below tier 0 threshold')
         end
 
         guard_result = ContextGuard.check(pattern, params, context)
-        LoggingSupport.info(
-          'tier_router.guard',
-          request_id: request_id,
-          passed:     guard_result[:passed],
-          reason:     guard_result[:reason]
-        )
+        log.info("[mcp] tier_router.guard #{Utils.format_fields(request_id: request_id, passed: guard_result[:passed], reason: guard_result[:reason])}")
         unless guard_result[:passed]
-          LoggingSupport.info(
-            'tier_router.decision',
-            request_id: request_id,
-            tier:       1,
-            reason:     guard_result[:reason],
-            confidence: confidence.round(3)
-          )
+          log.info("[mcp] tier_router.decision #{Utils.format_fields(request_id: request_id, tier: 1, reason: guard_result[:reason], confidence: confidence.round(3))}")
           return tier1_response(pattern, guard_result[:reason])
         end
 
         begin
-          LoggingSupport.info(
-            'tier_router.execute',
-            request_id: request_id,
-            tool_chain: Array(pattern[:tool_chain]),
-            params:     LoggingSupport.summarize_params(params)
-          )
+          log.info("[mcp] tier_router.execute #{Utils.format_fields(request_id: request_id, tool_chain: Array(pattern[:tool_chain]), params: Utils.summarize_params(params))}")
 
           results = execute_tool_chain(pattern[:tool_chain], params, request_id: request_id)
           response = generate_response(results, pattern)
@@ -113,14 +70,7 @@ module Legion
           PatternStore.learn_response_template(matched_hash, results.first, request_id: request_id) if results.size == 1
 
           elapsed_ms = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(2)
-          LoggingSupport.info(
-            'tier_router.complete',
-            request_id: request_id,
-            tier:       0,
-            latency_ms: elapsed_ms,
-            confidence: pattern[:confidence]&.round(3),
-            response:   LoggingSupport.summarize_result(response)
-          )
+          log.info("[mcp] tier_router.complete #{Utils.format_fields(request_id: request_id, tier: 0, latency_ms: elapsed_ms, confidence: pattern[:confidence]&.round(3), response: Utils.summarize_result(response))}")
           {
             tier:               0,
             response:           response,
@@ -129,12 +79,7 @@ module Legion
           }
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.tier_router.route')
-          LoggingSupport.warn(
-            'tier_router.execute.failed',
-            request_id: request_id,
-            error:      e.message,
-            tool_chain: Array(pattern[:tool_chain])
-          )
+          log.warn("[mcp] tier_router.execute.failed #{Utils.format_fields(request_id: request_id, error: e.message, tool_chain: Array(pattern[:tool_chain]))}")
           PatternStore.record_miss(matched_hash, request_id: request_id)
           tier1_response(pattern, "tool chain failed: #{e.message}")
         end
@@ -149,12 +94,7 @@ module Legion
           tool_class = find_tool_class(tool_name)
           raise ArgumentError, "unknown tool: #{tool_name}" unless tool_class
 
-          LoggingSupport.info(
-            'tier_router.tool_call.start',
-            request_id: request_id,
-            tool_name:  tool_name,
-            params:     LoggingSupport.summarize_params(params)
-          )
+          log.info("[mcp] tier_router.tool_call.start #{Utils.format_fields(request_id: request_id, tool_name: tool_name, params: Utils.summarize_params(params))}")
 
           result = if params.empty?
                      tool_class.call
@@ -162,22 +102,12 @@ module Legion
                      tool_class.call(**params.transform_keys(&:to_sym))
                    end
 
-          LoggingSupport.info(
-            'tier_router.tool_call.complete',
-            request_id: request_id,
-            tool_name:  tool_name,
-            result:     LoggingSupport.summarize_result(result)
-          )
+          log.info("[mcp] tier_router.tool_call.complete #{Utils.format_fields(request_id: request_id, tool_name: tool_name, result: Utils.summarize_result(result))}")
 
           result
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.tier_router.execute_tool_chain')
-          LoggingSupport.warn(
-            'tier_router.tool_call.failed',
-            request_id: request_id,
-            tool_name:  tool_name,
-            error:      e.message
-          )
+          log.warn("[mcp] tier_router.tool_call.failed #{Utils.format_fields(request_id: request_id, tool_name: tool_name, error: e.message)}")
           raise
         end
       end
@@ -211,7 +141,7 @@ module Legion
         PatternStore.lookup_semantic(intent_vector, request_id: request_id)
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.tier_router.try_semantic_lookup')
-        LoggingSupport.debug('tier_router.semantic_lookup.failed', request_id: request_id, error: e.message)
+        log.debug("[mcp] tier_router.semantic_lookup.failed #{Utils.format_fields(request_id: request_id, error: e.message)}")
         nil
       end
 

@@ -14,7 +14,9 @@ RSpec.describe 'Tier 0 pattern learning and promotion accounting' do
     Legion::MCP::PatternStore.reset!
     Legion::MCP::ContextGuard.reset!
     Legion::MCP::Observer.reset!
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+    allow(Legion::MCP::TierRouter).to receive(:log).and_return(logger)
+    allow(Legion::MCP::PatternStore).to receive(:log).and_return(logger)
+    allow(Legion::MCP::Observer).to receive(:log).and_return(logger)
   end
 
   # ---------------------------------------------------------------------------
