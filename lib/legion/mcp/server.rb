@@ -47,16 +47,7 @@ module Legion
         def rebuild_tool_registry
           @tool_registry_lock.synchronize do
             @tool_registry = Concurrent::Array.new(MCP_SPECIFIC_TOOLS)
-
-            if defined?(Legion::Tools::Registry) && Legion::Tools::Registry.respond_to?(:all_tools)
-              Legion::Tools::Registry.all_tools.each do |legion_tool_class|
-                next if @tool_registry.any? { |tc| tc.tool_name == legion_tool_class.tool_name }
-
-                adapted = ToolAdapter.from_legion_tool(legion_tool_class)
-                @tool_registry << adapted
-              end
-            end
-
+            load_extension_tools
             DeferredRegistry.reset_cache! if defined?(DeferredRegistry) && DeferredRegistry.respond_to?(:reset_cache!)
             reset_caches!
           end
@@ -209,6 +200,38 @@ module Legion
         end
 
         private
+
+        def load_extension_tools
+          if settings_extensions_available?
+            load_tools_from_settings_extensions
+          elsif defined?(Legion::Tools::Registry) && Legion::Tools::Registry.respond_to?(:all_tools)
+            load_tools_from_legacy_registry
+          end
+        end
+
+        def settings_extensions_available?
+          defined?(Legion::Settings::Extensions) &&
+            Legion::Settings::Extensions.respond_to?(:tools) &&
+            Legion::Settings::Extensions.tools.any?
+        end
+
+        def load_tools_from_settings_extensions
+          Legion::Settings::Extensions.tools.each do |tool_entry|
+            next if @tool_registry.any? { |tc| tc.tool_name == tool_entry[:name] }
+
+            adapter = ToolAdapter.from_registry_entry(tool_entry)
+            @tool_registry << adapter if adapter
+          end
+        end
+
+        def load_tools_from_legacy_registry
+          Legion::Tools::Registry.all_tools.each do |legion_tool_class|
+            next if @tool_registry.any? { |tc| tc.tool_name == legion_tool_class.tool_name }
+
+            adapted = ToolAdapter.from_legion_tool(legion_tool_class)
+            @tool_registry << adapted
+          end
+        end
 
         def run_function_discovery
           FunctionDiscovery.reset_discovery!
