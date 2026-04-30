@@ -113,6 +113,7 @@ module Legion
           end
 
           install_deferred_tools_list_handler(server)
+          register_mcp_tools_in_settings_extensions
 
           PatternStore.hydrate_from_l2 if defined?(PatternStore)
           ColdStart.load_community_patterns if defined?(ColdStart)
@@ -201,6 +202,22 @@ module Legion
 
         def load_extension_tools
           load_tools_from_settings_extensions if settings_extensions_available?
+        end
+
+        def register_mcp_tools_in_settings_extensions
+          return unless defined?(Legion::Settings::Extensions) && Legion::Settings::Extensions.respond_to?(:register_tool)
+
+          MCP_SPECIFIC_TOOLS.each do |tool_class|
+            Legion::Settings::Extensions.register_tool(tool_class.tool_name, {
+              description:   tool_class.description,
+              input_schema:  tool_class.input_schema,
+              tool_class:    tool_class,
+              dispatch_type: :class_call,
+              extension:     'legion-mcp',
+              source:        :mcp_builtin,
+              mcp_tier:      tool_class.respond_to?(:mcp_tier) ? tool_class.mcp_tier : nil
+            })
+          end
         end
 
         def settings_extensions_available?
