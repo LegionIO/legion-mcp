@@ -14,7 +14,7 @@ module Legion
       module_function
 
       def announce(pattern)
-        log.info('Starting legion.mcp.pattern_gossip.announce')
+        log.debug("[mcp][pattern_gossip] action=announce transport_available=#{transport_available?}")
         return nil unless transport_available?
 
         exported = PatternSchema.export(pattern)
@@ -40,7 +40,7 @@ module Legion
       end
 
       def receive(message)
-        log.info('Starting legion.mcp.pattern_gossip.receive')
+        log.debug("[mcp][pattern_gossip] action=receive valid=#{message.is_a?(Hash) && message.key?(:pattern)}")
         return nil unless message.is_a?(Hash) && message[:pattern]
 
         PatternSchema.import(message[:pattern], trust_level: :org)

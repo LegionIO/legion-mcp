@@ -8,7 +8,7 @@ module Legion
       module_function
 
       def boot
-        log.info('Starting legion.mcp.client.boot')
+        log.debug('[mcp][client] action=boot')
         servers = begin
           Legion::Settings.dig(:mcp, :servers)
         rescue StandardError => e
@@ -22,6 +22,7 @@ module Legion
       end
 
       def shutdown
+        log.debug('[mcp][client] action=shutdown')
         Pool.reset!
         ServerRegistry.reset!
       end

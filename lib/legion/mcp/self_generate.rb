@@ -18,7 +18,7 @@ module Legion
       end
 
       def run_cycle
-        log.info('Starting legion.mcp.self_generate.run_cycle')
+        log.debug("[mcp][self_generate] action=run_cycle enabled=#{enabled?} in_cooldown=#{in_cooldown?}")
         return { success: false, reason: :disabled } unless enabled?
         return { success: false, reason: :cooldown } if in_cooldown?
 
@@ -56,6 +56,8 @@ module Legion
       def publish_gap(gap)
         return false unless defined?(Legion::Transport::Messages::Dynamic)
 
+        log.debug("[mcp][self_generate] action=publish_gap gap_id=#{gap[:id]} type=#{gap[:type]}")
+
         Legion::Transport::Messages::Dynamic.new(
           function: 'codegen.gap.detected',
           data:     {
@@ -76,7 +78,7 @@ module Legion
       end
 
       def status
-        log.info('Starting legion.mcp.self_generate.status')
+        log.debug("[mcp][self_generate] action=status enabled=#{enabled?}")
         {
           last_cycle_at:      last_cycle_at,
           total_cycles:       cycle_count,

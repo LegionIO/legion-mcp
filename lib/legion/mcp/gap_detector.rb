@@ -5,6 +5,8 @@ require 'digest'
 module Legion
   module MCP
     module GapDetector
+      extend Legion::Logging::Helper
+
       GAP_INTENT_THRESHOLD = 5
       FAILURE_RATE_THRESHOLD = 0.4
       STALE_CANDIDATE_HOURS = 24
@@ -13,12 +15,15 @@ module Legion
       module_function
 
       def detect_gaps
+        log.debug('[mcp][gap_detector] action=detect_gaps')
         gaps = []
         gaps.concat(detect_unmatched_intents)
         gaps.concat(detect_high_failure_tools)
         gaps.concat(detect_stale_candidates)
 
-        gaps.uniq { |g| g[:id] }.first(MAX_GAPS)
+        result = gaps.uniq { |g| g[:id] }.first(MAX_GAPS)
+        log.debug("[mcp][gap_detector] action=detect_gaps.complete total=#{result.size}")
+        result
       end
 
       def detect_unmatched_intents

@@ -14,6 +14,8 @@ module Legion
       def publish_confirmation(tool:, lex:, confidence:, tests:)
         return unless defined?(Legion::Transport::Messages::Dynamic)
 
+        log.debug("[mcp][override] action=publish_confirmation tool=#{tool} lex=#{lex} confidence=#{confidence}")
+
         node_id = begin
           Legion::Settings.dig(:node, :id)
         rescue StandardError => e
@@ -36,6 +38,8 @@ module Legion
 
       def receive_confirmation(tool:, lex:, confidence:, tests:, node:)
         return unless defined?(Legion::LLM::OverrideConfidence)
+
+        log.debug("[mcp][override] action=receive_confirmation tool=#{tool} node=#{node} confidence=#{confidence}")
 
         existing = Legion::LLM::OverrideConfidence.lookup(tool)
 

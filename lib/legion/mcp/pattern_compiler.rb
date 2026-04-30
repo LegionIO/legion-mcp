@@ -10,6 +10,8 @@ module Legion
       def compile_tool_definitions
         return [] unless defined?(Legion::MCP::Server)
 
+        log.debug("[mcp][pattern_compiler] action=compile_tool_definitions " \
+                  "registry_size=#{Legion::MCP::Server.tool_registry.size}")
         Legion::MCP::Server.tool_registry.map do |klass|
           name = klass.respond_to?(:tool_name) ? klass.tool_name : klass.name
           desc = klass.respond_to?(:description) ? klass.description : ''
@@ -21,6 +23,7 @@ module Legion
       end
 
       def compile_workflows
+        log.debug("[mcp][pattern_compiler] action=compile_workflows patterns=#{PatternStore.size}")
         PatternStore.patterns.filter_map do |_hash, pattern|
           next if (pattern[:confidence] || 0) < 0.6
 

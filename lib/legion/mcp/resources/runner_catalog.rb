@@ -15,7 +15,7 @@ module Legion
           include Legion::Logging::Helper
 
           def register(server)
-            log.info('Starting legion.mcp.resources.runner_catalog.register')
+            log.debug('[mcp][runner_catalog] action=register')
             server.resources << RESOURCE
 
             server.resources_read_handler do |params|

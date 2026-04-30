@@ -243,6 +243,7 @@ module Legion
       end
 
       def decay_all(factor: 0.998)
+        log.debug("[mcp][pattern_store] action=decay_all factor=#{factor} patterns=#{size}")
         archived = []
         mutex.synchronize do
           patterns_l0.each do |hash, pattern|
@@ -257,6 +258,7 @@ module Legion
           evict_l1(hash)
         end
         sync_all_to_persistence
+        log.debug("[mcp][pattern_store] action=decay_all.complete archived=#{archived.size} remaining=#{size}")
       end
 
       def hydrate_from_l2

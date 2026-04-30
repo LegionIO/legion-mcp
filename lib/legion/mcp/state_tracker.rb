@@ -10,7 +10,7 @@ module Legion
       module_function
 
       def snapshot
-        log.info('Starting legion.mcp.state_tracker.snapshot')
+        log.debug('[mcp][state_tracker] action=snapshot')
         state = collect_state
         timestamp = Time.now.floor
 
@@ -23,7 +23,7 @@ module Legion
       end
 
       def diff(since:)
-        log.info('Starting legion.mcp.state_tracker.diff')
+        log.debug("[mcp][state_tracker] action=diff since=#{since}")
         since_time = parse_time(since)
         return { error: 'invalid timestamp' } unless since_time
 

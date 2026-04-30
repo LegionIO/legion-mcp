@@ -12,11 +12,15 @@ module Legion
       module_function
 
       def build
-        {
+        log.debug('[mcp][structural_index] action=build')
+        result = {
           extensions:   scan_extensions,
           tools:        scan_tools,
           generated_at: Time.now.iso8601
         }
+        log.debug("[mcp][structural_index] action=build.complete " \
+                  "extensions=#{result[:extensions].size} tools=#{result[:tools].size}")
+        result
       end
 
       def scan_extensions
@@ -98,6 +102,7 @@ module Legion
 
       def save_cache(index = nil)
         index ||= build
+        log.debug("[mcp][structural_index] action=save_cache path=#{CACHE_PATH}")
         dir = File.dirname(CACHE_PATH)
         FileUtils.mkdir_p(dir) unless File.directory?(dir)
         File.write(CACHE_PATH, Legion::JSON.dump(index))

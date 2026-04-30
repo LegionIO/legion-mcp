@@ -20,6 +20,7 @@ module Legion
       end
 
       def import_all(patterns, trust_level: :community)
+        log.debug("[mcp][pattern_exchange] action=import_all count=#{Array(patterns).size} trust_level=#{trust_level}")
         imported = 0
         skipped = 0
 
@@ -40,13 +41,14 @@ module Legion
       end
 
       def export_to_file(path, min_confidence: 0.5)
+        log.debug("[mcp][pattern_exchange] action=export_to_file path=#{path} min_confidence=#{min_confidence}")
         data = export_all(min_confidence: min_confidence)
         File.write(path, ::JSON.pretty_generate(data))
         { exported: data.size, path: path }
       end
 
       def import_from_file(path, trust_level: :community)
-        log.info('Starting legion.mcp.pattern_exchange.import_from_file')
+        log.debug("[mcp][pattern_exchange] action=import_from_file path=#{path} trust_level=#{trust_level}")
         raw = File.read(path)
         patterns = ::JSON.parse(raw, symbolize_names: true)
         patterns = [patterns] if patterns.is_a?(Hash)

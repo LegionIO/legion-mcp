@@ -27,8 +27,8 @@ module Legion
           end
 
           def read(uri)
-            log.info('Starting legion.mcp.resources.extension_info.read')
             name = uri.sub('legion://extensions/', '')
+            log.debug("[mcp][extension_info] action=read name=#{name}")
             return [] if name.empty?
 
             unless data_connected?

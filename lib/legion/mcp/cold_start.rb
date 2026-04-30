@@ -11,11 +11,13 @@ module Legion
       module_function
 
       def load_community_patterns(path: nil)
-        log.info('Starting legion.mcp.cold_start.load_community_patterns')
+        log.debug("[mcp][cold_start] action=load_community_patterns store_empty=#{PatternStore.empty?}")
         return { skipped: true, reason: 'store not empty' } unless PatternStore.empty?
 
         path ||= configured_path
         return { skipped: true, reason: 'no path configured' } unless path
+
+        log.debug("[mcp][cold_start] action=load_community_patterns path=#{path}")
 
         PatternExchange.import_from_file(path, trust_level: :community)
       rescue StandardError => e

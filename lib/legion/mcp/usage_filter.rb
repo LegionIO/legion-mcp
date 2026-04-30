@@ -3,6 +3,8 @@
 module Legion
   module MCP
     module UsageFilter
+      extend Legion::Logging::Helper
+
       ESSENTIAL_TOOLS = %w[
         legion.do legion.tools legion.run_task legion.get_status legion.describe_runner
       ].freeze
@@ -46,7 +48,10 @@ module Legion
       def ranked_tools(tool_names, limit: nil, keywords: [])
         scores = score_tools(tool_names, keywords: keywords)
         ranked = tool_names.sort_by { |n| -scores.fetch(n, BASELINE_SCORE) }
-        limit ? ranked.first(limit) : ranked
+        result = limit ? ranked.first(limit) : ranked
+        log.debug("[mcp][usage_filter] action=ranked_tools input=#{tool_names.size} " \
+                  "output=#{result.size} keywords=#{keywords.size}")
+        result
       end
 
       def prune_dead_tools(tool_names, prune_after_seconds: 86_400 * 30)

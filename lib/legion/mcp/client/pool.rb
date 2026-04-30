@@ -13,18 +13,27 @@ module Legion
 
         def connection_for(server_name)
           @mutex.synchronize do
-            return @connections[server_name] if @connections.key?(server_name)
+            if @connections.key?(server_name)
+              log.debug("[mcp][pool] action=connection_for server=#{server_name} cached=true")
+              return @connections[server_name]
+            end
 
             config = ServerRegistry.servers[server_name]
-            return nil unless config
+            unless config
+              log.debug("[mcp][pool] action=connection_for server=#{server_name} found=false")
+              return nil
+            end
 
+            log.debug("[mcp][pool] action=connection_for server=#{server_name} creating=true")
             conn = Connection.new(name: server_name, **config.except(:registered_at, :source))
             @connections[server_name] = conn
           end
         end
 
         def all_tools
-          ServerRegistry.healthy_servers.flat_map do |name, _config|
+          healthy = ServerRegistry.healthy_servers
+          log.debug("[mcp][pool] action=all_tools healthy_servers=#{healthy.size}")
+          healthy.flat_map do |name, _config|
             conn = connection_for(name)
             next [] unless conn
 
@@ -54,6 +63,7 @@ module Legion
         end
 
         def refresh_tools!
+          log.debug("[mcp][pool] action=refresh_tools connections=#{@connections.size}")
           @mutex.synchronize do
             @connections.each_value do |conn|
               conn.tools(force_refresh: true)
@@ -65,6 +75,7 @@ module Legion
         end
 
         def reset!
+          log.debug("[mcp][pool] action=reset connections=#{@connections.size}")
           @mutex.synchronize do
             @connections.each_value do |connection|
               connection.disconnect

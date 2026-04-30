@@ -3,6 +3,8 @@
 module Legion
   module MCP
     module DeferredRegistry
+      extend Legion::Logging::Helper
+
       # Tools that are ALWAYS fully loaded (never deferred).
       # These are high-frequency entry points or meta-tools.
       ALWAYS_LOADED = %w[
@@ -60,22 +62,30 @@ module Legion
       end
 
       def build_tools_list(tool_classes)
-        tool_classes.map do |tc|
+        deferred_count = 0
+        result = tool_classes.map do |tc|
           if deferred?(tc)
+            deferred_count += 1
             deferred_entry(tc)
           else
             full_entry(tc)
           end
         end
+        log.debug("[mcp][deferred] action=build_tools_list total=#{result.size} " \
+                  "deferred=#{deferred_count} full=#{result.size - deferred_count}")
+        result
       end
 
       def resolve_schemas(tool_names, tool_classes)
-        tool_names.filter_map do |name|
+        log.debug("[mcp][deferred] action=resolve_schemas requested=#{tool_names.size}")
+        result = tool_names.filter_map do |name|
           tc = tool_classes.find { |klass| klass.tool_name == name }
           next unless tc
 
           tc.to_h
         end
+        log.debug("[mcp][deferred] action=resolve_schemas.complete resolved=#{result.size}")
+        result
       end
     end
   end

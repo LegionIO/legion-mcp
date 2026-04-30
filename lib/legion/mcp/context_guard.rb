@@ -13,6 +13,7 @@ module Legion
       module_function
 
       def check(pattern, _params, _context)
+        log.debug("[mcp][guard] action=check intent_hash=#{pattern[:intent_hash]&.[](0, 12)}")
         return staleness_failure(pattern) if stale?(pattern)
         return anomaly_failure(pattern) if anomalous?(pattern)
         return rapid_fire_failure(pattern) if rapid_fire?(pattern[:intent_hash])

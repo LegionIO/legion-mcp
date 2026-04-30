@@ -3,6 +3,8 @@
 module Legion
   module MCP
     class ToolAdapter < ::MCP::Tool
+      extend Legion::Logging::Helper
+
       class << self
         MCP_NAME_PATTERN = /[^a-zA-Z0-9_-]/
 
@@ -12,6 +14,7 @@ module Legion
 
         def from_legion_tool(tool_class)
           safe_name = sanitize_tool_name(tool_class.tool_name)
+          log.debug("[mcp][adapter] action=from_legion_tool tool=#{safe_name}")
           Class.new(::MCP::Tool) do
             tool_name safe_name
             description tool_class.description
@@ -42,6 +45,9 @@ module Legion
         # Otherwise builds a thin adapter from the metadata alone.
         def from_registry_entry(entry)
           tool_class = entry[:tool_class]
+          dispatch = entry[:dispatch_type]
+          log.debug("[mcp][adapter] action=from_registry_entry name=#{entry[:name]} " \
+                    "dispatch_type=#{dispatch} has_class=#{!tool_class.nil?}")
           return from_legion_tool(tool_class) if tool_class.is_a?(Class) && tool_class.respond_to?(:tool_name)
 
           build_from_metadata(entry)
@@ -94,6 +100,8 @@ module Legion
 
         def build_from_metadata(entry)
           entry_name   = sanitize_tool_name(entry[:name])
+          log.debug("[mcp][adapter] action=build_from_metadata tool=#{entry_name} " \
+                    "dispatch_type=#{entry[:dispatch_type]}")
           entry_desc   = entry[:description] || ''
           entry_schema = entry[:input_schema].is_a?(Hash) ? entry[:input_schema] : { properties: {} }
           entry_ref    = entry

@@ -55,6 +55,7 @@ module Legion
         end
 
         def disconnect
+          log.debug("[mcp][client] action=disconnect connection=#{@name}")
           @mutex.synchronize do
             @mcp_transport&.close if @mcp_transport.respond_to?(:close)
             @connected = false
@@ -104,6 +105,7 @@ module Legion
           command = @config[:command]
           raise ArgumentError, 'stdio transport requires a :command config key' unless command
 
+          log.debug("[mcp][client] action=connect_stdio connection=#{@name}")
           parts = command.is_a?(Array) ? command : Shellwords.split(command)
           cmd = parts.shift
           @mcp_transport = ::MCP::Client::Stdio.new(command: cmd, args: parts)
@@ -114,6 +116,7 @@ module Legion
           url = @config[:url]
           raise ArgumentError, 'http transport requires a :url config key' unless url
 
+          log.debug("[mcp][client] action=connect_http connection=#{@name} url=#{url}")
           headers = @config[:headers] || {}
           headers['Authorization'] ||= @config[:auth] if @config[:auth]
 
@@ -125,6 +128,7 @@ module Legion
         # the MCP initialize handshake on stdio transports and confirms the
         # HTTP endpoint is reachable. The result seeds the tools cache.
         def verify_connection!
+          log.debug("[mcp][client] action=verify_connection connection=#{@name}")
           raw_tools = @mcp_client.tools
           @tools_cache = raw_tools.map do |tool|
             {
@@ -141,6 +145,7 @@ module Legion
         def fetch_tools
           connect unless connected?
 
+          log.debug("[mcp][client] action=fetch_tools connection=#{@name}")
           raw_tools = @mcp_client.tools
           raw_tools.map do |tool|
             {
@@ -156,6 +161,7 @@ module Legion
         def execute_tool_call(name:, arguments:)
           connect unless connected?
 
+          log.debug("[mcp][client] action=execute_tool_call connection=#{@name} tool=#{name}")
           response = @mcp_client.call_tool(name: name, arguments: arguments)
           result = response.is_a?(Hash) ? response['result'] || response : response
 

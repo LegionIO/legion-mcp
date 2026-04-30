@@ -8,6 +8,8 @@ module Legion
       module_function
 
       def build_from_tool_data(tool_data, embedder: default_embedder)
+        log.debug("[mcp][embedding] action=build_from_tool_data tools=#{tool_data.size} " \
+                  "embedder_present=#{!embedder.nil?}")
         @embedder = embedder
         mutex.synchronize do
           composites = tool_data.to_h do |tool|
@@ -46,6 +48,8 @@ module Legion
 
         intent_vec = safe_embed(intent, embedder)
         return [] unless intent_vec
+
+        log.debug("[mcp][embedding] action=semantic_match index_size=#{index.size} limit=#{limit}")
 
         scores = mutex.synchronize do
           index.values.filter_map do |entry|

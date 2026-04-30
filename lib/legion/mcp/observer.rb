@@ -49,6 +49,7 @@ module Legion
       end
 
       def record_intent_with_result(intent:, tool_name:, success:, request_id: nil)
+        log.debug("[mcp][observer] action=record_intent_with_result tool=#{tool_name} success=#{success}")
         record_intent(intent, tool_name)
         return unless success
         return unless defined?(Legion::MCP::PatternStore)

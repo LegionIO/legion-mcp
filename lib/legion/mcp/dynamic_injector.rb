@@ -21,6 +21,7 @@ module Legion
         return [] unless enabled?
         return [] if intent_string.nil? || intent_string.strip.empty?
 
+        log.debug("[mcp][dynamic_injector] action=context_tools max_injected=#{max_injected}")
         matches = ContextCompiler.match_tools(intent_string, limit: max_injected)
         return [] if matches.empty?
 
@@ -63,6 +64,9 @@ module Legion
 
         tools = active_tool_set(intent_string)
         current_names = tools.map(&:tool_name)
+        log.debug("[mcp][dynamic_injector] action=inject_for_context " \
+                  "previous=#{previous_names.size} current=#{current_names.size} " \
+                  "changed=#{tools_changed?(previous_names, current_names)}")
 
         notify_if_changed(server, previous_names, current_names)
         current_names

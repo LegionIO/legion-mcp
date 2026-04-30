@@ -8,14 +8,17 @@ module Legion
       module_function
 
       def authenticate(token)
-        log.info('Starting legion.mcp.auth.authenticate')
+        token_type = token ? (jwt_token?(token) ? :jwt : :api_key) : :none
+        log.debug("[mcp][auth] action=authenticate token_type=#{token_type}")
         return { authenticated: false, error: 'missing_token' } unless token
 
-        if jwt_token?(token)
-          verify_jwt(token)
-        else
-          verify_api_key(token)
-        end
+        result = if jwt_token?(token)
+                   verify_jwt(token)
+                 else
+                   verify_api_key(token)
+                 end
+        log.debug("[mcp][auth] action=authenticate.complete authenticated=#{result[:authenticated]}")
+        result
       end
 
       def auth_enabled?
@@ -35,6 +38,7 @@ module Legion
       end
 
       def verify_jwt(token)
+        log.debug("[mcp][auth] action=verify_jwt crypt_available=#{defined?(Legion::Crypt::JWT) ? true : false}")
         return { authenticated: false, error: 'crypt_unavailable' } unless defined?(Legion::Crypt::JWT)
 
         verification_key = jwt_verification_key
@@ -63,7 +67,9 @@ module Legion
 
       def verify_api_key(token)
         allowed = Legion::Settings.dig(:mcp, :auth, :allowed_api_keys) || []
-        if allowed.include?(token)
+        matched = allowed.include?(token)
+        log.debug("[mcp][auth] action=verify_api_key allowed_keys=#{allowed.size} matched=#{matched}")
+        if matched
           { authenticated: true, identity: { user_id: 'api_key', risk_tier: :low } }
         else
           { authenticated: false, error: 'invalid_api_key' }
@@ -96,8 +102,10 @@ module Legion
       end
 
       def identity_from_claims(claims)
-        { user_id: claims[:sub], risk_tier: claims[:risk_tier]&.to_sym,
-          tenant_id: claims[:tenant_id], worker_id: claims[:worker_id] }
+        identity = { user_id: claims[:sub], risk_tier: claims[:risk_tier]&.to_sym,
+                     tenant_id: claims[:tenant_id], worker_id: claims[:worker_id] }
+        log.debug("[mcp][auth] action=identity_from_claims user_id=#{identity[:user_id]} risk_tier=#{identity[:risk_tier]}")
+        identity
       end
     end
   end

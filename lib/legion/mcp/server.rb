@@ -47,12 +47,14 @@ module Legion
         attr_reader :tool_registry, :current_identity
 
         def rebuild_tool_registry
+          log.debug("[mcp][server] action=rebuild_tool_registry mcp_specific=#{MCP_SPECIFIC_TOOLS.size}")
           @tool_registry_lock.synchronize do
             @tool_registry = Concurrent::Array.new(MCP_SPECIFIC_TOOLS)
             load_extension_tools
             DeferredRegistry.reset_cache! if defined?(DeferredRegistry) && DeferredRegistry.respond_to?(:reset_cache!)
             reset_caches!
           end
+          log.debug("[mcp][server] action=rebuild_tool_registry.complete registry_size=#{tool_registry.size}")
         end
 
         def register_tool(tool_class)
@@ -174,11 +176,15 @@ module Legion
           governed = ToolGovernance.filter_tools(tool_registry, @current_identity)
           tool_names = governed.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
           ranked     = UsageFilter.ranked_tools(tool_names, keywords: keywords)
-          ranked.filter_map do |name|
+          result = ranked.filter_map do |name|
             governed.find do |tc|
               (tc.respond_to?(:tool_name) ? tc.tool_name : tc.name) == name
             end
           end
+          log.debug("[mcp][server] action=build_filtered_tool_list tools_before=#{tool_registry.size} " \
+                    "governed=#{governed.size} tools_after=#{result.size} " \
+                    "identity=#{Utils.summarize_identity(@current_identity)} keywords=#{keywords.size}")
+          result
         end
 
         private
@@ -188,12 +194,15 @@ module Legion
         end
 
         def load_extension_tools
-          load_tools_from_settings_extensions if settings_extensions_available?
+          available = settings_extensions_available?
+          log.debug("[mcp][server] action=load_extension_tools settings_extensions_available=#{available}")
+          load_tools_from_settings_extensions if available
         end
 
         def register_mcp_tools_in_settings_extensions
           return unless defined?(Legion::Settings::Extensions) && Legion::Settings::Extensions.respond_to?(:register_tool)
 
+          log.debug("[mcp][server] action=register_mcp_tools_in_settings_extensions count=#{MCP_SPECIFIC_TOOLS.size}")
           MCP_SPECIFIC_TOOLS.each do |tool_class|
             Legion::Settings::Extensions.register_tool(tool_class.tool_name, {
                                                          description:   tool_class.description,
@@ -214,16 +223,24 @@ module Legion
         end
 
         def load_tools_from_settings_extensions
-          Legion::Settings::Extensions.tools.each do |tool_entry|
+          entries = Legion::Settings::Extensions.tools
+          log.debug("[mcp][server] action=load_tools_from_settings_extensions entries=#{entries.size}")
+          loaded = 0
+          entries.each do |tool_entry|
             sanitized_name = ToolAdapter.sanitize_tool_name(tool_entry[:name])
             next if @tool_registry.any? { |tc| tc.tool_name == sanitized_name }
 
             adapter = ToolAdapter.from_registry_entry(tool_entry)
-            @tool_registry << adapter if adapter
+            if adapter
+              @tool_registry << adapter
+              loaded += 1
+            end
           end
+          log.debug("[mcp][server] action=load_tools_from_settings_extensions.complete loaded=#{loaded}")
         end
 
         def run_function_discovery
+          log.debug('[mcp][server] action=run_function_discovery')
           FunctionDiscovery.reset_discovery!
           FunctionDiscovery.discover_and_register
         end
@@ -232,6 +249,7 @@ module Legion
           return unless defined?(Legion::LLM::OverrideConfidence)
           return unless Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_l2)
 
+          log.debug('[mcp][server] action=hydrate_override_confidence')
           Legion::LLM::OverrideConfidence.hydrate_from_l2
           Legion::LLM::OverrideConfidence.hydrate_from_apollo if Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_apollo)
         end
