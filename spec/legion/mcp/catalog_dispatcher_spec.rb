@@ -150,20 +150,20 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
   end
 
   describe '.generate_tools_from_catalog' do
-    context 'when Legion::Tools::Registry is not defined' do
-      before { hide_const('Legion::Tools::Registry') }
+    context 'when Legion::Settings::Extensions is not defined' do
+      before { hide_const('Legion::Settings::Extensions') }
 
       it 'returns empty array' do
         expect(described_class.generate_tools_from_catalog).to eq([])
       end
     end
 
-    context 'when Legion::Tools::Registry has no tools' do
+    context 'when Legion::Settings::Extensions has no tools' do
       before do
-        stub_const('Legion::Tools::Registry', Module.new do
+        stub_const('Legion::Settings::Extensions', Module.new do
           module_function
 
-          def all_tools
+          def tools
             []
           end
         end)

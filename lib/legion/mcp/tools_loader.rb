@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Requires all built-in MCP tool files so they are defined as Ruby constants.
-# server.rb no longer owns these requires — Legion::Tools::Registry provides
+# server.rb no longer owns these requires — Legion::Settings::Extensions provides
 # runtime registration, but the classes must still be defined for specs and
 # for any code that references Legion::MCP::Tools::* directly.
 

@@ -24,7 +24,7 @@ module Legion
   module MCP
     module Server
       # MCP-specific tools not owned by any extension.
-      # All extension-owned tools are discovered via Legion::Tools::Registry.
+      # All extension-owned tools are discovered via Legion::Settings::Extensions.
       MCP_SPECIFIC_TOOLS = [
         Tools::PlanAction,
         Tools::DiscoverTools,
@@ -200,11 +200,7 @@ module Legion
         private
 
         def load_extension_tools
-          if settings_extensions_available?
-            load_tools_from_settings_extensions
-          elsif defined?(Legion::Tools::Registry) && Legion::Tools::Registry.respond_to?(:all_tools)
-            load_tools_from_legacy_registry
-          end
+          load_tools_from_settings_extensions if settings_extensions_available?
         end
 
         def settings_extensions_available?
@@ -220,15 +216,6 @@ module Legion
 
             adapter = ToolAdapter.from_registry_entry(tool_entry)
             @tool_registry << adapter if adapter
-          end
-        end
-
-        def load_tools_from_legacy_registry
-          Legion::Tools::Registry.all_tools.each do |legion_tool_class|
-            next if @tool_registry.any? { |tc| tc.tool_name == legion_tool_class.tool_name }
-
-            adapted = ToolAdapter.from_legion_tool(legion_tool_class)
-            @tool_registry << adapted
           end
         end
 

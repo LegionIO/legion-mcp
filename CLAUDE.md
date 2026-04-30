@@ -15,7 +15,7 @@ Standalone gem providing the Model Context Protocol (MCP) server for LegionIO. E
 
 ```
 Legion::MCP
-├── Server              # MCP::Server builder, governance-aware build; tool list sourced from Legion::Tools::Registry via DeferredRegistry
+├── Server              # MCP::Server builder, governance-aware build; tool list sourced from Legion::Settings::Extensions via DeferredRegistry
 ├── Auth                # JWT + API key authentication
 ├── ToolGovernance      # Risk-tier tool filtering + invocation audit
 ├── ContextCompiler     # Keyword + semantic tool matching, blended scoring (60% semantic + 40% keyword)
@@ -26,7 +26,7 @@ Legion::MCP
 ├── TierRouter          # Confidence-gated tier selection (Tier 0/1/2)
 ├── ContextGuard        # Staleness, rapid-fire, anomaly detection guards
 ├── ToolAdapter         # Adapts Legion::Tools::Base subclasses to MCP SDK format (McpToolAdapter kept as alias)
-├── DeferredRegistry    # Reads deferred tools from Legion::Tools::Registry at request time
+├── DeferredRegistry    # Reads deferred/always-loaded tools from Legion::Settings::Extensions at request time
 ├── Tools/              # MCP_SPECIFIC_TOOLS only (6 registered); remaining tool files exist but are not registered in Server.tool_registry — extension tools discovered via Legion::Tools::Discovery
 └── Resources/          # RunnerCatalog, ExtensionInfo
 ```
@@ -34,7 +34,7 @@ Legion::MCP
 ### Tool Registry Migration Notes
 
 - **Before**: legion-mcp owned 57+ individual `Tools/*.rb` files registered in `TOOL_CLASSES`.
-- **After**: Tools discovered dynamically via `Legion::Tools::Discovery` from extension `runner_modules` at boot. `Legion::Tools::Registry` classifies each as `:always` or `:deferred`. `DeferredRegistry` resolves the deferred set at request time.
+- **After**: Tools discovered dynamically via `Legion::Settings::Extensions` (the single source of truth). `DeferredRegistry` resolves the deferred set at request time. `FunctionDiscovery` falls back to `Legion::Tools::Discovery` only when `Settings::Extensions` is empty (standalone MCP server mode).
 - `MCP_SPECIFIC_TOOLS` (6 tools) covers MCP-only concerns not owned by any extension.
 - `CatalogBridge` removed — bridged old `Extensions::Capability` / `Catalog::Registry` which no longer exist.
 - `EmbeddingIndex` uses `Legion::Tools::EmbeddingCache` (5-tier L0–L4) instead of its own in-memory store.
@@ -75,7 +75,7 @@ All optional dependencies use `defined?()` guards:
 |------|---------|
 | `lib/legion/mcp.rb` | Entry point: `Legion::MCP.server` singleton factory |
 | `lib/legion/mcp/version.rb` | `Legion::MCP::VERSION` constant |
-| `lib/legion/mcp/server.rb` | MCP::Server builder, governance-aware build; reads tools from Tools::Registry |
+| `lib/legion/mcp/server.rb` | MCP::Server builder, governance-aware build; reads tools from Settings::Extensions |
 | `lib/legion/mcp/auth.rb` | JWT + API key authentication |
 | `lib/legion/mcp/tool_governance.rb` | Risk-tier tool filtering + invocation audit |
 | `lib/legion/mcp/context_compiler.rb` | Keyword + semantic tool matching (60/40 blend) |
@@ -86,7 +86,7 @@ All optional dependencies use `defined?()` guards:
 | `lib/legion/mcp/tier_router.rb` | Confidence-gated tier selection, tool chain execution |
 | `lib/legion/mcp/context_guard.rb` | Staleness, rapid-fire, anomaly detection |
 | `lib/legion/mcp/tool_adapter.rb` | MCP::ToolAdapter — wraps Legion::Tools::Base for MCP SDK (McpToolAdapter kept as alias) |
-| `lib/legion/mcp/deferred_registry.rb` | DeferredRegistry — reads deferred tools from Legion::Tools::Registry at request time |
+| `lib/legion/mcp/deferred_registry.rb` | DeferredRegistry — reads deferred/always-loaded tools from Legion::Settings::Extensions at request time |
 | `lib/legion/mcp/tools/` | All tool implementations; only MCP_SPECIFIC_TOOLS (6 tools) registered in Server.tool_registry — extension tools sourced via Legion::Tools::Discovery |
 | `lib/legion/mcp/tools/do_action.rb` | Natural language intent routing with Tier 0 fast path |
 | `lib/legion/mcp/tools/discover_tools.rb` | Dynamic tool discovery with context |

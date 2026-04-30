@@ -114,11 +114,11 @@ module Legion
       end
 
       def generate_tools_from_catalog
-        return [] unless defined?(Legion::Tools::Registry)
-        return [] unless Legion::Tools::Registry.respond_to?(:all_tools)
+        return [] unless defined?(Legion::Settings::Extensions)
+        return [] unless Legion::Settings::Extensions.respond_to?(:tools)
 
-        Legion::Tools::Registry.all_tools.filter_map do |tool_class|
-          ToolAdapter.from_legion_tool(tool_class) if defined?(ToolAdapter) && ToolAdapter.respond_to?(:from_legion_tool)
+        Legion::Settings::Extensions.tools.filter_map do |tool_entry|
+          ToolAdapter.from_registry_entry(tool_entry) if defined?(ToolAdapter) && ToolAdapter.respond_to?(:from_registry_entry)
         rescue StandardError => e
           handle_exception(e, level: :debug, operation: 'legion.mcp.catalog_dispatcher.generate_tools_from_catalog')
           nil
