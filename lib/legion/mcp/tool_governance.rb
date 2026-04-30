@@ -32,6 +32,10 @@ module Legion
         before = tools.size
         tools = filter_by_risk_tier(tools, identity&.dig(:risk_tier)) if governance_enabled?
         tools = filter_by_role(tools, identity[:role]) if identity.is_a?(Hash) && identity[:role]
+
+        blocked_count = before - tools.size
+        emit_governance_filter(identity, before, tools.size, blocked_count) if blocked_count.positive?
+
         log.debug("[mcp][governance] action=filter_tools before=#{before} after=#{tools.size} " \
                   "governance_enabled=#{governance_enabled?} " \
                   "risk_tier=#{identity&.dig(:risk_tier)} role=#{identity[:role] if identity.is_a?(Hash)}")
@@ -94,6 +98,25 @@ module Legion
           resource:     'mcp_tool',
           detail:       { param_keys: params&.keys, success: !result&.dig(:error) }
         )
+      end
+
+      def emit_governance_filter(identity, before_count, after_count, blocked_count)
+        return unless defined?(Legion::MCP::Audit)
+
+        Legion::MCP::Audit.emit_governance(
+          event:           :tools_filtered,
+          identity:        identity,
+          before_count:    before_count,
+          after_count:     after_count,
+          blocked_count:   blocked_count,
+          reason:          'risk_tier_or_role_filter',
+          conversation_id: Thread.current[:legion_mcp_conversation_id],
+          request_id:      Thread.current[:legion_mcp_request_id],
+          trace_id:        Thread.current[:legion_mcp_trace_id],
+          timestamp:       Time.now.utc.iso8601
+        )
+      rescue StandardError => e
+        handle_exception(e, level: :warn, handled: true, operation: 'mcp.governance.emit_audit')
       end
 
       def governance_enabled?

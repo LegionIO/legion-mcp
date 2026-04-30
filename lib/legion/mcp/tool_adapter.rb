@@ -122,7 +122,8 @@ module Legion
                          conn = Legion::MCP::Client::Pool.connection_for(server_name)
                          raise "MCP server #{server_name} not available" unless conn
 
-                         conn.call_tool(name: entry_ref[:name], arguments: args)
+                         conn.call_tool(name: entry_ref[:name], arguments: args,
+                                        context: TracingContext.current)
                        else
                          adapter.send(:dispatch_tool_class, entry_ref[:tool_class], entry_ref[:name], args)
                        end

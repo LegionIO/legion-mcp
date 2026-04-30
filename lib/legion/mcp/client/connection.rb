@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'securerandom'
 require 'shellwords'
 
 module Legion
@@ -84,13 +85,29 @@ module Legion
           end
         end
 
-        def call_tool(name:, arguments: {})
+        def call_tool(name:, arguments: {}, context: {})
           connect unless connected?
-          log.info("[mcp] client.tool_call.start #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name,
-                                                                       arguments: Utils.summarize_params(arguments))}")
-          result = execute_tool_call(name: name, arguments: arguments)
-          log.info("[mcp] client.tool_call.complete #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name,
-                                                                          result: Utils.summarize_result(result))}")
+          exchange_id = TracingContext.generate_exchange_id
+
+          log.info("[mcp] client.tool_call.start #{Utils.format_fields(
+            connection: @name, transport: @transport_type, tool_name: name,
+            exchange_id: exchange_id, trace_id: context[:trace_id],
+            arguments: Utils.summarize_params(arguments)
+          )}")
+
+          start_time = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
+          result = execute_tool_call(name: name, arguments: arguments, context: context)
+          elapsed = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(1)
+
+          log.info("[mcp] client.tool_call.complete #{Utils.format_fields(
+            connection: @name, transport: @transport_type, tool_name: name,
+            exchange_id: exchange_id, duration_ms: elapsed,
+            result: Utils.summarize_result(result)
+          )}")
+
+          emit_client_audit(tool_name: name, arguments: arguments, result: result,
+                            context: context, exchange_id: exchange_id, duration_ms: elapsed)
+
           result
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.client.connection.call_tool')
@@ -115,11 +132,36 @@ module Legion
           raise ArgumentError, 'http transport requires a :url config key' unless url
 
           log.debug("[mcp][client] action=connect_http connection=#{@name} url=#{url}")
-          headers = @config[:headers] || {}
-          headers['Authorization'] ||= @config[:auth] if @config[:auth]
+          @base_headers = (@config[:headers] || {}).dup
+          @base_headers['Authorization'] ||= @config[:auth] if @config[:auth]
 
-          @mcp_transport = ::MCP::Client::HTTP.new(url: url, headers: headers)
+          @mcp_transport = ::MCP::Client::HTTP.new(url: url, headers: @base_headers)
           @mcp_client = ::MCP::Client.new(transport: @mcp_transport)
+        end
+
+        def inject_trace_headers(context)
+          return unless http_transport? && traceable_context?(context)
+
+          headers = build_trace_headers(context)
+          @mcp_transport.instance_variable_set(:@headers, headers) if @mcp_transport.instance_variable_defined?(:@headers)
+        end
+
+        def http_transport?
+          %i[http streamable_http].include?(@transport_type) &&
+            @mcp_transport.respond_to?(:instance_variable_get)
+        end
+
+        def traceable_context?(context)
+          context.is_a?(Hash) && !context.empty? &&
+            (context[:trace_id] || context[:conversation_id])
+        end
+
+        def build_trace_headers(context)
+          headers = @base_headers&.dup || {}
+          headers['x-legion-trace-id'] = context[:trace_id] if context[:trace_id]
+          headers['x-legion-conversation-id'] = context[:conversation_id] if context[:conversation_id]
+          headers['traceparent'] = "00-#{context[:trace_id]}-#{SecureRandom.hex(8)}-01" if context[:trace_id]
+          headers
         end
 
         # Verify the connection by requesting the tool list. This triggers
@@ -156,8 +198,9 @@ module Legion
           raise ConnectionError, "Failed to fetch tools from #{@name}: #{e.message}"
         end
 
-        def execute_tool_call(name:, arguments:)
+        def execute_tool_call(name:, arguments:, context: {})
           connect unless connected?
+          inject_trace_headers(context)
 
           log.debug("[mcp][client] action=execute_tool_call connection=#{@name} tool=#{name}")
           response = @mcp_client.call_tool(name: name, arguments: arguments)
@@ -172,6 +215,31 @@ module Legion
           { content: [{ type: 'text', text: e.message }], error: true }
         rescue ::MCP::Client::RequestHandlerError => e
           raise ConnectionError, "Tool call failed on #{@name}: #{e.message}"
+        end
+
+        def emit_client_audit(event)
+          return unless defined?(Legion::MCP::Audit)
+
+          context = event[:context] || {}
+          result = event[:result]
+          status = result.is_a?(Hash) && result[:error] ? :error : :success
+
+          Legion::MCP::Audit.emit_client_call(
+            conversation_id: context[:conversation_id],
+            request_id:      context[:request_id],
+            exchange_id:     event[:exchange_id],
+            tool_name:       event[:tool_name],
+            server:          @name,
+            transport:       @transport_type,
+            arguments:       event[:arguments],
+            result:          Utils.summarize_result(result),
+            status:          status,
+            duration_ms:     event[:duration_ms],
+            trace_id:        context[:trace_id],
+            timestamp:       Time.now.utc.iso8601
+          )
+        rescue StandardError => e
+          handle_exception(e, level: :warn, handled: true, operation: 'mcp.client.emit_audit')
         end
       end
 

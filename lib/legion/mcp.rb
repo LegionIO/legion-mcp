@@ -13,6 +13,14 @@ require_relative 'mcp/tools_loader'
 require_relative 'mcp/server'
 require_relative 'mcp/override_broadcast'
 require_relative 'mcp/client'
+
+if defined?(Legion::Transport::Message)
+  require_relative 'mcp/transport/exchanges/audit'
+  require_relative 'mcp/transport/messages/tool_call_event'
+  require_relative 'mcp/transport/messages/client_call_event'
+  require_relative 'mcp/transport/messages/governance_event'
+end
+require_relative 'mcp/audit'
 require_relative 'mcp/actors/self_generate_cycle' if defined?(Legion::Extensions::Actors::Every)
 
 module Legion

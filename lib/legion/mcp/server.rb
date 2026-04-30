@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'observer'
+require_relative 'tracing_context'
 require_relative 'utils'
 require_relative 'usage_filter'
 require_relative 'tools_loader'
@@ -22,7 +23,7 @@ require_relative 'resources/extension_info'
 
 module Legion
   module MCP
-    module Server
+    module Server # rubocop:disable Metrics/ModuleLength
       extend Legion::Logging::Helper
 
       # MCP-specific tools not owned by any extension.
@@ -44,7 +45,7 @@ module Legion
       @tool_registry_lock = Mutex.new
 
       class << self # rubocop:disable Metrics/ClassLength
-        attr_reader :tool_registry, :current_identity
+        attr_reader :tool_registry, :current_identity, :conversation_id, :trace_id
 
         def rebuild_tool_registry
           log.debug("[mcp][server] action=rebuild_tool_registry mcp_specific=#{MCP_SPECIFIC_TOOLS.size}")
@@ -82,15 +83,8 @@ module Legion
           EmbeddingIndex.reset! if defined?(EmbeddingIndex) && EmbeddingIndex.respond_to?(:reset!)
         end
 
-        def build(identity: nil) # rubocop:disable Metrics/MethodLength
-          run_function_discovery
-          rebuild_tool_registry
-          @current_identity = identity
-
-          mcp_log :info, 'server.build.start',
-                  identity:      Utils.summarize_identity(identity),
-                  registry_size: tool_registry.size,
-                  governance:    ToolGovernance.governance_enabled?
+        def build(identity: nil)
+          prepare_build(identity)
           tools = ToolGovernance.filter_tools(tool_registry.dup, identity)
 
           server = ::MCP::Server.new(
@@ -102,23 +96,7 @@ module Legion
             resource_templates: Resources::ExtensionInfo.resource_templates
           )
 
-          if defined?(Observer)
-            ::MCP.configure do |c|
-              c.instrumentation_callback = ->(idata) { Server.wire_observer(idata) }
-            end
-          end
-
-          install_deferred_tools_list_handler(server)
-          register_mcp_tools_in_settings_extensions
-
-          PatternStore.hydrate_from_l2 if defined?(PatternStore)
-          ColdStart.load_community_patterns if defined?(ColdStart)
-          populate_embedding_index
-
-          Resources::RunnerCatalog.register(server)
-          Resources::ExtensionInfo.register_read_handler(server)
-
-          hydrate_override_confidence
+          configure_server(server)
 
           mcp_log :info, 'server.build.complete',
                   identity: Utils.summarize_identity(identity),
@@ -188,6 +166,41 @@ module Legion
         end
 
         private
+
+        def prepare_build(identity)
+          run_function_discovery
+          rebuild_tool_registry
+          @current_identity = identity
+          @conversation_id = TracingContext.generate_conversation_id
+          @trace_id = TracingContext.generate_trace_id
+
+          mcp_log :info, 'server.build.start',
+                  identity:        Utils.summarize_identity(identity),
+                  registry_size:   tool_registry.size,
+                  governance:      ToolGovernance.governance_enabled?,
+                  conversation_id: @conversation_id
+        end
+
+        def configure_server(server)
+          if defined?(Observer)
+            ::MCP.configure do |c|
+              c.instrumentation_callback = ->(idata) { Server.wire_observer(idata) }
+            end
+          end
+
+          install_deferred_tools_list_handler(server)
+          install_tracing_tool_call_handler(server)
+          register_mcp_tools_in_settings_extensions
+
+          PatternStore.hydrate_from_l2 if defined?(PatternStore)
+          ColdStart.load_community_patterns if defined?(ColdStart)
+          populate_embedding_index
+
+          Resources::RunnerCatalog.register(server)
+          Resources::ExtensionInfo.register_read_handler(server)
+
+          hydrate_override_confidence
+        end
 
         def mcp_log(level, event, **fields)
           log.public_send(level, "[mcp] #{event} #{Utils.format_fields(fields)}")
@@ -264,6 +277,67 @@ module Legion
             mcp_log :info, 'server.tools.list', total: tool_list.size, deferred_only: deferred
             tool_list
           }
+        end
+
+        def install_tracing_tool_call_handler(server)
+          tracing_mod = build_tracing_module
+          server.singleton_class.prepend(tracing_mod)
+        end
+
+        def build_tracing_module
+          server_mod = self
+          Module.new do
+            define_method(:call_tool) do |request, session: nil, related_request_id: nil|
+              request_id   = TracingContext.generate_request_id(request&.dig(:_meta, :progressToken))
+              exchange_id  = TracingContext.generate_exchange_id
+              tool_call_id = TracingContext.generate_tool_call_id
+
+              TracingContext.set(
+                conversation_id: server_mod.conversation_id,
+                request_id:      request_id,
+                exchange_id:     exchange_id,
+                tool_call_id:    tool_call_id,
+                trace_id:        server_mod.trace_id
+              )
+
+              start_time = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
+              result = super(request, session: session, related_request_id: related_request_id)
+              elapsed = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(1)
+
+              server_mod.send(:emit_server_audit,
+                              params: request, result: result, request_id: request_id,
+                              exchange_id: exchange_id, tool_call_id: tool_call_id, duration_ms: elapsed)
+
+              result
+            ensure
+              TracingContext.clear
+            end
+          end
+        end
+
+        def emit_server_audit(params:, result:, request_id:, exchange_id:, tool_call_id:, duration_ms:) # rubocop:disable Metrics/ParameterLists
+          return unless defined?(Legion::MCP::Audit)
+
+          tool_name = params&.dig(:name)
+          status = result.is_a?(Hash) && result[:isError] ? :error : :success
+
+          Legion::MCP::Audit.emit_tool_call(
+            conversation_id: @conversation_id,
+            request_id:      request_id,
+            exchange_id:     exchange_id,
+            tool_call_id:    tool_call_id,
+            tool_name:       tool_name,
+            arguments:       Utils.summarize_params(params&.dig(:arguments)),
+            result:          Utils.summarize_result(result),
+            status:          status,
+            duration_ms:     duration_ms,
+            caller:          @current_identity,
+            source:          { type: :mcp_server },
+            trace_id:        @trace_id,
+            timestamp:       Time.now.utc.iso8601
+          )
+        rescue StandardError => e
+          handle_exception(e, level: :warn, handled: true, operation: 'mcp.server.emit_audit')
         end
 
         def instructions
