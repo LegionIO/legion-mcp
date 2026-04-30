@@ -56,7 +56,7 @@ module Legion
 
         normalized  = intent.to_s.strip.downcase.gsub(/\s+/, ' ')
         intent_hash = Digest::SHA256.hexdigest(normalized)
-        candidate_key = Digest::SHA256.hexdigest("\#{normalized}:\#{tool_name}")
+        candidate_key = Digest::SHA256.hexdigest("#{normalized}:#{tool_name}")
 
         promotion = Legion::MCP::PatternStore.record_candidate(
           intent_hash:   intent_hash,

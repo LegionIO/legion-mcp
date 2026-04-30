@@ -126,15 +126,17 @@ module Legion
             )
 
             result = tool_params.empty? ? matched.call : matched.call(**tool_params)
+            tool_success = !(result.is_a?(::MCP::Tool::Response) && result.respond_to?(:error?) && result.error?)
             LoggingSupport.info(
               'do_action.complete',
               request_id: request_id,
               path:       'context_compiler',
               matched:    matched_name,
+              success:    tool_success,
               result:     LoggingSupport.summarize_result(result)
             )
 
-            record_feedback(intent, matched_name, success: true)
+            record_feedback(intent, matched_name, success: tool_success)
             result
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.do_action.call')
