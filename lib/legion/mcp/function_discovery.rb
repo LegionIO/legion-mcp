@@ -7,10 +7,16 @@ module Legion
 
       module_function
 
-      def discover_and_register # rubocop:disable Metrics/PerceivedComplexity
+      def discover_and_register # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         return if @discovery_fired
 
         @discovery_fired = true
+
+        # Prefer centralized registry when available and populated
+        if settings_extensions_available?
+          register_from_settings_extensions
+          return
+        end
 
         if defined?(Legion::Tools::Discovery) && Legion::Tools::Discovery.respond_to?(:discover_and_register)
           Legion::Tools::Discovery.discover_and_register
@@ -167,6 +173,27 @@ module Legion
             end
           text = defined?(Legion::JSON) ? Legion::JSON.dump(result) : result.to_s
           ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
+        end
+      end
+
+      # Returns true when Settings::Extensions is defined and has tools registered.
+      def settings_extensions_available?
+        defined?(Legion::Settings::Extensions) &&
+          Legion::Settings::Extensions.respond_to?(:tools) &&
+          Legion::Settings::Extensions.tools.any?
+      end
+
+      # Registers tools from the centralized Settings::Extensions registry.
+      # Each tool entry is adapted into an MCP tool class via ToolAdapter.
+      def register_from_settings_extensions
+        Legion::Settings::Extensions.tools.each do |tool_entry|
+          next if Server.tool_registry.any? { |tc| tc.tool_name == tool_entry[:name] }
+
+          adapter = ToolAdapter.from_registry_entry(tool_entry)
+          Server.register_tool(adapter) if adapter
+        rescue StandardError => e
+          handle_exception(e, level: :debug, operation: 'legion.mcp.function_discovery.register_from_settings_extensions')
+          log.debug("FunctionDiscovery: skipping registry entry #{tool_entry[:name]}: #{e.message}")
         end
       end
     end

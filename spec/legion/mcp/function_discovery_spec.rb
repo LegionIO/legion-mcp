@@ -151,4 +151,147 @@ RSpec.describe Legion::MCP::FunctionDiscovery do
       expect(klass.mcp_tier).to be_nil
     end
   end
+
+  describe '.settings_extensions_available?' do
+    it 'returns falsy when Settings::Extensions is not defined' do
+      expect(described_class.settings_extensions_available?).to be_falsey
+    end
+
+    context 'when Settings::Extensions is defined' do
+      let(:mock_extensions) do
+        Module.new do
+          def self.tools
+            [{ name: 'legion.test_tool', description: 'A test tool' }]
+          end
+        end
+      end
+
+      it 'returns true when tools are populated' do
+        stub_const('Legion::Settings::Extensions', mock_extensions)
+        expect(described_class.settings_extensions_available?).to be true
+      end
+
+      it 'returns false when tools are empty' do
+        empty_extensions = Module.new do
+          def self.tools
+            []
+          end
+        end
+        stub_const('Legion::Settings::Extensions', empty_extensions)
+        expect(described_class.settings_extensions_available?).to be false
+      end
+    end
+  end
+
+  describe '.register_from_settings_extensions' do
+    let(:tool_class) do
+      Class.new do
+        def self.tool_name
+          'legion.registry_tool'
+        end
+
+        def self.description
+          'A tool from the registry'
+        end
+
+        def self.input_schema
+          { properties: { q: { type: 'string' } } }
+        end
+
+        def self.call(**_args)
+          { result: 'ok' }
+        end
+      end
+    end
+
+    let(:mock_extensions) do
+      tc = tool_class
+      Module.new do
+        define_method(:tools) do
+          [{ name: 'legion.registry_tool', description: 'A tool from the registry',
+             input_schema: { properties: { q: { type: 'string' } } }, tool_class: tc }]
+        end
+        module_function :tools
+      end
+    end
+
+    before do
+      stub_const('Legion::Settings::Extensions', mock_extensions)
+      described_class.reset_discovery!
+    end
+
+    after do
+      Legion::MCP::Server.unregister_tool('legion_registry_tool')
+    end
+
+    it 'registers tools from the centralized registry' do
+      described_class.register_from_settings_extensions
+      names = Legion::MCP::Server.tool_registry.map(&:tool_name)
+      # ToolAdapter sanitizes dots to underscores
+      expect(names).to include('legion_registry_tool')
+    end
+
+    it 'skips tools already present in the registry' do
+      described_class.register_from_settings_extensions
+      initial_count = Legion::MCP::Server.tool_registry.size
+      described_class.register_from_settings_extensions
+      expect(Legion::MCP::Server.tool_registry.size).to eq(initial_count)
+    end
+  end
+
+  describe '.discover_and_register with Settings::Extensions' do
+    let(:tool_class) do
+      Class.new do
+        def self.tool_name
+          'legion.settings_ext_tool'
+        end
+
+        def self.description
+          'Discovered via settings'
+        end
+
+        def self.input_schema
+          { properties: {} }
+        end
+
+        def self.call(**_args)
+          { ok: true }
+        end
+      end
+    end
+
+    let(:mock_extensions) do
+      tc = tool_class
+      Module.new do
+        define_method(:tools) do
+          [{ name: 'legion.settings_ext_tool', description: 'Discovered via settings',
+             input_schema: { properties: {} }, tool_class: tc }]
+        end
+        module_function :tools
+      end
+    end
+
+    before { described_class.reset_discovery! }
+
+    after { Legion::MCP::Server.unregister_tool('legion_settings_ext_tool') }
+
+    it 'uses Settings::Extensions when available and populated' do
+      stub_const('Legion::Settings::Extensions', mock_extensions)
+      described_class.discover_and_register
+      names = Legion::MCP::Server.tool_registry.map(&:tool_name)
+      # ToolAdapter sanitizes dots to underscores
+      expect(names).to include('legion_settings_ext_tool')
+    end
+
+    it 'falls back to existing discovery when Settings::Extensions is empty' do
+      empty_ext = Module.new do
+        def self.tools
+          []
+        end
+      end
+      stub_const('Legion::Settings::Extensions', empty_ext)
+      # Should not raise; falls through to existing paths
+      expect { described_class.discover_and_register }.not_to raise_error
+    end
+  end
 end

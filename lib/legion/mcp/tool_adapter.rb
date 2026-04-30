@@ -36,6 +36,51 @@ module Legion
             end
           end
         end
+
+        # Builds an MCP tool from a Settings::Extensions registry entry hash.
+        # If the entry contains a loaded tool_class, delegates to from_legion_tool.
+        # Otherwise builds a thin adapter from the metadata alone.
+        def from_registry_entry(entry)
+          tool_class = entry[:tool_class]
+          return from_legion_tool(tool_class) if tool_class.is_a?(Class) && tool_class.respond_to?(:tool_name)
+
+          build_from_metadata(entry)
+        end
+
+        private
+
+        def build_from_metadata(entry)
+          entry_name   = sanitize_tool_name(entry[:name])
+          entry_desc   = entry[:description] || ''
+          entry_schema = entry[:input_schema].is_a?(Hash) ? entry[:input_schema] : { properties: {} }
+          entry_ref    = entry
+
+          Class.new(::MCP::Tool) do
+            tool_name entry_name
+            description entry_desc
+            input_schema(entry_schema)
+
+            define_singleton_method(:legion_tool_entry) { entry_ref }
+
+            define_singleton_method(:call) do |**args|
+              klass = entry_ref[:tool_class]
+              result =
+                if klass.respond_to?(:call)
+                  klass.call(**args)
+                elsif klass.respond_to?(:new)
+                  klass.new.call(args)
+                else
+                  { error: "Tool #{entry_ref[:name]} has no executable class" }
+                end
+
+              error = result.is_a?(Hash) ? !!result[:error] : false
+              text = result.is_a?(String) ? result : Legion::JSON.dump(result)
+              ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
+            rescue StandardError => e
+              ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ error: e.message }) }], error: true)
+            end
+          end
+        end
       end
     end
   end

@@ -32,6 +32,8 @@ module Legion
           private
 
           def catalog_json
+            return catalog_from_settings_extensions if settings_extensions_runners_available?
+
             return Legion::JSON.dump({ error: 'legion-data is not connected' }) unless data_connected?
 
             extensions = Legion::Data::Model::Extension.all
@@ -54,6 +56,29 @@ module Legion
             handle_exception(e, level: :warn, operation: 'legion.mcp.resources.runner_catalog.catalog_json')
             log.warn("RunnerCatalog#catalog_json failed: #{e.message}")
             Legion::JSON.dump({ error: "Failed to build catalog: #{e.message}" })
+          end
+
+          def settings_extensions_runners_available?
+            defined?(Legion::Settings::Extensions) &&
+              Legion::Settings::Extensions.respond_to?(:runners) &&
+              Legion::Settings::Extensions.runners.any?
+          end
+
+          def catalog_from_settings_extensions
+            runners = Legion::Settings::Extensions.runners
+            catalog = runners.map do |runner_entry|
+              {
+                name:      runner_entry[:name],
+                extension: runner_entry[:extension],
+                function:  runner_entry[:function],
+                exposed:   runner_entry[:exposed]
+              }
+            end
+            Legion::JSON.dump(catalog)
+          rescue StandardError => e
+            handle_exception(e, level: :warn, operation: 'legion.mcp.resources.runner_catalog.catalog_from_settings_extensions')
+            log.warn("RunnerCatalog#catalog_from_settings_extensions failed: #{e.message}")
+            Legion::JSON.dump({ error: "Failed to build catalog from settings: #{e.message}" })
           end
 
           def data_connected?

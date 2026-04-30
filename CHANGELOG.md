@@ -1,5 +1,21 @@
 # legion-mcp Changelog
 
+## [0.9.0] - 2026-04-29
+
+### Changed
+- `FunctionDiscovery.discover_and_register` now prefers reading tools from `Legion::Settings::Extensions` (the centralized registry in `legion-settings`) when available and populated, falling back to existing `Legion::Tools::Discovery` and runner-module discovery paths for backward compatibility
+- `ToolAdapter.from_registry_entry` builds MCP tool classes from registry entry hashes; delegates to `from_legion_tool` when the entry contains a loaded tool class, otherwise builds a thin metadata-driven adapter
+- `Resources::RunnerCatalog#catalog_json` reads from `Settings::Extensions.runners` when available, falling back to the existing `legion-data` database query path
+- Bumped `legion-settings` dependency floor to `>= 1.3.20` (requires `Settings::Extensions` module)
+
+### Added
+- `FunctionDiscovery.settings_extensions_available?` — guard method checking if `Settings::Extensions` is defined and populated
+- `FunctionDiscovery.register_from_settings_extensions` — registers tools from the centralized registry into the MCP server
+- `ToolAdapter.from_registry_entry` — factory method to build MCP tools from registry entry hashes
+- `ToolAdapter.build_from_metadata` — builds thin MCP tool adapters from metadata when no tool class is loaded
+- `RunnerCatalog#settings_extensions_runners_available?` — guard for registry-based runner catalog
+- `RunnerCatalog#catalog_from_settings_extensions` — builds runner catalog JSON from the centralized registry
+
 ## [0.8.1] - 2026-04-14
 
 ### Fixed
