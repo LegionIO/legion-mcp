@@ -275,7 +275,6 @@ module Legion
         mcp_log :info, 'pattern.hydrate.complete', source: :l2, loaded: loaded
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.hydrate_from_l2')
-        mcp_log :warn, 'pattern.hydrate.failed', source: :l2, error: e.message
         nil
       end
 
@@ -310,7 +309,6 @@ module Legion
         Legion::Cache.set("tbi:pattern:#{intent_hash}", Legion::JSON.dump(pattern), 3600)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.persist_l1')
-        log.warn("PatternStore#persist_l1 failed: #{e.message}")
         nil
       end
 
@@ -320,7 +318,6 @@ module Legion
         Legion::Cache.delete("tbi:pattern:#{intent_hash}")
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.evict_l1')
-        log.warn("PatternStore#evict_l1 failed: #{e.message}")
         nil
       end
 
@@ -331,7 +328,6 @@ module Legion
         raw ? Legion::JSON.load(raw) : nil
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.lookup_l1')
-        log.warn("PatternStore#lookup_l1 failed: #{e.message}")
         nil
       end
 
@@ -349,7 +345,6 @@ module Legion
         end
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.persist_l2')
-        log.warn("PatternStore#persist_l2 failed: #{e.message}")
         nil
       end
 
@@ -361,7 +356,6 @@ module Legion
         row ? deserialize_pattern(row) : nil
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.lookup_l2')
-        log.warn("PatternStore#lookup_l2 failed: #{e.message}")
         nil
       end
 
@@ -380,7 +374,6 @@ module Legion
         table.where(intent_hash: intent_hash).delete
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.archive_l2')
-        log.warn("PatternStore#archive_l2 failed: #{e.message}")
         nil
       end
 

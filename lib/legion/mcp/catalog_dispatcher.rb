@@ -62,8 +62,8 @@ module Legion
         klass
       end
 
-      def wire_dispatch(klass, runner_class_str, function_name, tool_name_val) # rubocop:disable Metrics/MethodLength
-        klass.define_singleton_method(:call) do |**params| # rubocop:disable Metrics/BlockLength
+      def wire_dispatch(klass, runner_class_str, function_name, tool_name_val)
+        klass.define_singleton_method(:call) do |**params|
           log.info("[mcp] catalog.tool_call.start #{Utils.format_fields(
             tool_name: tool_name_val, runner_class: runner_class_str,
             function: function_name, params: Utils.summarize_params(params)
@@ -88,10 +88,6 @@ module Legion
           end
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.catalog_dispatcher.call')
-          log.warn("[mcp] catalog.tool_call.failed #{Utils.format_fields(
-            tool_name: tool_name_val, runner_class: runner_class_str,
-            function: function_name, error: e.message
-          )}")
           text = Legion::JSON.dump({ error: e.message })
           ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: true)
         end

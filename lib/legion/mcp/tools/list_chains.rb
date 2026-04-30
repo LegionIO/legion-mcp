@@ -25,7 +25,6 @@ module Legion
             text_response(Legion::Data::Model::Chain.order(:id).limit(limit).all.map(&:values))
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_chains.call')
-            log.warn("ListChains#call failed: #{e.message}")
             error_response("Failed to list chains: #{e.message}")
           end
 
@@ -35,7 +34,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_chains.data_connected?')
-            log.warn("ListChains#data_connected? failed: #{e.message}")
             false
           end
 

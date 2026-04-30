@@ -56,7 +56,6 @@ module Legion
             end
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.client.pool.all_tools')
-            log.warn("MCP tool discovery failed for #{name}: #{e.message}")
             ServerRegistry.mark_unhealthy(name)
             []
           end

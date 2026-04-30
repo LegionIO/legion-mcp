@@ -27,7 +27,6 @@ module Legion
             text_response(record.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_chain.call')
-            log.warn("CreateChain#call failed: #{e.message}")
             error_response("Failed to create chain: #{e.message}")
           end
 
@@ -37,7 +36,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_chain.data_connected?')
-            log.warn("CreateChain#data_connected? failed: #{e.message}")
             false
           end
 

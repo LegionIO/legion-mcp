@@ -26,7 +26,6 @@ module Legion
             runner ? describe_single(runner) : describe_all
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.describe_runner.call')
-            log.warn("DescribeRunner#call failed: #{e.message}")
             error_response("Failed to describe runners: #{e.message}")
           end
 
@@ -36,7 +35,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.describe_runner.data_connected?')
-            log.warn("DescribeRunner#data_connected? failed: #{e.message}")
             false
           end
 

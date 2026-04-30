@@ -28,7 +28,6 @@ module Legion
             text_response(record.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_relationship.call')
-            log.warn("CreateRelationship#call failed: #{e.message}")
             error_response("Failed to create relationship: #{e.message}")
           end
 
@@ -38,7 +37,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_relationship.data_connected?')
-            log.warn("CreateRelationship#data_connected? failed: #{e.message}")
             false
           end
 

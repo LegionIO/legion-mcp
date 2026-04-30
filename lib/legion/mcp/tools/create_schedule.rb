@@ -41,7 +41,6 @@ module Legion
             text_response(record.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_schedule.call')
-            log.warn("CreateSchedule#call failed: #{e.message}")
             error_response("Failed to create schedule: #{e.message}")
           end
 
@@ -51,7 +50,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.create_schedule.data_connected?')
-            log.warn("CreateSchedule#data_connected? failed: #{e.message}")
             false
           end
 

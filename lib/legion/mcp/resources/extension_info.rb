@@ -53,7 +53,6 @@ module Legion
             [{ uri: uri, mimeType: 'application/json', text: Legion::JSON.dump(result) }]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.resources.extension_info.read')
-            log.warn("ExtensionInfo#read failed: #{e.message}")
             [{ uri: uri, mimeType: 'application/json',
                text: Legion::JSON.dump({ error: "Failed to read extension: #{e.message}" }) }]
           end
@@ -64,7 +63,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.resources.extension_info.data_connected?')
-            log.warn("ExtensionInfo#data_connected? failed: #{e.message}")
             false
           end
         end

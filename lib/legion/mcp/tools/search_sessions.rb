@@ -35,7 +35,6 @@ module Legion
             text_response({ query: query, results: results, total: results.size })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.search_sessions.call')
-            log.warn("SearchSessions#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

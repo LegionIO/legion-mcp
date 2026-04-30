@@ -35,7 +35,6 @@ module Legion
         { published: true, pattern_id: exported[:pattern_id] }
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_gossip.announce')
-        log.warn("PatternGossip#announce failed: #{e.message}")
         nil
       end
 
@@ -46,7 +45,6 @@ module Legion
         PatternSchema.import(message[:pattern], trust_level: :org)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_gossip.receive')
-        log.warn("PatternGossip#receive failed: #{e.message}")
         nil
       end
 

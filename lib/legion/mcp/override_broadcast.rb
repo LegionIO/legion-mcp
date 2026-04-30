@@ -33,7 +33,6 @@ module Legion
         ).publish
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.override_broadcast.publish_confirmation')
-        log.warn("Override broadcast failed: #{e.message}")
       end
 
       def receive_confirmation(tool:, lex:, confidence:, tests:, node:)
@@ -53,7 +52,6 @@ module Legion
         store_to_apollo(tool: tool, lex: lex, confidence: confidence, tests: tests, node: node)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.override_broadcast.receive_confirmation')
-        log.warn("Override receive failed: #{e.message}")
       end
 
       def store_to_apollo(tool:, lex:, confidence:, tests:, node:)
@@ -68,7 +66,6 @@ module Legion
         )
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.override_broadcast.store_to_apollo')
-        log.warn("OverrideBroadcast#store_to_apollo failed: #{e.message}")
         nil
       end
 

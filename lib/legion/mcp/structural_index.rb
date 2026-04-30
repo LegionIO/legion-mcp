@@ -18,7 +18,7 @@ module Legion
           tools:        scan_tools,
           generated_at: Time.now.iso8601
         }
-        log.debug("[mcp][structural_index] action=build.complete " \
+        log.debug('[mcp][structural_index] action=build.complete ' \
                   "extensions=#{result[:extensions].size} tools=#{result[:tools].size}")
         result
       end
@@ -36,7 +36,6 @@ module Legion
           build_extension_entry(ext)
         rescue StandardError => e
           handle_exception(e, level: :debug, operation: 'legion.mcp.structural_index.scan_extensions')
-          log.debug("StructuralIndex: skipping #{ext}: #{e.message}")
           nil
         end
       end

@@ -24,7 +24,6 @@ module Legion
             text_response(Legion::Data::Model::Relationship.order(:id).limit(limit).all.map(&:values))
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_relationships.call')
-            log.warn("ListRelationships#call failed: #{e.message}")
             error_response("Failed to list relationships: #{e.message}")
           end
 
@@ -34,7 +33,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_relationships.data_connected?')
-            log.warn("ListRelationships#data_connected? failed: #{e.message}")
             false
           end
 

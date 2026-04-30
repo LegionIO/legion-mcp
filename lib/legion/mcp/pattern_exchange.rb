@@ -55,7 +55,6 @@ module Legion
         import_all(patterns, trust_level: trust_level)
       rescue StandardError => e
         handle_exception(e, level: :error, operation: 'legion.mcp.pattern_exchange.import_from_file')
-        log.error("PatternExchange#import_from_file failed: #{e.message}")
         { error: e.message, imported: 0 }
       end
     end

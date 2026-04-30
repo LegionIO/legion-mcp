@@ -150,7 +150,6 @@ module Legion
             return rendered[:result] if rendered[:success]
           rescue StandardError => e
             handle_exception(e, level: :debug, operation: 'legion.mcp.tier_router.generate_response')
-            log.debug("TierRouter#generate_response transformer failed: #{e.message}")
           end
         end
 

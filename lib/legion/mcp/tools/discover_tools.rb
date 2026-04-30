@@ -47,7 +47,6 @@ module Legion
             end
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.discover_tools.call')
-            log.warn("DiscoverTools#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

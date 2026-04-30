@@ -54,7 +54,6 @@ module Legion
             Legion::JSON.dump(catalog)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.resources.runner_catalog.catalog_json')
-            log.warn("RunnerCatalog#catalog_json failed: #{e.message}")
             Legion::JSON.dump({ error: "Failed to build catalog: #{e.message}" })
           end
 
@@ -77,7 +76,6 @@ module Legion
             Legion::JSON.dump(catalog)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.resources.runner_catalog.catalog_from_settings_extensions')
-            log.warn("RunnerCatalog#catalog_from_settings_extensions failed: #{e.message}")
             Legion::JSON.dump({ error: "Failed to build catalog from settings: #{e.message}" })
           end
 
@@ -85,7 +83,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.resources.runner_catalog.data_connected?')
-            log.warn("RunnerCatalog#data_connected? failed: #{e.message}")
             false
           end
         end

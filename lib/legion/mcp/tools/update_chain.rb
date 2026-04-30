@@ -31,7 +31,6 @@ module Legion
             text_response(record.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_chain.call')
-            log.warn("UpdateChain#call failed: #{e.message}")
             error_response("Failed to update chain: #{e.message}")
           end
 
@@ -41,7 +40,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_chain.data_connected?')
-            log.warn("UpdateChain#data_connected? failed: #{e.message}")
             false
           end
 

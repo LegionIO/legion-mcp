@@ -73,7 +73,6 @@ module Legion
         true
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.self_generate.publish_gap')
-        log.warn("SelfGenerate#publish_gap failed: #{e.message}")
         false
       end
 

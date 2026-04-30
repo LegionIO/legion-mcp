@@ -29,7 +29,6 @@ module Legion
             text_response({ deleted: true, id: id })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_schedule.call')
-            log.warn("DeleteSchedule#call failed: #{e.message}")
             error_response("Failed to delete schedule: #{e.message}")
           end
 
@@ -39,7 +38,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_schedule.data_connected?')
-            log.warn("DeleteSchedule#data_connected? failed: #{e.message}")
             false
           end
 

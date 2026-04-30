@@ -21,7 +21,6 @@ module Legion
           end
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.actors.self_generate_cycle.time')
-          log.warn(e.message)
           300
         end
 
@@ -29,7 +28,6 @@ module Legion
           SelfGenerate.enabled?
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.actors.self_generate_cycle.enabled?')
-          log.warn(e.message)
           false
         end
 

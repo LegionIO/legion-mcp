@@ -2,7 +2,7 @@
 
 module Legion
   module MCP
-    class ToolAdapter < ::MCP::Tool
+    class ToolAdapter < ::MCP::Tool # rubocop:disable Metrics/ClassLength
       extend Legion::Logging::Helper
 
       class << self
@@ -35,6 +35,8 @@ module Legion
                 ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
               end
             rescue StandardError => e
+              Legion::MCP::ToolAdapter.handle_exception(e, level:     :warn,
+                                                           operation: 'legion.mcp.tool_adapter.from_legion_tool')
               ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ error: e.message }) }], error: true)
             end
           end
@@ -99,7 +101,7 @@ module Legion
         end
 
         def build_from_metadata(entry)
-          entry_name   = sanitize_tool_name(entry[:name])
+          entry_name = sanitize_tool_name(entry[:name])
           log.debug("[mcp][adapter] action=build_from_metadata tool=#{entry_name} " \
                     "dispatch_type=#{entry[:dispatch_type]}")
           entry_desc   = entry[:description] || ''
@@ -126,6 +128,8 @@ module Legion
                        end
               adapter.send(:result_to_response, result)
             rescue StandardError => e
+              Legion::MCP::ToolAdapter.handle_exception(e, level:     :warn,
+                                                           operation: 'legion.mcp.tool_adapter.build_from_metadata')
               ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ error: e.message }) }], error: true)
             end
           end

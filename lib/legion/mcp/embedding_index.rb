@@ -7,7 +7,7 @@ module Legion
 
       module_function
 
-      def build_from_tool_data(tool_data, embedder: default_embedder)
+      def build_from_tool_data(tool_data, embedder: default_embedder) # rubocop:disable Metrics/AbcSize
         log.debug("[mcp][embedding] action=build_from_tool_data tools=#{tool_data.size} " \
                   "embedder_present=#{!embedder.nil?}")
         @embedder = embedder
@@ -141,7 +141,6 @@ module Legion
         result
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.embedding_index.safe_embed')
-        log.debug("EmbeddingIndex#safe_embed failed: #{e.message}")
         nil
       end
 
@@ -151,7 +150,6 @@ module Legion
         ->(text) { Legion::LLM.embed(text)[:vector] }
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.embedding_index.default_embedder')
-        log.debug("EmbeddingIndex#default_embedder failed: #{e.message}")
         nil
       end
     end

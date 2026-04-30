@@ -41,7 +41,6 @@ module Legion
             text_response(result)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.structural_index.call')
-            log.warn("StructuralIndexTool#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

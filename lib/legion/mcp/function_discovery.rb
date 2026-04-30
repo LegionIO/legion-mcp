@@ -40,7 +40,6 @@ module Legion
           ext.runner_modules.each { |runner_mod| build_tools_from_runner(runner_mod) }
         rescue StandardError => e
           handle_exception(e, level: :debug, operation: 'legion.mcp.function_discovery.discover_and_register')
-          log.debug("FunctionDiscovery: skipping #{ext}: #{e.message}")
         end
       end
 
@@ -209,7 +208,6 @@ module Legion
           Server.register_tool(adapter) if adapter
         rescue StandardError => e
           handle_exception(e, level: :debug, operation: 'legion.mcp.function_discovery.register_from_settings_extensions')
-          log.debug("FunctionDiscovery: skipping registry entry #{tool_entry[:name]}: #{e.message}")
         end
       end
     end

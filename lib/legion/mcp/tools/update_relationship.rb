@@ -32,7 +32,6 @@ module Legion
             text_response(record.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_relationship.call')
-            log.warn("UpdateRelationship#call failed: #{e.message}")
             error_response("Failed to update relationship: #{e.message}")
           end
 
@@ -42,7 +41,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_relationship.data_connected?')
-            log.warn("UpdateRelationship#data_connected? failed: #{e.message}")
             false
           end
 

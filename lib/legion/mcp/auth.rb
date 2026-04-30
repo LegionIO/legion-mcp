@@ -8,7 +8,11 @@ module Legion
       module_function
 
       def authenticate(token)
-        token_type = token ? (jwt_token?(token) ? :jwt : :api_key) : :none
+        token_type = if token
+                       jwt_token?(token) ? :jwt : :api_key
+                     else
+                       :none
+                     end
         log.debug("[mcp][auth] action=authenticate token_type=#{token_type}")
         return { authenticated: false, error: 'missing_token' } unless token
 
@@ -61,7 +65,6 @@ module Legion
         { authenticated: true, identity: identity_from_claims(claims) }
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.auth.verify_jwt')
-        log.warn("Auth#verify_jwt failed: #{e.message}")
         { authenticated: false, error: e.message }
       end
 

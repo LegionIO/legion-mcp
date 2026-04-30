@@ -94,8 +94,6 @@ module Legion
           result
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.client.connection.call_tool')
-          log.warn("[mcp] client.tool_call.failed #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name,
-                                                                        error: e.message)}")
           raise
         end
 
@@ -170,6 +168,7 @@ module Legion
 
           { content: content, error: is_error }
         rescue ::MCP::Client::ServerError => e
+          handle_exception(e, level: :warn, operation: 'legion.mcp.client.connection.execute_tool_call')
           { content: [{ type: 'text', text: e.message }], error: true }
         rescue ::MCP::Client::RequestHandlerError => e
           raise ConnectionError, "Tool call failed on #{@name}: #{e.message}"

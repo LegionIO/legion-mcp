@@ -27,7 +27,6 @@ module Legion
             text_response(task.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.get_task.call')
-            log.warn("GetTask#call failed: #{e.message}")
             error_response("Failed to get task: #{e.message}")
           end
 
@@ -37,7 +36,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.get_task.data_connected?')
-            log.warn("GetTask#data_connected? failed: #{e.message}")
             false
           end
 

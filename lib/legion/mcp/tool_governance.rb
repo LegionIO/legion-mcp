@@ -34,7 +34,7 @@ module Legion
         tools = filter_by_role(tools, identity[:role]) if identity.is_a?(Hash) && identity[:role]
         log.debug("[mcp][governance] action=filter_tools before=#{before} after=#{tools.size} " \
                   "governance_enabled=#{governance_enabled?} " \
-                  "risk_tier=#{identity&.dig(:risk_tier)} role=#{identity.is_a?(Hash) ? identity[:role] : nil}")
+                  "risk_tier=#{identity&.dig(:risk_tier)} role=#{identity[:role] if identity.is_a?(Hash)}")
         tools
       end
 

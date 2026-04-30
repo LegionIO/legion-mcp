@@ -22,7 +22,6 @@ module Legion
         PatternExchange.import_from_file(path, trust_level: :community)
       rescue StandardError => e
         handle_exception(e, level: :error, operation: 'legion.mcp.cold_start.load_community_patterns')
-        log.error("ColdStart#load_community_patterns failed: #{e.message}")
         { error: e.message, imported: 0 }
       end
 
@@ -30,7 +29,6 @@ module Legion
         Legion::Settings.dig(:mcp, :cold_start, :patterns_path)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.cold_start.configured_path')
-        log.warn("ColdStart#configured_path failed: #{e.message}")
         nil
       end
     end

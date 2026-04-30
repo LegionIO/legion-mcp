@@ -37,7 +37,6 @@ module Legion
             end
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.state_diff.call')
-            log.warn("StateDiff#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

@@ -56,7 +56,6 @@ module Legion
         server.notify_tools_list_changed
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.dynamic_injector.notify_if_changed')
-        log.debug("DynamicInjector: notify failed: #{e.message}")
       end
 
       def inject_for_context(server, intent_string, previous_names: [])
@@ -64,7 +63,7 @@ module Legion
 
         tools = active_tool_set(intent_string)
         current_names = tools.map(&:tool_name)
-        log.debug("[mcp][dynamic_injector] action=inject_for_context " \
+        log.debug('[mcp][dynamic_injector] action=inject_for_context ' \
                   "previous=#{previous_names.size} current=#{current_names.size} " \
                   "changed=#{tools_changed?(previous_names, current_names)}")
 

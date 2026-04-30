@@ -10,7 +10,7 @@ module Legion
       def compile_tool_definitions
         return [] unless defined?(Legion::MCP::Server)
 
-        log.debug("[mcp][pattern_compiler] action=compile_tool_definitions " \
+        log.debug('[mcp][pattern_compiler] action=compile_tool_definitions ' \
                   "registry_size=#{Legion::MCP::Server.tool_registry.size}")
         Legion::MCP::Server.tool_registry.map do |klass|
           name = klass.respond_to?(:tool_name) ? klass.tool_name : klass.name
@@ -50,7 +50,6 @@ module Legion
         props.keys.map(&:to_s)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_compiler.extract_params')
-        log.warn("PatternCompiler#extract_params failed: #{e.message}")
         []
       end
     end
