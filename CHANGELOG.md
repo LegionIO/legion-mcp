@@ -2,13 +2,26 @@
 
 ## [0.9.0] - 2026-04-29
 
+### Removed
+- 38 hardcoded tool files that duplicated dynamic extension discovery (extensions, workers, RBAC, status, config, prompts, datasets, evals, mind-growth, knowledge, mesh, absorb) — these are now auto-discovered via `Settings::Extensions`
+- `LoggingSupport` module — replaced by direct `Legion::Logging::Helper` + `Utils` module
+
 ### Changed
 - `FunctionDiscovery.discover_and_register` now prefers reading tools from `Legion::Settings::Extensions` (the centralized registry in `legion-settings`) when available and populated, falling back to existing `Legion::Tools::Discovery` and runner-module discovery paths for backward compatibility
 - `ToolAdapter.from_registry_entry` builds MCP tool classes from registry entry hashes; delegates to `from_legion_tool` when the entry contains a loaded tool class, otherwise builds a thin metadata-driven adapter
+- `ToolAdapter.build_from_metadata` handles `:mcp_remote` dispatch type by proxying calls through `MCP::Client::Pool` instead of dispatching to a local tool class
 - `Resources::RunnerCatalog#catalog_json` reads from `Settings::Extensions.runners` when available, falling back to the existing `legion-data` database query path
+- `tools_loader.rb` now requires only 8 MCP-specific and 18 legion-data CRUD tool files (down from 65)
+- All logging in server, catalog_dispatcher, observer, pattern_store, tier_router, do_action, and client/connection migrated from `LoggingSupport` to direct `log.*` calls with `Utils.format_fields`
 - Bumped `legion-settings` dependency floor to `>= 1.4.0` (requires `Settings::Extensions` module)
 
 ### Added
+- `Utils` module (`lib/legion/mcp/utils.rb`) — pure-function summarization and formatting helpers extracted from `LoggingSupport`
+- `Client::Pool.refresh_tools!` — re-fetches and re-registers all remote server tools
+- `Client::Pool.all_tools` now registers each remote tool into `Settings::Extensions` with `dispatch_type: :mcp_remote`
+- `Server.register_mcp_tools_in_settings_extensions` — registers `MCP_SPECIFIC_TOOLS` into `Settings::Extensions` with `dispatch_type: :class_call` after build
+- `patterns.rb` barrel file — requires all 13 Tier 0 pattern routing modules
+- `discovery.rb` barrel file — requires all 12 tool discovery and adaptation modules
 - `FunctionDiscovery.settings_extensions_available?` — guard method checking if `Settings::Extensions` is defined and populated
 - `FunctionDiscovery.register_from_settings_extensions` — registers tools from the centralized registry into the MCP server
 - `ToolAdapter.from_registry_entry` — factory method to build MCP tools from registry entry hashes
