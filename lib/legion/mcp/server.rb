@@ -192,7 +192,7 @@ module Legion
           install_tracing_tool_call_handler(server)
           register_mcp_tools_in_settings_extensions
 
-          PatternStore.hydrate_from_l2 if defined?(PatternStore)
+          Patterns::Store.hydrate_from_l2 if defined?(Patterns::Store)
           ColdStart.load_community_patterns if defined?(ColdStart)
           populate_embedding_index
 

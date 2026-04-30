@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'legion/mcp/pattern_store'
+require 'legion/mcp/patterns/store'
 
-RSpec.describe Legion::MCP::PatternStore do
+RSpec.describe Legion::MCP::Patterns::Store do
   let(:logger) { spy('logger') }
 
   before do

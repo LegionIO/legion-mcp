@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'digest'
-require_relative 'pattern_store'
+require_relative 'patterns/store'
 require_relative 'context_guard'
 require_relative 'utils'
 
@@ -33,7 +33,7 @@ module Legion
 
         ContextGuard.record_request(intent_hash)
 
-        pattern = PatternStore.lookup(intent_hash, request_id: request_id)
+        pattern = Patterns::Store.lookup(intent_hash, request_id: request_id)
         lookup_source = :exact
 
         unless pattern
@@ -87,8 +87,8 @@ module Legion
 
           results = execute_tool_chain(pattern[:tool_chain], params, request_id: request_id)
           response = generate_response(results, pattern)
-          PatternStore.record_hit(matched_hash, request_id: request_id)
-          PatternStore.learn_response_template(matched_hash, results.first, request_id: request_id) if results.size == 1
+          Patterns::Store.record_hit(matched_hash, request_id: request_id)
+          Patterns::Store.learn_response_template(matched_hash, results.first, request_id: request_id) if results.size == 1
 
           elapsed_ms = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(2)
           mcp_log :info, 'tier_router.complete',
@@ -105,7 +105,7 @@ module Legion
           handle_exception(e, level: :warn, operation: 'legion.mcp.tier_router.route')
           mcp_log :warn, 'tier_router.execute.failed',
                   request_id: request_id, error: e.message, tool_chain: Array(pattern[:tool_chain])
-          PatternStore.record_miss(matched_hash, request_id: request_id)
+          Patterns::Store.record_miss(matched_hash, request_id: request_id)
           tier1_response(pattern, "tool chain failed: #{e.message}")
         end
       end
@@ -165,7 +165,7 @@ module Legion
         intent_vector = embedder.call(normalized_intent)
         return nil unless intent_vector
 
-        PatternStore.lookup_semantic(intent_vector, request_id: request_id)
+        Patterns::Store.lookup_semantic(intent_vector, request_id: request_id)
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.tier_router.try_semantic_lookup')
         mcp_log :debug, 'tier_router.semantic_lookup.failed',

@@ -5,7 +5,7 @@ require 'tempfile'
 require 'legion/mcp/cold_start'
 
 RSpec.describe Legion::MCP::ColdStart do
-  before { Legion::MCP::PatternStore.reset! }
+  before { Legion::MCP::Patterns::Store.reset! }
 
   describe '.load_community_patterns' do
     it 'imports patterns from file when store is empty' do
@@ -28,7 +28,7 @@ RSpec.describe Legion::MCP::ColdStart do
     end
 
     it 'skips when store already has patterns' do
-      Legion::MCP::PatternStore.store(
+      Legion::MCP::Patterns::Store.store(
         intent_hash: 'existing', intent_text: 'existing',
         tool_chain: ['test'], confidence: 0.9,
         hit_count: 1, miss_count: 0, created_at: Time.now

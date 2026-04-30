@@ -74,9 +74,9 @@ module Legion
       end
 
       def detect_stale_candidates
-        return [] unless defined?(PatternStore)
+        return [] unless defined?(Patterns::Store)
 
-        candidates = PatternStore.candidates
+        candidates = Patterns::Store.candidates
 
         candidates.filter_map do |intent_hash, entry|
           next if entry[:count] < 2

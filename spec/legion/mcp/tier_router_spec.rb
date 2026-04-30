@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 require 'digest'
-require 'legion/mcp/pattern_store'
+require 'legion/mcp/patterns/store'
 require 'legion/mcp/context_guard'
 require 'legion/mcp/tier_router'
 
@@ -10,10 +10,10 @@ RSpec.describe Legion::MCP::TierRouter do
   let(:logger) { spy('logger') }
 
   before do
-    Legion::MCP::PatternStore.reset!
+    Legion::MCP::Patterns::Store.reset!
     Legion::MCP::ContextGuard.reset!
     allow(Legion::MCP::TierRouter).to receive(:log).and_return(logger)
-    allow(Legion::MCP::PatternStore).to receive(:log).and_return(logger)
+    allow(Legion::MCP::Patterns::Store).to receive(:log).and_return(logger)
   end
 
   describe '.route' do
@@ -27,7 +27,7 @@ RSpec.describe Legion::MCP::TierRouter do
 
     context 'with low confidence pattern' do
       before do
-        Legion::MCP::PatternStore.store(
+        Legion::MCP::Patterns::Store.store(
           intent_hash: Digest::SHA256.hexdigest('check status'),
           intent_text: 'check status', tool_chain: ['legion.get_status'],
           confidence: 0.4, hit_count: 0, miss_count: 0, created_at: Time.now
@@ -42,7 +42,7 @@ RSpec.describe Legion::MCP::TierRouter do
 
     context 'with medium confidence pattern (0.6-0.8)' do
       before do
-        Legion::MCP::PatternStore.store(
+        Legion::MCP::Patterns::Store.store(
           intent_hash: Digest::SHA256.hexdigest('check status'),
           intent_text: 'check status', tool_chain: ['legion.get_status'],
           confidence: 0.7, hit_count: 5, miss_count: 0, created_at: Time.now
@@ -58,7 +58,7 @@ RSpec.describe Legion::MCP::TierRouter do
 
     context 'with high confidence pattern (>= 0.8)' do
       before do
-        Legion::MCP::PatternStore.store(
+        Legion::MCP::Patterns::Store.store(
           intent_hash: Digest::SHA256.hexdigest('check status'),
           intent_text: 'check status', tool_chain: ['legion.get_status'],
           confidence: 0.9, hit_count: 10, miss_count: 0, created_at: Time.now,
@@ -90,7 +90,7 @@ RSpec.describe Legion::MCP::TierRouter do
 
     context 'when context guard fails' do
       before do
-        Legion::MCP::PatternStore.store(
+        Legion::MCP::Patterns::Store.store(
           intent_hash: Digest::SHA256.hexdigest('check status'),
           intent_text: 'check status', tool_chain: ['legion.get_status'],
           confidence: 0.9, hit_count: 10, miss_count: 2,
@@ -107,7 +107,7 @@ RSpec.describe Legion::MCP::TierRouter do
 
     context 'when tool chain execution fails' do
       before do
-        Legion::MCP::PatternStore.store(
+        Legion::MCP::Patterns::Store.store(
           intent_hash: Digest::SHA256.hexdigest('check status'),
           intent_text: 'check status', tool_chain: ['legion.get_status'],
           confidence: 0.9, hit_count: 10, miss_count: 0,
@@ -120,7 +120,7 @@ RSpec.describe Legion::MCP::TierRouter do
       it 'escalates to tier 1 and records miss' do
         result = described_class.route(intent: 'check status')
         expect(result[:tier]).to eq(1)
-        pattern = Legion::MCP::PatternStore.lookup(Digest::SHA256.hexdigest('check status'))
+        pattern = Legion::MCP::Patterns::Store.lookup(Digest::SHA256.hexdigest('check status'))
         expect(pattern[:miss_count]).to eq(1)
       end
     end

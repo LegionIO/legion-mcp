@@ -59,9 +59,9 @@ module Legion
       end
 
       def collect_pattern_count
-        return 0 unless defined?(PatternStore)
+        return 0 unless defined?(Patterns::Store)
 
-        PatternStore.respond_to?(:size) ? PatternStore.size : 0
+        Patterns::Store.respond_to?(:size) ? Patterns::Store.size : 0
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.state_tracker.collect_pattern_count')
         0

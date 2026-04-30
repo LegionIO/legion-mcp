@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'legion/mcp/pattern_gossip'
+require 'legion/mcp/patterns/gossip'
 
-RSpec.describe Legion::MCP::PatternGossip do
+RSpec.describe Legion::MCP::Patterns::Gossip do
   let(:pattern) do
     {
       intent_hash: 'gos1', intent_text: 'check health',

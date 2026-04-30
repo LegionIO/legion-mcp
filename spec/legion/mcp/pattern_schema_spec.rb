@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'legion/mcp/pattern_schema'
+require 'legion/mcp/patterns/schema'
 
-RSpec.describe Legion::MCP::PatternSchema do
+RSpec.describe Legion::MCP::Patterns::Schema do
   let(:internal_pattern) do
     {
       intent_hash: 'abc123', intent_text: 'check health',

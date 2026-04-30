@@ -2,10 +2,10 @@
 
 require 'spec_helper'
 require 'legion/mcp'
-require 'legion/mcp/pattern_store'
-require 'legion/mcp/pattern_compiler'
+require 'legion/mcp/patterns/store'
+require 'legion/mcp/patterns/compiler'
 
-RSpec.describe Legion::MCP::PatternCompiler do
+RSpec.describe Legion::MCP::Patterns::Compiler do
   describe '.compile_tool_definitions' do
     it 'generates compressed tool definitions from the server tool registry' do
       result = described_class.compile_tool_definitions
@@ -29,10 +29,10 @@ RSpec.describe Legion::MCP::PatternCompiler do
   end
 
   describe '.compile_workflows' do
-    before { Legion::MCP::PatternStore.reset! }
+    before { Legion::MCP::Patterns::Store.reset! }
 
     it 'generates workflows from promoted patterns above threshold' do
-      Legion::MCP::PatternStore.store(
+      Legion::MCP::Patterns::Store.store(
         intent_hash: 'wf_test', intent_text: 'check health',
         tool_chain: ['legion.get_status'], confidence: 0.85,
         hit_count: 10, miss_count: 0, created_at: Time.now
@@ -46,7 +46,7 @@ RSpec.describe Legion::MCP::PatternCompiler do
     end
 
     it 'excludes low-confidence patterns' do
-      Legion::MCP::PatternStore.store(
+      Legion::MCP::Patterns::Store.store(
         intent_hash: 'low_conf', intent_text: 'test',
         tool_chain: ['test'], confidence: 0.3,
         hit_count: 1, miss_count: 5, created_at: Time.now

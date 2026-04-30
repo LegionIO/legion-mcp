@@ -52,13 +52,13 @@ module Legion
         log.debug("[mcp][observer] action=record_intent_with_result tool=#{tool_name} success=#{success}")
         record_intent(intent, tool_name)
         return unless success
-        return unless defined?(Legion::MCP::PatternStore)
+        return unless defined?(Legion::MCP::Patterns::Store)
 
         normalized  = intent.to_s.strip.downcase.gsub(/\s+/, ' ')
         intent_hash = Digest::SHA256.hexdigest(normalized)
         candidate_key = Digest::SHA256.hexdigest("#{normalized}:#{tool_name}")
 
-        promotion = Legion::MCP::PatternStore.record_candidate(
+        promotion = Legion::MCP::Patterns::Store.record_candidate(
           intent_hash:   intent_hash,
           candidate_key: candidate_key,
           tool_chain:    [tool_name],
@@ -68,7 +68,7 @@ module Legion
 
         return unless promotion&.dig(:promote)
 
-        Legion::MCP::PatternStore.promote_candidate(
+        Legion::MCP::Patterns::Store.promote_candidate(
           intent_hash:   promotion[:intent_hash],
           candidate_key: candidate_key,
           tool_chain:    promotion[:tool_chain],

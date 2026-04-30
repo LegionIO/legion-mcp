@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'legion/mcp/pattern_store'
-require 'legion/mcp/pattern_exchange'
+require 'legion/mcp/patterns/store'
+require 'legion/mcp/patterns/exchange'
 
-RSpec.describe Legion::MCP::PatternExchange do
+RSpec.describe Legion::MCP::Patterns::Exchange do
   let(:valid_pattern) do
     {
       intent_hash: 'exp1', intent_text: 'check health',
@@ -33,12 +33,12 @@ RSpec.describe Legion::MCP::PatternExchange do
     }
   end
 
-  before { Legion::MCP::PatternStore.reset! }
+  before { Legion::MCP::Patterns::Store.reset! }
 
   describe '.export_all' do
     it 'exports patterns above confidence threshold' do
-      Legion::MCP::PatternStore.store(valid_pattern)
-      Legion::MCP::PatternStore.store(low_conf_pattern)
+      Legion::MCP::Patterns::Store.store(valid_pattern)
+      Legion::MCP::Patterns::Store.store(low_conf_pattern)
 
       exported = described_class.export_all(min_confidence: 0.5)
       expect(exported.size).to eq(1)
@@ -51,7 +51,7 @@ RSpec.describe Legion::MCP::PatternExchange do
       result = described_class.import_all([valid_v1_pattern], trust_level: :community)
       expect(result[:imported]).to eq(1)
 
-      stored = Legion::MCP::PatternStore.lookup('sha256abc')
+      stored = Legion::MCP::Patterns::Store.lookup('sha256abc')
       expect(stored[:confidence]).to eq(0.3)
     end
 
@@ -69,14 +69,14 @@ RSpec.describe Legion::MCP::PatternExchange do
     after { File.delete(path) if File.exist?(path) }
 
     it 'round-trips through JSON file' do
-      Legion::MCP::PatternStore.store(valid_pattern)
+      Legion::MCP::Patterns::Store.store(valid_pattern)
 
       described_class.export_to_file(path)
-      Legion::MCP::PatternStore.reset!
+      Legion::MCP::Patterns::Store.reset!
       result = described_class.import_from_file(path, trust_level: :org)
 
       expect(result[:imported]).to eq(1)
-      expect(Legion::MCP::PatternStore.size).to eq(1)
+      expect(Legion::MCP::Patterns::Store.size).to eq(1)
     end
   end
 end
