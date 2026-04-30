@@ -148,7 +148,7 @@ module Legion
         )
       end
 
-      def promote_candidate(intent_hash:, tool_chain:, intent_text:, intent_vector: nil, request_id: nil)
+      def promote_candidate(intent_hash:, tool_chain:, intent_text:, intent_vector: nil, candidate_key: nil, request_id: nil) # rubocop:disable Metrics/ParameterLists
         pattern = {
           intent_hash:          intent_hash,
           intent_text:          intent_text,
@@ -163,7 +163,8 @@ module Legion
           context_requirements: nil
         }
         store(pattern, request_id: request_id)
-        candidates_mutex.synchronize { candidates_buffer.delete(intent_hash) }
+        buf_key = candidate_key || intent_hash
+        candidates_mutex.synchronize { candidates_buffer.delete(buf_key) }
         LoggingSupport.info(
           'pattern.promoted',
           request_id:  request_id,
@@ -174,10 +175,11 @@ module Legion
         pattern
       end
 
-      def record_candidate(intent_hash:, tool_chain:, intent_text:, threshold: 3, request_id: nil) # rubocop:disable Metrics/MethodLength
+      def record_candidate(intent_hash:, tool_chain:, intent_text:, candidate_key: nil, threshold: 3, request_id: nil) # rubocop:disable Metrics/MethodLength, Metrics/ParameterLists
+        buf_key = candidate_key || intent_hash
         candidates_mutex.synchronize do # rubocop:disable Metrics/BlockLength
-          entry = candidates_buffer[intent_hash] ||= { intent_text: intent_text, tool_chain: tool_chain,
-                                                       count: 0 }
+          entry = candidates_buffer[buf_key] ||= { intent_text: intent_text, tool_chain: tool_chain,
+                                                   count: 0 }
           entry[:count] += 1
 
           if entry[:count] == 1
@@ -193,7 +195,7 @@ module Legion
           end
 
           if entry[:count] >= threshold && !pattern_exists?(intent_hash)
-            candidates_buffer.delete(intent_hash)
+            candidates_buffer.delete(buf_key)
             LoggingSupport.info(
               'pattern.candidate.threshold_met',
               request_id:  request_id,
@@ -284,8 +286,11 @@ module Legion
           archived.each { |hash| patterns_l0.delete(hash) }
         end
 
-        archived.each { |hash| archive_l2(hash) }
-        sync_all_to_persistence unless archived.empty?
+        archived.each do |hash|
+          archive_l2(hash)
+          evict_l1(hash)
+        end
+        sync_all_to_persistence
       end
 
       def hydrate_from_l2
@@ -338,6 +343,16 @@ module Legion
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.persist_l1')
         log.warn("PatternStore#persist_l1 failed: #{e.message}")
+        nil
+      end
+
+      def evict_l1(intent_hash)
+        return unless defined?(Legion::Cache) && Legion::Cache.respond_to?(:connected?) && Legion::Cache.connected?
+
+        Legion::Cache.delete("tbi:pattern:#{intent_hash}")
+      rescue StandardError => e
+        handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.evict_l1')
+        log.warn("PatternStore#evict_l1 failed: #{e.message}")
         nil
       end
 
