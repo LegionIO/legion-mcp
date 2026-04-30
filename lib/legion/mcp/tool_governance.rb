@@ -27,18 +27,45 @@ module Legion
       module_function
 
       def filter_tools(tools, identity)
-        return tools unless governance_enabled?
+        tools = filter_by_risk_tier(tools, identity&.dig(:risk_tier)) if governance_enabled?
+        tools = filter_by_role(tools, identity[:role]) if identity.is_a?(Hash) && identity[:role]
+        tools
+      end
 
-        risk_tier = identity&.dig(:risk_tier) || :low
-        tier_value = RISK_TIER_ORDER[risk_tier] || 0
+      def filter_by_risk_tier(tools, risk_tier)
+        tier_value = RISK_TIER_ORDER[risk_tier || :low] || 0
 
         # DEFAULT_TOOL_TIERS is the fallback; custom_tiers (from Settings) override it;
         # definition-level mcp_tier on the tool class takes highest precedence.
+        # Tools without any tier metadata default to :medium so they are not
+        # exposed to low-tier identities (safe-by-default).
         fallback_tiers = DEFAULT_TOOL_TIERS.merge(custom_tiers)
         tools.select do |tool|
-          tool_tier = definition_tier(tool) || fallback_tiers[tool_name(tool)] || :low
+          tool_tier = definition_tier(tool) || fallback_tiers[tool_name(tool)] || :medium
           (RISK_TIER_ORDER[tool_tier] || 0) <= tier_value
         end
+      end
+
+      def filter_by_role(tools, role)
+        return tools unless role
+
+        allowed = role_allowlist(role)
+        return tools if allowed.include?('*')
+
+        tools.select do |tool|
+          name = tool_name(tool).to_s
+          allowed.any? { |pattern| File.fnmatch?(pattern, name) }
+        end
+      end
+
+      def role_allowlist(role)
+        roles = Legion::Settings.dig(:mcp, :roles)
+        return ['*'] unless roles.is_a?(Hash)
+
+        role_config = roles[role.to_sym] || roles[role.to_s]
+        return ['*'] unless role_config.is_a?(Hash)
+
+        Array(role_config[:tools] || role_config['tools'])
       end
 
       def audit_invocation(tool_name:, identity:, params:, result:)

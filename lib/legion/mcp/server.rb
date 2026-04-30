@@ -42,7 +42,7 @@ module Legion
       @tool_registry_lock = Mutex.new
 
       class << self # rubocop:disable Metrics/ClassLength
-        attr_reader :tool_registry
+        attr_reader :tool_registry, :current_identity
 
         def rebuild_tool_registry
           @tool_registry_lock.synchronize do
@@ -87,6 +87,7 @@ module Legion
         def build(identity: nil) # rubocop:disable Metrics/MethodLength
           run_function_discovery
           rebuild_tool_registry
+          @current_identity = identity
 
           LoggingSupport.info(
             'server.build.start',
@@ -94,11 +95,7 @@ module Legion
             registry_size: tool_registry.size,
             governance:    ToolGovernance.governance_enabled?
           )
-          tools = if ToolGovernance.governance_enabled?
-                    ToolGovernance.filter_tools(tool_registry, identity)
-                  else
-                    tool_registry
-                  end
+          tools = ToolGovernance.filter_tools(tool_registry.dup, identity)
 
           server = ::MCP::Server.new(
             name:               'legion',
@@ -190,10 +187,11 @@ module Legion
         end
 
         def build_filtered_tool_list(keywords: [])
-          tool_names = tool_registry.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
+          governed = ToolGovernance.filter_tools(tool_registry, @current_identity)
+          tool_names = governed.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
           ranked     = UsageFilter.ranked_tools(tool_names, keywords: keywords)
           ranked.filter_map do |name|
-            tool_registry.find do |tc|
+            governed.find do |tc|
               (tc.respond_to?(:tool_name) ? tc.tool_name : tc.name) == name
             end
           end

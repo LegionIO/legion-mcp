@@ -12,7 +12,12 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
   describe '.filter_tools' do
     context 'when governance is disabled' do
-      it 'returns all tools unfiltered' do
+      it 'returns all tools unfiltered when no role is set' do
+        tools = [low_tool, high_tool, medium_tool]
+        expect(described_class.filter_tools(tools, {})).to eq(tools)
+      end
+
+      it 'returns all tools when identity is nil' do
         tools = [low_tool, high_tool, medium_tool]
         expect(described_class.filter_tools(tools, nil)).to eq(tools)
       end
@@ -112,6 +117,226 @@ RSpec.describe Legion::MCP::ToolGovernance do
         result = described_class.filter_tools([tool_without_def], identity)
         expect(result).to contain_exactly(tool_without_def)
       end
+
+      it 'defaults untiered tools to :medium so low-tier identities cannot access them' do
+        untiered_tool = double('tool', tool_name: 'legion.custom_unknown_tool')
+        identity = { risk_tier: :low }
+        result = described_class.filter_tools([untiered_tool], identity)
+        expect(result).to be_empty
+      end
+
+      it 'allows untiered tools for medium-tier identities' do
+        untiered_tool = double('tool', tool_name: 'legion.custom_unknown_tool')
+        identity = { risk_tier: :medium }
+        result = described_class.filter_tools([untiered_tool], identity)
+        expect(result).to contain_exactly(untiered_tool)
+      end
+
+      it 'allows untiered tools for high-tier identities' do
+        untiered_tool = double('tool', tool_name: 'legion.custom_unknown_tool')
+        identity = { risk_tier: :high }
+        result = described_class.filter_tools([untiered_tool], identity)
+        expect(result).to contain_exactly(untiered_tool)
+      end
+    end
+  end
+
+  describe '.filter_by_role' do
+    let(:query_tool) { double('tool', tool_name: 'legion.query_knowledge') }
+    let(:search_tool) { double('tool', tool_name: 'legion.search_sessions') }
+    let(:list_tool) { double('tool', tool_name: 'legion.list_extensions') }
+    let(:describe_tool) { double('tool', tool_name: 'legion.describe_runner') }
+    let(:run_tool) { double('tool', tool_name: 'legion.run_task') }
+    let(:all_tools) { [query_tool, search_tool, list_tool, describe_tool, run_tool] }
+
+    it 'returns all tools when role is nil' do
+      expect(described_class.filter_by_role(all_tools, nil)).to eq(all_tools)
+    end
+
+    context 'with researcher role' do
+      let(:researcher_roles) do
+        {
+          researcher: { tools: ['legion.query_knowledge', 'legion.search_*', 'legion.list_*'] }
+        }
+      end
+
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(researcher_roles)
+      end
+
+      it 'returns only tools matching the allowlist patterns' do
+        result = described_class.filter_by_role(all_tools, :researcher)
+        expect(result).to contain_exactly(query_tool, search_tool, list_tool)
+      end
+
+      it 'excludes tools not in the allowlist' do
+        result = described_class.filter_by_role(all_tools, :researcher)
+        expect(result).not_to include(run_tool, describe_tool)
+      end
+    end
+
+    context 'with orchestrator role (wildcard)' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+          { orchestrator: { tools: ['*'] } }
+        )
+      end
+
+      it 'returns all tools when allowlist contains wildcard' do
+        result = described_class.filter_by_role(all_tools, :orchestrator)
+        expect(result).to eq(all_tools)
+      end
+    end
+
+    context 'with glob patterns' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+          { reviewer: { tools: ['legion.list_*', 'legion.describe_*', 'legion.query_*'] } }
+        )
+      end
+
+      it 'matches glob patterns correctly' do
+        result = described_class.filter_by_role(all_tools, :reviewer)
+        expect(result).to contain_exactly(query_tool, list_tool, describe_tool)
+      end
+    end
+
+    context 'with sub_agent role (exact matches only)' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+          { sub_agent: { tools: ['legion.query_knowledge', 'legion.retrieve_knowledge'] } }
+        )
+      end
+
+      it 'restricts to exact tool names' do
+        result = described_class.filter_by_role(all_tools, :sub_agent)
+        expect(result).to contain_exactly(query_tool)
+      end
+    end
+
+    context 'when role is not configured' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+          { researcher: { tools: ['legion.query_knowledge'] } }
+        )
+      end
+
+      it 'returns all tools for an unknown role' do
+        result = described_class.filter_by_role(all_tools, :unknown_role)
+        expect(result).to eq(all_tools)
+      end
+    end
+
+    context 'when roles config is missing' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(nil)
+      end
+
+      it 'returns all tools' do
+        result = described_class.filter_by_role(all_tools, :researcher)
+        expect(result).to eq(all_tools)
+      end
+    end
+
+    context 'with string role key' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+          { 'researcher' => { 'tools' => ['legion.query_knowledge'] } }
+        )
+      end
+
+      it 'matches string role keys' do
+        result = described_class.filter_by_role(all_tools, :researcher)
+        expect(result).to contain_exactly(query_tool)
+      end
+    end
+  end
+
+  describe '.role_allowlist' do
+    it 'returns ["*"] when roles config is nil' do
+      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(nil)
+      expect(described_class.role_allowlist(:any)).to eq(['*'])
+    end
+
+    it 'returns ["*"] when role is not found in config' do
+      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return({ other: { tools: [] } })
+      expect(described_class.role_allowlist(:missing)).to eq(['*'])
+    end
+
+    it 'returns the tools array for a configured role' do
+      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+        { researcher: { tools: ['legion.query_knowledge', 'legion.search_*'] } }
+      )
+      expect(described_class.role_allowlist(:researcher)).to eq(['legion.query_knowledge', 'legion.search_*'])
+    end
+  end
+
+  describe '.filter_tools with role and risk tier composed' do
+    let(:query_tool) { double('tool', tool_name: 'legion.query_knowledge') }
+    let(:search_tool) { double('tool', tool_name: 'legion.search_sessions') }
+
+    context 'when governance is enabled and role is set' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :tool_risk_tiers).and_return({})
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+          { researcher: { tools: ['legion.query_knowledge'] } }
+        )
+      end
+
+      it 'applies both risk tier and role filtering' do
+        # low_tool passes risk tier but not role; query_tool passes both
+        # query_tool is untiered so defaults to :medium — use medium identity to pass risk tier
+        identity = { risk_tier: :medium, role: :researcher }
+        result = described_class.filter_tools([low_tool, query_tool], identity)
+        # low_tool (legion.list_tasks) passes risk tier (:low <= :medium) but not role
+        # query_tool (legion.query_knowledge) passes risk tier (default :medium <= :medium) and role
+        expect(result).to contain_exactly(query_tool)
+      end
+
+      it 'filters by risk tier first then role narrows further' do
+        identity = { risk_tier: :high, role: :researcher }
+        result = described_class.filter_tools([low_tool, high_tool, query_tool], identity)
+        # All pass risk tier (:high allows everything), but role filters to query_knowledge only
+        expect(result).to contain_exactly(query_tool)
+      end
+    end
+
+    context 'when governance is disabled but role is set' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+          { researcher: { tools: ['legion.search_*'] } }
+        )
+      end
+
+      it 'skips risk tier but still applies role filtering' do
+        identity = { role: :researcher }
+        result = described_class.filter_tools([low_tool, high_tool, search_tool], identity)
+        expect(result).to contain_exactly(search_tool)
+      end
+    end
+  end
+
+  describe '.filter_tools role-based invocation blocking' do
+    let(:query_tool) { double('tool', tool_name: 'legion.query_knowledge') }
+    let(:blocked_tool) { double('tool', tool_name: 'legion.run_task') }
+
+    before do
+      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
+        { sub_agent: { tools: ['legion.query_knowledge'] } }
+      )
+    end
+
+    it 'blocks tools not in the role allowlist' do
+      identity = { role: :sub_agent }
+      result = described_class.filter_tools([query_tool, blocked_tool], identity)
+      expect(result).not_to include(blocked_tool)
+    end
+
+    it 'allows tools in the role allowlist' do
+      identity = { role: :sub_agent }
+      result = described_class.filter_tools([query_tool, blocked_tool], identity)
+      expect(result).to include(query_tool)
     end
   end
 end
