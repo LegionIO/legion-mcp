@@ -25,8 +25,6 @@ module Legion
       end
 
       def configured_path
-        return nil unless defined?(Legion::Settings)
-
         Legion::Settings.dig(:mcp, :cold_start, :patterns_path)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.cold_start.configured_path')

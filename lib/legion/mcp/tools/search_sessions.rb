@@ -87,7 +87,7 @@ module Legion
           end
 
           def resolve_sessions_dir
-            custom = Legion::Settings.dig(:chat, :sessions_dir) if defined?(Legion::Settings)
+            custom = Legion::Settings.dig(:chat, :sessions_dir)
             custom || SESSIONS_DIR
           end
 

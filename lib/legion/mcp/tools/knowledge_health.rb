@@ -39,7 +39,6 @@ module Legion
 
           def resolve_path(path)
             return path if path && !path.empty?
-            return nil unless defined?(Legion::Settings)
 
             Legion::Settings.dig(:knowledge, :corpus_path)
           rescue StandardError => e

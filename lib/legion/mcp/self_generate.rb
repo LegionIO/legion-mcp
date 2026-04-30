@@ -14,8 +14,6 @@ module Legion
       module_function
 
       def enabled?
-        return false unless defined?(Legion::Settings)
-
         Legion::Settings.dig(:codegen, :self_generate, :enabled) == true
       end
 
@@ -125,13 +123,11 @@ module Legion
       # private helpers
 
       def max_gaps_per_cycle
-        val = Legion::Settings.dig(:codegen, :self_generate, :max_gaps_per_cycle) if defined?(Legion::Settings)
-        val || MAX_GAPS_PER_CYCLE
+        Legion::Settings.dig(:codegen, :self_generate, :max_gaps_per_cycle) || MAX_GAPS_PER_CYCLE
       end
 
       def cooldown_seconds
-        val = Legion::Settings.dig(:codegen, :self_generate, :cooldown_seconds) if defined?(Legion::Settings)
-        val || COOLDOWN_SECONDS
+        Legion::Settings.dig(:codegen, :self_generate, :cooldown_seconds) || COOLDOWN_SECONDS
       end
 
       def record_cycle(published_count)

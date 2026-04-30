@@ -88,7 +88,7 @@ module Legion
             text = Legion::JSON.dump({ error: 'Ingress not available' })
             ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: true)
           else
-            text = defined?(Legion::JSON) ? Legion::JSON.dump(result) : result.to_s
+            text = Legion::JSON.dump(result)
             response = ::MCP::Tool::Response.new([{ type: 'text', text: text }])
             LoggingSupport.info(
               'catalog.tool_call.complete',

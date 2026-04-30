@@ -74,8 +74,6 @@ module Legion
       end
 
       def setting(key)
-        return nil unless defined?(Legion::Settings)
-
         Legion::Settings.dig(:mcp, :tier0, :guards, key)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.context_guard.setting')

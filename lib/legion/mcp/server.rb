@@ -217,7 +217,8 @@ module Legion
 
         def load_tools_from_settings_extensions
           Legion::Settings::Extensions.tools.each do |tool_entry|
-            next if @tool_registry.any? { |tc| tc.tool_name == tool_entry[:name] }
+            sanitized_name = ToolAdapter.sanitize_tool_name(tool_entry[:name])
+            next if @tool_registry.any? { |tc| tc.tool_name == sanitized_name }
 
             adapter = ToolAdapter.from_registry_entry(tool_entry)
             @tool_registry << adapter if adapter

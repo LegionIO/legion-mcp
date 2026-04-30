@@ -54,9 +54,41 @@ module Legion
             klass.call(**args)
           elsif klass.respond_to?(:new)
             instance = klass.new
-            instance.method(:call).arity.zero? && args.empty? ? instance.call : instance.call(args)
+            return { error: "Tool #{name} instance does not implement call" } unless instance.respond_to?(:call)
+
+            dispatch_tool_instance(instance, name, args)
           else
             { error: "Tool #{name} has no executable class" }
+          end
+        end
+
+        def dispatch_tool_instance(instance, _name, args)
+          call_method = instance.method(:call)
+          return instance.call if call_method.arity.zero? && args.empty?
+
+          if keyword_callable_method?(call_method)
+            begin
+              instance.call(**args)
+            rescue ArgumentError
+              instance.call(args)
+            end
+          else
+            instance.call(args)
+          end
+        end
+
+        def keyword_callable_method?(call_method)
+          call_method.parameters.any? { |type, _name| %i[key keyreq keyrest].include?(type) }
+        end
+
+        def result_to_response(result)
+          if result.is_a?(Hash) && result[:content]
+            content = result[:content].map { |c| { type: c[:type] || 'text', text: c[:text] || '' } }
+            ::MCP::Tool::Response.new(content, error: result[:error] || false)
+          else
+            error = result.is_a?(Hash) ? !result[:error].nil? : false
+            text = result.is_a?(String) ? result : Legion::JSON.dump(result)
+            ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
           end
         end
 
@@ -76,9 +108,7 @@ module Legion
 
             define_singleton_method(:call) do |**args|
               result = adapter.send(:dispatch_tool_class, entry_ref[:tool_class], entry_ref[:name], args)
-              error = result.is_a?(Hash) ? !!result[:error] : false
-              text = result.is_a?(String) ? result : Legion::JSON.dump(result)
-              ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
+              adapter.send(:result_to_response, result)
             rescue StandardError => e
               ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ error: e.message }) }], error: true)
             end

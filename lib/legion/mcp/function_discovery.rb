@@ -56,7 +56,7 @@ module Legion
       end
 
       def runner_expose_opts(_runner_module)
-        global_expose = defined?(Legion::Settings) ? (Legion::Settings.dig(:mcp, :auto_expose_runners) || false) : false
+        global_expose = Legion::Settings.dig(:mcp, :auto_expose_runners) || false
         { class_expose: nil, global_expose: global_expose, prefix: nil }
       end
 
@@ -171,7 +171,7 @@ module Legion
               error = true
               { error: "function #{func_ref} not found" }
             end
-          text = defined?(Legion::JSON) ? Legion::JSON.dump(result) : result.to_s
+          text = Legion::JSON.dump(result)
           ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
         end
       end
