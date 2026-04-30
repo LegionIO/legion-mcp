@@ -48,13 +48,8 @@ module Legion
 
       private
 
-      def resolve_identity(token) # rubocop:disable Metrics/MethodLength
-        if Auth.auth_enabled?
-          auth_result = Auth.authenticate(token)
-          return { error: auth_result[:error] } unless auth_result[:authenticated]
-
-          auth_result[:identity]
-        elsif Auth.require_auth? && token
+      def resolve_identity(token)
+        if Auth.auth_enabled? || (Auth.require_auth? && token)
           auth_result = Auth.authenticate(token)
           return { error: auth_result[:error] } unless auth_result[:authenticated]
 

@@ -2,7 +2,7 @@
 
 module Legion
   module MCP
-    module Auth # rubocop:disable Metrics/ModuleLength
+    module Auth
       extend Legion::Logging::Helper
 
       module_function
@@ -34,18 +34,18 @@ module Legion
         token.count('.') == 2
       end
 
-      def verify_jwt(token) # rubocop:disable Metrics/MethodLength
+      def verify_jwt(token)
         return { authenticated: false, error: 'crypt_unavailable' } unless defined?(Legion::Crypt::JWT)
 
         verification_key = jwt_verification_key
         claims = if verification_key
                    Legion::Crypt::JWT.verify(
                      token,
-                     verification_key: verification_key,
-                     algorithm: jwt_algorithm,
-                     issuer: jwt_issuer,
+                     verification_key:  verification_key,
+                     algorithm:         jwt_algorithm,
+                     issuer:            jwt_issuer,
                      verify_expiration: true,
-                     verify_issuer: true
+                     verify_issuer:     true
                    )
                  else
                    log.warn('No JWT verification key available; falling back to unverified decode')
@@ -74,9 +74,7 @@ module Legion
         configured = Legion::Settings.dig(:mcp, :auth, :jwt_secret)
         return configured if configured
 
-        if defined?(Legion::Crypt::ClusterSecret) && Legion::Crypt::ClusterSecret.respond_to?(:cs)
-          return Legion::Crypt::ClusterSecret.cs
-        end
+        return Legion::Crypt::ClusterSecret.cs if defined?(Legion::Crypt::ClusterSecret) && Legion::Crypt::ClusterSecret.respond_to?(:cs)
 
         nil
       end

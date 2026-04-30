@@ -1,0 +1,28 @@
+[
+  {
+    "file_path": "./spec/legion/mcp/context_compiler_spec.rb",
+    "line_number": 161,
+    "full_description": "Legion::MCP::ContextCompiler CATEGORIES contains a :skills category",
+    "status": "failed",
+    "exception": {
+      "class": "RSpec::Expectations::ExpectationNotMetError",
+      "message": "expected [:tasks, :chains, :relationships, :extensions, :schedules, :workers, :rbac, :status, :describe, :knowledge, :mesh, :mind_growth, :prompts, :datasets, :evals, :meta] to include :skills\nDiff:\n@@ -1 +1,16 @@\n-[:skills]\n+[:tasks,\n+ :chains,\n+ :relationships,\n+ :extensions,\n+ :schedules,\n+ :workers,\n+ :rbac,\n+ :status,\n+ :describe,\n+ :knowledge,\n+ :mesh,\n+ :mind_growth,\n+ :prompts,\n+ :datasets,\n+ :evals,\n+ :meta]\n",
+      "backtrace": [
+        "./spec/legion/mcp/context_compiler_spec.rb:162:in 'block (3 levels) in <top (required)>'"
+      ]
+    }
+  },
+  {
+    "file_path": "./spec/legion/mcp/context_compiler_spec.rb",
+    "line_number": 165,
+    "full_description": "Legion::MCP::ContextCompiler CATEGORIES skills category lists all four skill tools",
+    "status": "failed",
+    "exception": {
+      "class": "NoMethodError",
+      "message": "undefined method '[]' for nil",
+      "backtrace": [
+        "./spec/legion/mcp/context_compiler_spec.rb:166:in 'block (3 levels) in <top (required)>'"
+      ]
+    }
+  }
+]
