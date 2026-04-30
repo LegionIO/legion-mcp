@@ -61,7 +61,8 @@ module Legion
 
             tool_registry << tool_class
             reset_caches!
-            log.info("[mcp] server.tool.registered #{Utils.format_fields(tool_name: tool_class.tool_name, registry_size: tool_registry.size)}")
+            mcp_log :info, 'server.tool.registered',
+                    tool_name: tool_class.tool_name, registry_size: tool_registry.size
           end
         end
 
@@ -69,7 +70,8 @@ module Legion
           @tool_registry_lock.synchronize do
             tool_registry.reject! { |tc| tc.tool_name == tool_name }
             reset_caches!
-            log.info("[mcp] server.tool.unregistered #{Utils.format_fields(tool_name: tool_name, registry_size: tool_registry.size)}")
+            mcp_log :info, 'server.tool.unregistered',
+                    tool_name: tool_name, registry_size: tool_registry.size
           end
         end
 
@@ -83,7 +85,10 @@ module Legion
           rebuild_tool_registry
           @current_identity = identity
 
-          log.info("[mcp] server.build.start #{Utils.format_fields(identity: Utils.summarize_identity(identity), registry_size: tool_registry.size, governance: ToolGovernance.governance_enabled?)}")
+          mcp_log :info, 'server.build.start',
+                  identity:      Utils.summarize_identity(identity),
+                  registry_size: tool_registry.size,
+                  governance:    ToolGovernance.governance_enabled?
           tools = ToolGovernance.filter_tools(tool_registry.dup, identity)
 
           server = ::MCP::Server.new(
@@ -113,7 +118,10 @@ module Legion
 
           hydrate_override_confidence
 
-          log.info("[mcp] server.build.complete #{Utils.format_fields(identity: Utils.summarize_identity(identity), tool_count: tools.size, registry_size: tool_registry.size, resource_count: server.resources.size)}")
+          mcp_log :info, 'server.build.complete',
+                  identity: Utils.summarize_identity(identity),
+                  tool_count: tools.size, registry_size: tool_registry.size,
+                  resource_count: server.resources.size
           server
         end
 
@@ -122,10 +130,10 @@ module Legion
 
           tool_data = ContextCompiler.tool_index.values
           EmbeddingIndex.build_from_tool_data(tool_data, embedder: embedder)
-          log.info("[mcp] server.embedding_index.populated #{Utils.format_fields(tool_count: tool_data.size)}")
+          mcp_log :info, 'server.embedding_index.populated', tool_count: tool_data.size
         end
 
-        def wire_observer(data) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        def wire_observer(data)
           return unless data[:method] == 'tools/call' && data[:tool_name]
 
           duration_ms = (data[:duration].to_f * 1000).to_i
@@ -133,7 +141,10 @@ module Legion
           success     = data[:error].nil?
           request_id  = Utils.request_id_from(data[:tool_arguments])
 
-          log.info("[mcp] server.tool_call.complete #{Utils.format_fields(request_id: request_id, tool_name: data[:tool_name], success: success, duration_ms: duration_ms, params_keys: params_keys, error: data[:error])}")
+          mcp_log :info, 'server.tool_call.complete',
+                  request_id: request_id, tool_name: data[:tool_name],
+                  success: success, duration_ms: duration_ms,
+                  params_keys: params_keys, error: data[:error]
 
           Observer.record(
             tool_name:   data[:tool_name],
@@ -172,6 +183,10 @@ module Legion
 
         private
 
+        def mcp_log(level, event, **fields)
+          log.public_send(level, "[mcp] #{event} #{Utils.format_fields(fields)}")
+        end
+
         def load_extension_tools
           load_tools_from_settings_extensions if settings_extensions_available?
         end
@@ -181,14 +196,14 @@ module Legion
 
           MCP_SPECIFIC_TOOLS.each do |tool_class|
             Legion::Settings::Extensions.register_tool(tool_class.tool_name, {
-              description:   tool_class.description,
-              input_schema:  tool_class.input_schema,
-              tool_class:    tool_class,
-              dispatch_type: :class_call,
-              extension:     'legion-mcp',
-              source:        :mcp_builtin,
-              mcp_tier:      tool_class.respond_to?(:mcp_tier) ? tool_class.mcp_tier : nil
-            })
+                                                         description:   tool_class.description,
+                                                         input_schema:  tool_class.input_schema,
+                                                         tool_class:    tool_class,
+                                                         dispatch_type: :class_call,
+                                                         extension:     'legion-mcp',
+                                                         source:        :mcp_builtin,
+                                                         mcp_tier:      tool_class.respond_to?(:mcp_tier) ? tool_class.mcp_tier : nil
+                                                       })
           end
         end
 
@@ -227,7 +242,8 @@ module Legion
 
           handlers[::MCP::Methods::TOOLS_LIST] = lambda { |_request|
             tool_list = DeferredRegistry.build_tools_list(build_filtered_tool_list)
-            log.info("[mcp] server.tools.list #{Utils.format_fields(total: tool_list.size, deferred_only: tool_list.count { |entry| !entry.key?(:inputSchema) && !entry.key?(:input_schema) })}")
+            deferred = tool_list.count { |e| !e.key?(:inputSchema) && !e.key?(:input_schema) }
+            mcp_log :info, 'server.tools.list', total: tool_list.size, deferred_only: deferred
             tool_list
           }
         end

@@ -154,6 +154,7 @@ RSpec.describe Legion::MCP::FunctionDiscovery do
 
   describe '.settings_extensions_available?' do
     it 'returns falsy when the Settings::Extensions registry has no tools' do
+      allow(Legion::Settings::Extensions).to receive(:tools).and_return([])
       expect(described_class.settings_extensions_available?).to be_falsey
     end
 

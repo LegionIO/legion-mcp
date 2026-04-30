@@ -32,7 +32,8 @@ module Legion
           @mutex.synchronize do
             return if @connected
 
-            log.info("[mcp] client.connect.start #{Utils.format_fields(connection: @name, transport: @transport_type, config: @config.slice(:url, :command))}")
+            log.info("[mcp] client.connect.start #{Utils.format_fields(connection: @name, transport: @transport_type,
+                                                                       config: @config.slice(:url, :command))}")
             case @transport_type
             when :stdio
               connect_stdio
@@ -67,27 +68,33 @@ module Legion
           @mutex.synchronize do
             if !force_refresh && @tools_cache && @tools_cached_at &&
                (Time.now - @tools_cached_at) < TOOL_CACHE_TTL
-              log.info("[mcp] client.tools.cache_hit #{Utils.format_fields(connection: @name, transport: @transport_type, count: @tools_cache.size)}")
+              log.info("[mcp] client.tools.cache_hit #{Utils.format_fields(connection: @name, transport: @transport_type,
+                                                                           count: @tools_cache.size)}")
               return @tools_cache
             end
 
-            log.info("[mcp] client.tools.fetch.start #{Utils.format_fields(connection: @name, transport: @transport_type, force_refresh: force_refresh)}")
+            log.info("[mcp] client.tools.fetch.start #{Utils.format_fields(connection: @name, transport: @transport_type,
+                                                                           force_refresh: force_refresh)}")
             @tools_cache = fetch_tools
             @tools_cached_at = Time.now
-            log.info("[mcp] client.tools.fetch.complete #{Utils.format_fields(connection: @name, transport: @transport_type, count: @tools_cache.size)}")
+            log.info("[mcp] client.tools.fetch.complete #{Utils.format_fields(connection: @name, transport: @transport_type,
+                                                                              count: @tools_cache.size)}")
             @tools_cache
           end
         end
 
         def call_tool(name:, arguments: {})
           connect unless connected?
-          log.info("[mcp] client.tool_call.start #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name, arguments: Utils.summarize_params(arguments))}")
+          log.info("[mcp] client.tool_call.start #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name,
+                                                                       arguments: Utils.summarize_params(arguments))}")
           result = execute_tool_call(name: name, arguments: arguments)
-          log.info("[mcp] client.tool_call.complete #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name, result: Utils.summarize_result(result))}")
+          log.info("[mcp] client.tool_call.complete #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name,
+                                                                          result: Utils.summarize_result(result))}")
           result
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.client.connection.call_tool')
-          log.warn("[mcp] client.tool_call.failed #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name, error: e.message)}")
+          log.warn("[mcp] client.tool_call.failed #{Utils.format_fields(connection: @name, transport: @transport_type, tool_name: name,
+                                                                        error: e.message)}")
           raise
         end
 

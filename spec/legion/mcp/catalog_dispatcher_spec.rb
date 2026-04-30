@@ -119,6 +119,7 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
 
     it 'logs tool call start and completion' do
       klass = described_class.build_tool_class(entry)
+      allow(klass).to receive(:log).and_return(logger)
       allow(described_class).to receive(:dispatch).and_return({ status: 200 })
 
       klass.call(url: 'https://example.com')

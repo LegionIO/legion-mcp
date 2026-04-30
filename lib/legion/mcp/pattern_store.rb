@@ -15,26 +15,42 @@ module Legion
 
       module_function
 
+      def mcp_log(level, event, **fields)
+        log.public_send(level, "[mcp] #{event} #{Utils.format_fields(fields)}")
+      end
+
       def store(pattern = nil, request_id: nil, **attrs)
         pattern = (pattern || {}).merge(attrs)
         hash = pattern[:intent_hash]
         mutex.synchronize { patterns_l0[hash] = pattern.dup }
         persist_l1(hash, pattern)
         persist_l2(hash, pattern)
-        log.info("[mcp] pattern.store #{Utils.format_fields(request_id: request_id, intent_hash: hash&.[](0, 12), intent: pattern[:intent_text], confidence: pattern[:confidence]&.round(3), tool_chain: Array(pattern[:tool_chain]))}")
+        mcp_log :info, 'pattern.store',
+                request_id: request_id, intent_hash: hash&.[](0, 12),
+                intent: pattern[:intent_text],
+                confidence: pattern[:confidence]&.round(3),
+                tool_chain: Array(pattern[:tool_chain])
       end
 
       def lookup(intent_hash, request_id: nil) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         result = mutex.synchronize { patterns_l0[intent_hash]&.dup }
         if result
-          log.info("[mcp] pattern.lookup #{Utils.format_fields(request_id: request_id, source: :l0, intent_hash: intent_hash&.[](0, 12), confidence: result[:confidence]&.round(3), tool_chain: Array(result[:tool_chain]))}")
+          mcp_log :info, 'pattern.lookup',
+                  request_id: request_id, source: :l0,
+                  intent_hash: intent_hash&.[](0, 12),
+                  confidence: result[:confidence]&.round(3),
+                  tool_chain: Array(result[:tool_chain])
           return result
         end
 
         result = lookup_l1(intent_hash)
         if result
           mutex.synchronize { patterns_l0[intent_hash] = result }
-          log.info("[mcp] pattern.lookup #{Utils.format_fields(request_id: request_id, source: :l1, intent_hash: intent_hash&.[](0, 12), confidence: result[:confidence]&.round(3), tool_chain: Array(result[:tool_chain]))}")
+          mcp_log :info, 'pattern.lookup',
+                  request_id: request_id, source: :l1,
+                  intent_hash: intent_hash&.[](0, 12),
+                  confidence: result[:confidence]&.round(3),
+                  tool_chain: Array(result[:tool_chain])
           return result.dup
         end
 
@@ -42,11 +58,16 @@ module Legion
         if result
           mutex.synchronize { patterns_l0[intent_hash] = result }
           persist_l1(intent_hash, result)
-          log.info("[mcp] pattern.lookup #{Utils.format_fields(request_id: request_id, source: :l2, intent_hash: intent_hash&.[](0, 12), confidence: result[:confidence]&.round(3), tool_chain: Array(result[:tool_chain]))}")
+          mcp_log :info, 'pattern.lookup',
+                  request_id: request_id, source: :l2,
+                  intent_hash: intent_hash&.[](0, 12),
+                  confidence: result[:confidence]&.round(3),
+                  tool_chain: Array(result[:tool_chain])
           return result.dup
         end
 
-        log.info("[mcp] pattern.lookup #{Utils.format_fields(request_id: request_id, source: :miss, intent_hash: intent_hash&.[](0, 12))}")
+        mcp_log :info, 'pattern.lookup',
+                request_id: request_id, source: :miss, intent_hash: intent_hash&.[](0, 12)
 
         nil
       end
@@ -69,7 +90,10 @@ module Legion
           end
         end
 
-        log.info("[mcp] pattern.semantic_lookup #{Utils.format_fields(request_id: request_id, matched: !best_hash.nil?, best_score: best_score.round(4), threshold: threshold, intent_hash: best_hash&.[](0, 12))}")
+        mcp_log :info, 'pattern.semantic_lookup',
+                request_id: request_id, matched: !best_hash.nil?,
+                best_score: best_score.round(4), threshold: threshold,
+                intent_hash: best_hash&.[](0, 12)
         best_hash ? lookup(best_hash, request_id: request_id) : nil
       end
 
@@ -85,7 +109,10 @@ module Legion
         end
         sync_to_persistence(intent_hash)
         pattern = mutex.synchronize { patterns_l0[intent_hash]&.dup }
-        log.info("[mcp] pattern.hit #{Utils.format_fields(request_id: request_id, intent_hash: intent_hash&.[](0, 12), confidence: pattern&.dig(:confidence)&.round(3), hit_count: pattern&.dig(:hit_count))}")
+        mcp_log :info, 'pattern.hit',
+                request_id: request_id, intent_hash: intent_hash&.[](0, 12),
+                confidence: pattern&.dig(:confidence)&.round(3),
+                hit_count: pattern&.dig(:hit_count)
       end
 
       def record_miss(intent_hash, request_id: nil)
@@ -98,7 +125,10 @@ module Legion
         end
         sync_to_persistence(intent_hash)
         pattern = mutex.synchronize { patterns_l0[intent_hash]&.dup }
-        log.info("[mcp] pattern.miss #{Utils.format_fields(request_id: request_id, intent_hash: intent_hash&.[](0, 12), confidence: pattern&.dig(:confidence)&.round(3), miss_count: pattern&.dig(:miss_count))}")
+        mcp_log :info, 'pattern.miss',
+                request_id: request_id, intent_hash: intent_hash&.[](0, 12),
+                confidence: pattern&.dig(:confidence)&.round(3),
+                miss_count: pattern&.dig(:miss_count)
       end
 
       def promote_candidate(intent_hash:, tool_chain:, intent_text:, intent_vector: nil, candidate_key: nil, request_id: nil) # rubocop:disable Metrics/ParameterLists
@@ -118,24 +148,32 @@ module Legion
         store(pattern, request_id: request_id)
         buf_key = candidate_key || intent_hash
         candidates_mutex.synchronize { candidates_buffer.delete(buf_key) }
-        log.info("[mcp] pattern.promoted #{Utils.format_fields(request_id: request_id, intent_hash: intent_hash&.[](0, 12), intent: intent_text, tool_chain: Array(tool_chain))}")
+        mcp_log :info, 'pattern.promoted',
+                request_id: request_id, intent_hash: intent_hash&.[](0, 12),
+                intent: intent_text, tool_chain: Array(tool_chain)
         pattern
       end
 
-      def record_candidate(intent_hash:, tool_chain:, intent_text:, candidate_key: nil, threshold: 3, request_id: nil) # rubocop:disable Metrics/MethodLength, Metrics/ParameterLists
+      def record_candidate(intent_hash:, tool_chain:, intent_text:, candidate_key: nil, threshold: 3, request_id: nil) # rubocop:disable Metrics/ParameterLists
         buf_key = candidate_key || intent_hash
-        candidates_mutex.synchronize do # rubocop:disable Metrics/BlockLength
+        candidates_mutex.synchronize do
           entry = candidates_buffer[buf_key] ||= { intent_text: intent_text, tool_chain: tool_chain,
                                                    count: 0 }
           entry[:count] += 1
 
           if entry[:count] == 1
-            log.info("[mcp] pattern.candidate.recorded #{Utils.format_fields(request_id: request_id, intent_hash: intent_hash&.[](0, 12), intent: intent_text, tool_chain: Array(tool_chain), count: entry[:count], threshold: threshold)}")
+            mcp_log :info, 'pattern.candidate.recorded',
+                    request_id: request_id, intent_hash: intent_hash&.[](0, 12),
+                    intent: intent_text, tool_chain: Array(tool_chain),
+                    count: entry[:count], threshold: threshold
           end
 
           if entry[:count] >= threshold && !pattern_exists?(intent_hash)
             candidates_buffer.delete(buf_key)
-            log.info("[mcp] pattern.candidate.threshold_met #{Utils.format_fields(request_id: request_id, intent_hash: intent_hash&.[](0, 12), intent: intent_text, tool_chain: Array(tool_chain), count: entry[:count], threshold: threshold)}")
+            mcp_log :info, 'pattern.candidate.threshold_met',
+                    request_id: request_id, intent_hash: intent_hash&.[](0, 12),
+                    intent: intent_text, tool_chain: Array(tool_chain),
+                    count: entry[:count], threshold: threshold
             return { promote: true, intent_hash: intent_hash, tool_chain: tool_chain,
                      intent_text: intent_text }
           end
@@ -197,7 +235,9 @@ module Legion
               pattern[:response_template] = template if pattern
             end
             sync_to_persistence(intent_hash)
-            log.info("[mcp] pattern.template.learned #{Utils.format_fields(request_id: request_id, intent_hash: intent_hash&.[](0, 12), template: Utils.summarize_text(template))}")
+            mcp_log :info, 'pattern.template.learned',
+                    request_id: request_id, intent_hash: intent_hash&.[](0, 12),
+                    template: Utils.summarize_text(template)
           end
         end
       end
@@ -230,10 +270,10 @@ module Legion
           persist_l1(pattern[:intent_hash], pattern)
           loaded += 1
         end
-        log.info("[mcp] pattern.hydrate.complete #{Utils.format_fields(source: :l2, loaded: loaded)}")
+        mcp_log :info, 'pattern.hydrate.complete', source: :l2, loaded: loaded
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.pattern_store.hydrate_from_l2')
-        log.warn("[mcp] pattern.hydrate.failed #{Utils.format_fields(source: :l2, error: e.message)}")
+        mcp_log :warn, 'pattern.hydrate.failed', source: :l2, error: e.message
         nil
       end
 

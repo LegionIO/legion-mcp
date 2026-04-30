@@ -92,7 +92,7 @@ module Legion
           end
         end
 
-        def build_from_metadata(entry) # rubocop:disable Metrics/MethodLength
+        def build_from_metadata(entry)
           entry_name   = sanitize_tool_name(entry[:name])
           entry_desc   = entry[:description] || ''
           entry_schema = entry[:input_schema].is_a?(Hash) ? entry[:input_schema] : { properties: {} }
