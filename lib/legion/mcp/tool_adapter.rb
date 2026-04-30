@@ -92,7 +92,7 @@ module Legion
           end
         end
 
-        def build_from_metadata(entry)
+        def build_from_metadata(entry) # rubocop:disable Metrics/MethodLength
           entry_name   = sanitize_tool_name(entry[:name])
           entry_desc   = entry[:description] || ''
           entry_schema = entry[:input_schema].is_a?(Hash) ? entry[:input_schema] : { properties: {} }
@@ -107,7 +107,15 @@ module Legion
             define_singleton_method(:legion_tool_entry) { entry_ref }
 
             define_singleton_method(:call) do |**args|
-              result = adapter.send(:dispatch_tool_class, entry_ref[:tool_class], entry_ref[:name], args)
+              result = if entry_ref[:dispatch_type] == :mcp_remote
+                         server_name = entry_ref[:mcp_server] || entry_ref[:extension]&.sub(/\Amcp:/, '')
+                         conn = Legion::MCP::Client::Pool.connection_for(server_name)
+                         raise "MCP server #{server_name} not available" unless conn
+
+                         conn.call_tool(name: entry_ref[:name], arguments: args)
+                       else
+                         adapter.send(:dispatch_tool_class, entry_ref[:tool_class], entry_ref[:name], args)
+                       end
               adapter.send(:result_to_response, result)
             rescue StandardError => e
               ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump({ error: e.message }) }], error: true)
