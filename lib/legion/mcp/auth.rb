@@ -46,21 +46,20 @@ module Legion
         return { authenticated: false, error: 'crypt_unavailable' } unless defined?(Legion::Crypt::JWT)
 
         verification_key = jwt_verification_key
-        claims = if verification_key
-                   Legion::Crypt::JWT.verify(
-                     token,
-                     verification_key:  verification_key,
-                     algorithm:         jwt_algorithm,
-                     issuer:            jwt_issuer,
-                     verify_expiration: true,
-                     verify_issuer:     true
-                   )
-                 else
-                   log.warn('No JWT verification key available; falling back to unverified decode')
-                   decoded = Legion::Crypt::JWT.decode(token)
-                   validate_claims!(decoded)
-                   decoded
-                 end
+
+        unless verification_key
+          log.warn('No JWT verification key available; rejecting token')
+          return { authenticated: false, error: 'jwt_verification_key_unavailable' }
+        end
+
+        claims = Legion::Crypt::JWT.verify(
+          token,
+          verification_key:  verification_key,
+          algorithm:         jwt_algorithm,
+          issuer:            jwt_issuer,
+          verify_expiration: true,
+          verify_issuer:     true
+        )
 
         { authenticated: true, identity: identity_from_claims(claims) }
       rescue StandardError => e

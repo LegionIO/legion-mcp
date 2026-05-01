@@ -113,35 +113,23 @@ RSpec.describe Legion::MCP::Auth do
       end
     end
 
-    context 'without a verification key (fallback decode)' do
+    context 'without a verification key' do
       before do
         allow(Legion::Settings).to receive(:dig).with(:mcp, :auth, :jwt_secret).and_return(nil)
         allow(Legion::Settings).to receive(:dig).with(:mcp, :auth, :jwt_algorithm).and_return(nil)
         allow(Legion::Settings).to receive(:dig).with(:mcp, :auth, :jwt_issuer).and_return(nil)
+        hide_const('Legion::Crypt::ClusterSecret') if defined?(Legion::Crypt::ClusterSecret)
       end
 
-      it 'accepts a token with valid claims via decode fallback' do
-        allow(Legion::Crypt::JWT).to receive(:decode)
-          .and_return(valid_claims.merge(exp: Time.now.to_i + 3600))
-        result = described_class.verify_jwt('unverified.jwt.token')
-        expect(result[:authenticated]).to be true
-        expect(result[:identity][:user_id]).to eq('test-user')
-      end
-
-      it 'rejects a token missing the sub claim' do
-        allow(Legion::Crypt::JWT).to receive(:decode)
-          .and_return({ exp: Time.now.to_i + 3600 })
-        result = described_class.verify_jwt('no-sub.jwt.token')
+      it 'rejects any token when no verification key is available' do
+        result = described_class.verify_jwt('any.jwt.token')
         expect(result[:authenticated]).to be false
-        expect(result[:error]).to include('sub')
+        expect(result[:error]).to eq('jwt_verification_key_unavailable')
       end
 
-      it 'rejects a token that has expired' do
-        allow(Legion::Crypt::JWT).to receive(:decode)
-          .and_return(valid_claims.merge(exp: Time.now.to_i - 60))
-        result = described_class.verify_jwt('expired.jwt.token')
-        expect(result[:authenticated]).to be false
-        expect(result[:error]).to include('expired')
+      it 'does not call Legion::Crypt::JWT.decode' do
+        expect(Legion::Crypt::JWT).not_to receive(:decode)
+        described_class.verify_jwt('any.jwt.token')
       end
     end
   end

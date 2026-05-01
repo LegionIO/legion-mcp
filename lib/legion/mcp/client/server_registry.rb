@@ -31,6 +31,7 @@ module Legion
         end
 
         def deregister(name)
+          log.debug("[mcp][server_registry] action=deregister server=#{name}")
           @mutex.synchronize do
             @servers.delete(name)
             @health.delete(name)
@@ -71,6 +72,7 @@ module Legion
         end
 
         def mark_healthy(name)
+          log.debug("[mcp][server_registry] action=mark_healthy server=#{name}")
           @mutex.synchronize do
             @health[name] = { healthy: true, last_check: Time.now }
           end

@@ -164,6 +164,8 @@ module Legion
             text_response({ invoked: true, skill: name, conversation_id: conv_id,
                             content: result.message[:content] })
           rescue StandardError => e
+            handle_exception(e, level: :warn, handled: false,
+                             operation: 'legion.mcp.tools.skill_invoke.invoke_skill')
             Legion::LLM::ConversationStore.clear_skill_state(conv_id) if defined?(Legion::LLM::ConversationStore)
             raise e
           end

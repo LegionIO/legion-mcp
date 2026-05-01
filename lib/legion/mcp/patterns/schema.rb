@@ -40,7 +40,17 @@ module Legion
           }
         end
 
+        def deep_symbolize(obj)
+          case obj
+          when Hash  then obj.to_h { |k, v| [k.to_sym, deep_symbolize(v)] }
+          when Array then obj.map { |v| deep_symbolize(v) }
+          else            obj
+          end
+        end
+
         def import(external, trust_level: :community)
+          external = deep_symbolize(external)
+
           confidence = external.dig(:confidence, :suggested_initial) || TRUST_LEVELS.fetch(trust_level, 0.3)
           confidence = [confidence, TRUST_LEVELS.fetch(trust_level, 0.3)].min
 
@@ -68,7 +78,7 @@ module Legion
         def validate_schema(data)
           return false unless data.is_a?(Hash)
 
-          REQUIRED_FIELDS.all? { |f| data.key?(f) }
+          REQUIRED_FIELDS.all? { |f| data.key?(f) || data.key?(f.to_s) }
         end
 
         def extract_keywords(text)

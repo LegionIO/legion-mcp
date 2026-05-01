@@ -77,7 +77,8 @@ module Legion
           if keyword_callable_method?(call_method)
             begin
               instance.call(**args)
-            rescue ArgumentError
+            rescue ArgumentError => e
+              handle_exception(e, level: :debug, handled: true, operation: 'mcp.tool_adapter.dispatch_tool_instance')
               instance.call(args)
             end
           else

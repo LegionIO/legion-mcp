@@ -32,7 +32,8 @@ module Legion
 
       def transport_connected?
         Legion::Settings.dig(:transport, :connected) == true
-      rescue StandardError
+      rescue StandardError => e
+        handle_exception(e, level: :debug, handled: true, operation: 'mcp.audit.transport_connected?')
         false
       end
 

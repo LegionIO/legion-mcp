@@ -1,5 +1,19 @@
 # legion-mcp Changelog
 
+## [0.9.1] - 2026-04-30
+
+### Fixed
+- `Audit.transport_connected?` rescue block now calls `handle_exception` at `:debug` level instead of silently swallowing the error
+- `ToolAdapter.dispatch_tool_instance` `rescue ArgumentError` (keyword-to-positional fallback) now calls `handle_exception` at `:debug` level
+- `SkillInvoke.invoke_skill` cleanup rescue now calls `handle_exception` at `:warn` level before re-raising
+- `Client::Connection.verify_connection!` rescue now calls `handle_exception` at `:error` level before re-raising as `ConnectionError`
+- `Client::Connection.fetch_tools` rescue now calls `handle_exception` at `:warn` level before re-raising as `ConnectionError`
+- `Client::Connection.execute_tool_call` `RequestHandlerError` rescue now calls `handle_exception` at `:warn` level before re-raising as `ConnectionError`
+
+### Changed
+- Added debug-level logging to `Client.register`, `Client.deregister`, `ServerRegistry.deregister`, and `ServerRegistry.mark_healthy` for full action traceability
+- Updated README.md to reflect 0.9.x architecture: DeferredRegistry, Client pool, Settings::Extensions integration, correct version, dependency floors, and file map
+
 ## [0.9.0] - 2026-04-29
 
 ### Removed

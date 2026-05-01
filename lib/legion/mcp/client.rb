@@ -28,10 +28,12 @@ module Legion
       end
 
       def register(name, **config)
+        log.debug("[mcp][client] action=register server=#{name}")
         ServerRegistry.register(name, **config)
       end
 
       def deregister(name)
+        log.debug("[mcp][client] action=deregister server=#{name}")
         Pool.reset!
         ServerRegistry.deregister(name)
       end

@@ -179,6 +179,8 @@ module Legion
           end
           @tools_cached_at = Time.now
         rescue ::MCP::Client::ServerError, ::MCP::Client::RequestHandlerError => e
+          handle_exception(e, level: :error, handled: false,
+                           operation: 'mcp.client.connection.verify_connection')
           raise ConnectionError, "MCP handshake failed for #{@name}: #{e.message}"
         end
 
@@ -195,6 +197,8 @@ module Legion
             }
           end
         rescue ::MCP::Client::ServerError, ::MCP::Client::RequestHandlerError => e
+          handle_exception(e, level: :warn, handled: false,
+                           operation: 'mcp.client.connection.fetch_tools')
           raise ConnectionError, "Failed to fetch tools from #{@name}: #{e.message}"
         end
 
@@ -214,6 +218,8 @@ module Legion
           handle_exception(e, level: :warn, operation: 'legion.mcp.client.connection.execute_tool_call')
           { content: [{ type: 'text', text: e.message }], error: true }
         rescue ::MCP::Client::RequestHandlerError => e
+          handle_exception(e, level: :warn, handled: false,
+                           operation: 'mcp.client.connection.execute_tool_call')
           raise ConnectionError, "Tool call failed on #{@name}: #{e.message}"
         end
 
