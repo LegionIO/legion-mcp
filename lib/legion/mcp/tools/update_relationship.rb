@@ -44,7 +44,7 @@ module Legion
             false
           end
 
-          def relationship_model? = Legion::Data::Model.const_defined?(:Relationship)
+          def relationship_model? = Legion::Data::Model.const_defined?(:Relationship, false)
 
           def text_response(data)
             ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump(data) }])

@@ -191,8 +191,7 @@ module Legion
 
       # Returns true when Settings::Extensions is defined and has tools registered.
       def settings_extensions_available?
-        defined?(Legion::Settings::Extensions) &&
-          Legion::Settings::Extensions.respond_to?(:tools) &&
+        Legion::Settings::Extensions.respond_to?(:tools) &&
           Legion::Settings::Extensions.tools.any?
       end
 

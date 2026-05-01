@@ -94,7 +94,6 @@ module Legion
       end
 
       def generate_tools_from_catalog
-        return [] unless defined?(Legion::Settings::Extensions)
         return [] unless Legion::Settings::Extensions.respond_to?(:tools)
 
         Legion::Settings::Extensions.tools.filter_map do |tool_entry|

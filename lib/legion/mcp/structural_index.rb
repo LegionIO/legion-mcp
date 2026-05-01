@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
-
 module Legion
   module MCP
     module StructuralIndex

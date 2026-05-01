@@ -58,8 +58,7 @@ module Legion
           end
 
           def settings_extensions_runners_available?
-            defined?(Legion::Settings::Extensions) &&
-              Legion::Settings::Extensions.respond_to?(:runners) &&
+            Legion::Settings::Extensions.respond_to?(:runners) &&
               Legion::Settings::Extensions.runners.any?
           end
 

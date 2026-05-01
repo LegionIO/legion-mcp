@@ -43,7 +43,7 @@ module Legion
             false
           end
 
-          def chain_model? = Legion::Data::Model.const_defined?(:Chain)
+          def chain_model? = Legion::Data::Model.const_defined?(:Chain, false)
 
           def text_response(data)
             ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump(data) }])

@@ -49,7 +49,7 @@ module Legion
                 mcp_server:    name
               }
               # Register into the central registry so LLM pipeline sees these too
-              if defined?(Legion::Settings::Extensions) && Legion::Settings::Extensions.respond_to?(:register_tool)
+              if Legion::Settings::Extensions.respond_to?(:register_tool)
                 Legion::Settings::Extensions.register_tool(tool[:name], tool_entry)
               end
               tool_entry

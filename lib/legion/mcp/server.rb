@@ -213,7 +213,7 @@ module Legion
         end
 
         def register_mcp_tools_in_settings_extensions
-          return unless defined?(Legion::Settings::Extensions) && Legion::Settings::Extensions.respond_to?(:register_tool)
+          return unless Legion::Settings::Extensions.respond_to?(:register_tool)
 
           log.debug("[mcp][server] action=register_mcp_tools_in_settings_extensions count=#{MCP_SPECIFIC_TOOLS.size}")
           MCP_SPECIFIC_TOOLS.each do |tool_class|
@@ -230,8 +230,7 @@ module Legion
         end
 
         def settings_extensions_available?
-          defined?(Legion::Settings::Extensions) &&
-            Legion::Settings::Extensions.respond_to?(:tools) &&
+          Legion::Settings::Extensions.respond_to?(:tools) &&
             Legion::Settings::Extensions.tools.any?
         end
 

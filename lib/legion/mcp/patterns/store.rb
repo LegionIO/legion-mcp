@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
 require 'legion/mcp/utils'
 
 module Legion
@@ -413,15 +412,15 @@ module Legion
           {
             intent_hash:          pattern[:intent_hash],
             intent_text:          pattern[:intent_text],
-            intent_vector:        pattern[:intent_vector] ? ::JSON.dump(pattern[:intent_vector]) : nil,
-            tool_chain:           ::JSON.dump(pattern[:tool_chain]),
+            intent_vector:        pattern[:intent_vector] ? Legion::JSON.dump(pattern[:intent_vector]) : nil,
+            tool_chain:           Legion::JSON.dump(pattern[:tool_chain]),
             response_template:    pattern[:response_template],
             confidence:           pattern[:confidence],
             hit_count:            pattern[:hit_count],
             miss_count:           pattern[:miss_count],
             last_hit_at:          pattern[:last_hit_at],
             created_at:           pattern[:created_at],
-            context_requirements: pattern[:context_requirements]&.then { |c| ::JSON.dump(c) }
+            context_requirements: pattern[:context_requirements]&.then { |c| Legion::JSON.dump(c) }
           }
         end
 
@@ -429,15 +428,15 @@ module Legion
           {
             intent_hash:          row[:intent_hash],
             intent_text:          row[:intent_text],
-            intent_vector:        row[:intent_vector] ? ::JSON.parse(row[:intent_vector]) : nil,
-            tool_chain:           ::JSON.parse(row[:tool_chain]),
+            intent_vector:        row[:intent_vector] ? Legion::JSON.load(row[:intent_vector]) : nil,
+            tool_chain:           Legion::JSON.load(row[:tool_chain]),
             response_template:    row[:response_template],
             confidence:           row[:confidence],
             hit_count:            row[:hit_count],
             miss_count:           row[:miss_count],
             last_hit_at:          row[:last_hit_at],
             created_at:           row[:created_at],
-            context_requirements: row[:context_requirements] ? ::JSON.parse(row[:context_requirements]) : nil
+            context_requirements: row[:context_requirements] ? Legion::JSON.load(row[:context_requirements]) : nil
           }
         end
 

@@ -38,7 +38,7 @@ module Legion
         return @always_loaded_cache if @always_loaded_cache
 
         base = ALWAYS_LOADED.dup
-        if defined?(Legion::Settings::Extensions) && Legion::Settings::Extensions.respond_to?(:filter_tools)
+        if Legion::Settings::Extensions.respond_to?(:filter_tools)
           always_entries = Legion::Settings::Extensions.filter_tools(deferred: false)
           base |= always_entries.map { |e| Legion::MCP::ToolAdapter.sanitize_tool_name(e[:name]) } if always_entries.is_a?(Array)
         end
