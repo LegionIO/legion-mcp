@@ -5,6 +5,8 @@ require_relative 'embedding_index'
 module Legion
   module MCP
     module ContextCompiler
+      extend Legion::Logging::Helper
+
       CATEGORIES = {
         tasks:         {
           tools:   %w[legion.run_task legion.list_tasks legion.get_task legion.delete_task legion.get_task_logs],
@@ -151,7 +153,10 @@ module Legion
         best = scored.max_by { |entry| entry[:score] }
         return nil if best[:score].zero?
 
-        Server.tool_registry.find { |klass| klass.tool_name == best[:name] }
+        matched = Server.tool_registry.find { |klass| klass.tool_name == best[:name] }
+        log.debug("[mcp][context_compiler] action=match_tool matched=#{matched&.tool_name} " \
+                  "score=#{best[:score].round(4)}")
+        matched
       end
 
       # Returns top N keyword-matched tools ranked by score.

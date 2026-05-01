@@ -28,10 +28,11 @@ unless defined?(Legion::Logging)
     end
   end
 end
-
+require 'legion/logging'
 require 'legion/settings'
 require 'legion/mcp'
-
+Legion::Settings[:logging][:level] = :error
+Legion::Logging.setup(level: :error, extended: false, log_stdout: false, trace_size: 0)
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true

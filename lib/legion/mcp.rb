@@ -13,6 +13,14 @@ require_relative 'mcp/tools_loader'
 require_relative 'mcp/server'
 require_relative 'mcp/override_broadcast'
 require_relative 'mcp/client'
+
+if defined?(Legion::Transport::Message)
+  require_relative 'mcp/transport/exchanges/audit'
+  require_relative 'mcp/transport/messages/tool_call_event'
+  require_relative 'mcp/transport/messages/client_call_event'
+  require_relative 'mcp/transport/messages/governance_event'
+end
+require_relative 'mcp/audit'
 require_relative 'mcp/actors/self_generate_cycle' if defined?(Legion::Extensions::Actors::Every)
 
 module Legion
@@ -28,13 +36,14 @@ module Legion
         raise
       end
 
-      def server_for(token:)
+      def server_for(token: nil, identity: nil)
         log.debug { "Authenticating MCP server request token_present=#{!token.to_s.empty?}" }
-        auth_result = Auth.authenticate(token)
-        return { error: auth_result[:error] } unless auth_result[:authenticated]
 
-        log.info { "Building identity-scoped MCP server identity=#{auth_result[:identity]}" }
-        Server.build(identity: auth_result[:identity])
+        identity ||= resolve_identity(token)
+        return identity if identity.is_a?(Hash) && identity.key?(:error)
+
+        log.info { "Building identity-scoped MCP server identity=#{identity}" }
+        Server.build(identity: identity)
       rescue StandardError => e
         handle_exception(e, level: :error, operation: 'mcp.server_for', token_present: !token.to_s.empty?)
         { error: e.message }
@@ -43,6 +52,19 @@ module Legion
       def reset!
         log.info 'Resetting Legion::MCP server cache' if @server
         @server = nil
+      end
+
+      private
+
+      def resolve_identity(token)
+        if Auth.auth_enabled? || (Auth.require_auth? && token)
+          auth_result = Auth.authenticate(token)
+          return { error: auth_result[:error] } unless auth_result[:authenticated]
+
+          auth_result[:identity]
+        else
+          Auth.default_identity
+        end
       end
     end
   end

@@ -8,7 +8,7 @@ RSpec.describe Legion::MCP::Server do
 
   before do
     allow(Legion::Settings).to receive(:dig).and_return(nil)
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+    allow(Legion::MCP::Server).to receive(:log).and_return(logger)
   end
 
   describe '.build' do
@@ -94,6 +94,66 @@ RSpec.describe Legion::MCP::Server do
       it 'includes all MCP-specific tools for high-tier identity' do
         server = described_class.build(identity: { risk_tier: :high })
         expect(server.tools.keys).to include('legion.plan', 'legion.tools')
+      end
+    end
+  end
+
+  describe '.build_filtered_tool_list with governance' do
+    let(:low_tool) do
+      Class.new(MCP::Tool) do
+        tool_name 'legion.list_tasks'
+        description 'List tasks'
+        input_schema(properties: {})
+        def self.call(**) = MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+      end
+    end
+
+    let(:high_tool) do
+      Class.new(MCP::Tool) do
+        tool_name 'legion.worker_lifecycle'
+        description 'Manage workers'
+        input_schema(properties: {})
+        def self.call(**) = MCP::Tool::Response.new([{ type: 'text', text: '{}' }])
+      end
+    end
+
+    before do
+      described_class.instance_variable_set(:@tool_registry, Concurrent::Array.new([low_tool, high_tool]))
+    end
+
+    after do
+      described_class.rebuild_tool_registry
+      described_class.instance_variable_set(:@current_identity, nil)
+    end
+
+    context 'when governance is enabled' do
+      before do
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
+        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :tool_risk_tiers).and_return({})
+      end
+
+      it 'excludes high-tier tools for low-tier identity' do
+        described_class.instance_variable_set(:@current_identity, { risk_tier: :low })
+        result = described_class.build_filtered_tool_list
+        names = result.map(&:tool_name)
+        expect(names).to include('legion.list_tasks')
+        expect(names).not_to include('legion.worker_lifecycle')
+      end
+
+      it 'includes all tools for high-tier identity' do
+        described_class.instance_variable_set(:@current_identity, { risk_tier: :high })
+        result = described_class.build_filtered_tool_list
+        names = result.map(&:tool_name)
+        expect(names).to include('legion.list_tasks', 'legion.worker_lifecycle')
+      end
+    end
+
+    context 'when governance is disabled' do
+      it 'returns all tools regardless of identity' do
+        described_class.instance_variable_set(:@current_identity, { risk_tier: :low })
+        result = described_class.build_filtered_tool_list
+        names = result.map(&:tool_name)
+        expect(names).to include('legion.list_tasks', 'legion.worker_lifecycle')
       end
     end
   end

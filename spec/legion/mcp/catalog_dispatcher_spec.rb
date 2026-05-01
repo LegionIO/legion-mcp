@@ -9,7 +9,6 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
   before do
     allow(Legion::Settings).to receive(:dig).and_return(nil)
     allow(described_class).to receive(:log).and_return(logger)
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
   end
 
   describe '.dispatch' do
@@ -120,6 +119,7 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
 
     it 'logs tool call start and completion' do
       klass = described_class.build_tool_class(entry)
+      allow(klass).to receive(:log).and_return(logger)
       allow(described_class).to receive(:dispatch).and_return({ status: 200 })
 
       klass.call(url: 'https://example.com')
@@ -150,20 +150,12 @@ RSpec.describe Legion::MCP::CatalogDispatcher do
   end
 
   describe '.generate_tools_from_catalog' do
-    context 'when Legion::Tools::Registry is not defined' do
-      before { hide_const('Legion::Tools::Registry') }
-
-      it 'returns empty array' do
-        expect(described_class.generate_tools_from_catalog).to eq([])
-      end
-    end
-
-    context 'when Legion::Tools::Registry has no tools' do
+    context 'when Legion::Settings::Extensions has no tools' do
       before do
-        stub_const('Legion::Tools::Registry', Module.new do
+        stub_const('Legion::Settings::Extensions', Module.new do
           module_function
 
-          def all_tools
+          def tools
             []
           end
         end)

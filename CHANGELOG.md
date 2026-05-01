@@ -1,5 +1,48 @@
 # legion-mcp Changelog
 
+## [0.9.1] - 2026-04-30
+
+### Fixed
+- `Audit.transport_connected?` rescue block now calls `handle_exception` at `:debug` level instead of silently swallowing the error
+- `ToolAdapter.dispatch_tool_instance` `rescue ArgumentError` (keyword-to-positional fallback) now calls `handle_exception` at `:debug` level
+- `SkillInvoke.invoke_skill` cleanup rescue now calls `handle_exception` at `:warn` level before re-raising
+- `Client::Connection.verify_connection!` rescue now calls `handle_exception` at `:error` level before re-raising as `ConnectionError`
+- `Client::Connection.fetch_tools` rescue now calls `handle_exception` at `:warn` level before re-raising as `ConnectionError`
+- `Client::Connection.execute_tool_call` `RequestHandlerError` rescue now calls `handle_exception` at `:warn` level before re-raising as `ConnectionError`
+
+### Changed
+- Added debug-level logging to `Client.register`, `Client.deregister`, `ServerRegistry.deregister`, and `ServerRegistry.mark_healthy` for full action traceability
+- Updated README.md to reflect 0.9.x architecture: DeferredRegistry, Client pool, Settings::Extensions integration, correct version, dependency floors, and file map
+
+## [0.9.0] - 2026-04-29
+
+### Removed
+- 38 hardcoded tool files that duplicated dynamic extension discovery (extensions, workers, RBAC, status, config, prompts, datasets, evals, mind-growth, knowledge, mesh, absorb) — these are now auto-discovered via `Settings::Extensions`
+- `LoggingSupport` module — replaced by direct `Legion::Logging::Helper` + `Utils` module
+
+### Changed
+- `FunctionDiscovery.discover_and_register` now prefers reading tools from `Legion::Settings::Extensions` (the centralized registry in `legion-settings`) when available and populated, falling back to existing `Legion::Tools::Discovery` and runner-module discovery paths for backward compatibility
+- `ToolAdapter.from_registry_entry` builds MCP tool classes from registry entry hashes; delegates to `from_legion_tool` when the entry contains a loaded tool class, otherwise builds a thin metadata-driven adapter
+- `ToolAdapter.build_from_metadata` handles `:mcp_remote` dispatch type by proxying calls through `MCP::Client::Pool` instead of dispatching to a local tool class
+- `Resources::RunnerCatalog#catalog_json` reads from `Settings::Extensions.runners` when available, falling back to the existing `legion-data` database query path
+- `tools_loader.rb` now requires only 8 MCP-specific and 18 legion-data CRUD tool files (down from 65)
+- All logging in server, catalog_dispatcher, observer, pattern_store, tier_router, do_action, and client/connection migrated from `LoggingSupport` to direct `log.*` calls with `Utils.format_fields`
+- Bumped `legion-settings` dependency floor to `>= 1.4.0` (requires `Settings::Extensions` module)
+
+### Added
+- `Utils` module (`lib/legion/mcp/utils.rb`) — pure-function summarization and formatting helpers extracted from `LoggingSupport`
+- `Client::Pool.refresh_tools!` — re-fetches and re-registers all remote server tools
+- `Client::Pool.all_tools` now registers each remote tool into `Settings::Extensions` with `dispatch_type: :mcp_remote`
+- `Server.register_mcp_tools_in_settings_extensions` — registers `MCP_SPECIFIC_TOOLS` into `Settings::Extensions` with `dispatch_type: :class_call` after build
+- `patterns.rb` barrel file — requires all 13 Tier 0 pattern routing modules
+- `discovery.rb` barrel file — requires all 12 tool discovery and adaptation modules
+- `FunctionDiscovery.settings_extensions_available?` — guard method checking if `Settings::Extensions` is defined and populated
+- `FunctionDiscovery.register_from_settings_extensions` — registers tools from the centralized registry into the MCP server
+- `ToolAdapter.from_registry_entry` — factory method to build MCP tools from registry entry hashes
+- `ToolAdapter.build_from_metadata` — builds thin MCP tool adapters from metadata when no tool class is loaded
+- `RunnerCatalog#settings_extensions_runners_available?` — guard for registry-based runner catalog
+- `RunnerCatalog#catalog_from_settings_extensions` — builds runner catalog JSON from the centralized registry
+
 ## [0.8.1] - 2026-04-14
 
 ### Fixed

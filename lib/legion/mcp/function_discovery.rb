@@ -7,12 +7,21 @@ module Legion
 
       module_function
 
-      def discover_and_register # rubocop:disable Metrics/PerceivedComplexity
+      def discover_and_register # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         return if @discovery_fired
 
         @discovery_fired = true
+        log.debug('[mcp][discovery] action=discover_and_register')
+
+        # Prefer centralized registry when available and populated
+        if settings_extensions_available?
+          log.debug('[mcp][discovery] action=discover_and_register source=settings_extensions')
+          register_from_settings_extensions
+          return
+        end
 
         if defined?(Legion::Tools::Discovery) && Legion::Tools::Discovery.respond_to?(:discover_and_register)
+          log.debug('[mcp][discovery] action=discover_and_register source=tools_discovery')
           Legion::Tools::Discovery.discover_and_register
           return
         end
@@ -31,7 +40,6 @@ module Legion
           ext.runner_modules.each { |runner_mod| build_tools_from_runner(runner_mod) }
         rescue StandardError => e
           handle_exception(e, level: :debug, operation: 'legion.mcp.function_discovery.discover_and_register')
-          log.debug("FunctionDiscovery: skipping #{ext}: #{e.message}")
         end
       end
 
@@ -45,22 +53,31 @@ module Legion
         functions = runner_module.settings[:functions]
         return if functions.nil? || functions.empty?
 
+        log.debug("[mcp][discovery] action=build_tools_from_runner runner=#{runner_module} functions=#{functions.size}")
         opts = runner_expose_opts(runner_module)
         functions.each { |func_name, meta| register_function(runner_module, func_name, meta, opts) }
       end
 
       def runner_expose_opts(_runner_module)
-        global_expose = defined?(Legion::Settings) ? (Legion::Settings.dig(:mcp, :auto_expose_runners) || false) : false
+        global_expose = Legion::Settings.dig(:mcp, :auto_expose_runners) || false
         { class_expose: nil, global_expose: global_expose, prefix: nil }
       end
 
       def register_function(runner_module, func_name, meta, opts)
         defn = definition_for(runner_module, func_name)
-        return unless resolve_exposed(defn, meta, opts)
+        exposed = resolve_exposed(defn, meta, opts)
+        unless exposed
+          log.debug("[mcp][discovery] action=register_function func=#{func_name} skipped=not_exposed")
+          return
+        end
 
         requires = defn&.dig(:requires)&.map(&:to_s) || meta[:requires]
-        return unless deps_satisfied?(requires)
+        unless deps_satisfied?(requires)
+          log.debug("[mcp][discovery] action=register_function func=#{func_name} skipped=deps_unsatisfied")
+          return
+        end
 
+        log.debug("[mcp][discovery] action=register_function func=#{func_name} runner=#{runner_module}")
         Server.register_tool(build_tool_class(build_tool_opts(runner_module, func_name, meta, opts, defn)))
       end
 
@@ -131,6 +148,8 @@ module Legion
       end
 
       def build_tool_class(opts)
+        log.debug("[mcp][discovery] action=build_tool_class tool=#{opts[:name]} " \
+                  "category=#{opts[:mcp_category]} tier=#{opts[:mcp_tier]}")
         runner_ref         = opts[:runner_module]
         func_ref           = opts[:function_name]
         tool_name_value    = opts[:name]
@@ -165,8 +184,29 @@ module Legion
               error = true
               { error: "function #{func_ref} not found" }
             end
-          text = defined?(Legion::JSON) ? Legion::JSON.dump(result) : result.to_s
+          text = Legion::JSON.dump(result)
           ::MCP::Tool::Response.new([{ type: 'text', text: text }], error: error)
+        end
+      end
+
+      # Returns true when Settings::Extensions is defined and has tools registered.
+      def settings_extensions_available?
+        Legion::Settings::Extensions.respond_to?(:tools) &&
+          Legion::Settings::Extensions.tools.any?
+      end
+
+      # Registers tools from the centralized Settings::Extensions registry.
+      # Each tool entry is adapted into an MCP tool class via ToolAdapter.
+      def register_from_settings_extensions
+        entries = Legion::Settings::Extensions.tools
+        log.debug("[mcp][discovery] action=register_from_settings_extensions entries=#{entries.size}")
+        entries.each do |tool_entry|
+          next if Server.tool_registry.any? { |tc| tc.tool_name == tool_entry[:name] }
+
+          adapter = ToolAdapter.from_registry_entry(tool_entry)
+          Server.register_tool(adapter) if adapter
+        rescue StandardError => e
+          handle_exception(e, level: :debug, operation: 'legion.mcp.function_discovery.register_from_settings_extensions')
         end
       end
     end

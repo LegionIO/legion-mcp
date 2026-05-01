@@ -13,6 +13,7 @@ module Legion
       module_function
 
       def check(pattern, _params, _context)
+        log.debug("[mcp][guard] action=check intent_hash=#{pattern[:intent_hash]&.[](0, 12)}")
         return staleness_failure(pattern) if stale?(pattern)
         return anomaly_failure(pattern) if anomalous?(pattern)
         return rapid_fire_failure(pattern) if rapid_fire?(pattern[:intent_hash])
@@ -74,12 +75,9 @@ module Legion
       end
 
       def setting(key)
-        return nil unless defined?(Legion::Settings)
-
         Legion::Settings.dig(:mcp, :tier0, :guards, key)
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.context_guard.setting')
-        log.warn("ContextGuard#setting failed for key #{key}: #{e.message}")
         nil
       end
 

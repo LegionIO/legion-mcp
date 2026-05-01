@@ -47,14 +47,14 @@ module Legion
             end
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.discover_tools.call')
-            log.warn("DiscoverTools#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 
           private
 
           def resolve_schemas(tool_names)
-            schemas = DeferredRegistry.resolve_schemas(tool_names, Server.tool_registry)
+            governed = ToolGovernance.filter_tools(Server.tool_registry, Server.current_identity)
+            schemas = DeferredRegistry.resolve_schemas(tool_names, governed)
             if schemas.empty?
               error_response("No tools found matching: #{tool_names.join(', ')}")
             else

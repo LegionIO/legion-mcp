@@ -28,7 +28,6 @@ module Legion
             text_response({ deleted: true, id: id })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_task.call')
-            log.warn("DeleteTask#call failed: #{e.message}")
             error_response("Failed to delete task: #{e.message}")
           end
 
@@ -38,7 +37,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_task.data_connected?')
-            log.warn("DeleteTask#data_connected? failed: #{e.message}")
             false
           end
 

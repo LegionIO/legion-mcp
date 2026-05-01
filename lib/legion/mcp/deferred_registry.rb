@@ -3,6 +3,8 @@
 module Legion
   module MCP
     module DeferredRegistry
+      extend Legion::Logging::Helper
+
       # Tools that are ALWAYS fully loaded (never deferred).
       # These are high-frequency entry points or meta-tools.
       ALWAYS_LOADED = %w[
@@ -36,9 +38,9 @@ module Legion
         return @always_loaded_cache if @always_loaded_cache
 
         base = ALWAYS_LOADED.dup
-        if defined?(Legion::Tools::Registry) && Legion::Tools::Registry.respond_to?(:tools)
-          registry_always = Legion::Tools::Registry.tools(:always)
-          base |= registry_always.map(&:tool_name) if registry_always.is_a?(Array)
+        if Legion::Settings::Extensions.respond_to?(:filter_tools)
+          always_entries = Legion::Settings::Extensions.filter_tools(deferred: false)
+          base |= always_entries.map { |e| Legion::MCP::ToolAdapter.sanitize_tool_name(e[:name]) } if always_entries.is_a?(Array)
         end
         custom = Legion::Settings.dig(:mcp, :deferred_loading, :always_loaded)
         @always_loaded_cache = custom.is_a?(Array) ? (base | custom) : base
@@ -60,22 +62,30 @@ module Legion
       end
 
       def build_tools_list(tool_classes)
-        tool_classes.map do |tc|
+        deferred_count = 0
+        result = tool_classes.map do |tc|
           if deferred?(tc)
+            deferred_count += 1
             deferred_entry(tc)
           else
             full_entry(tc)
           end
         end
+        log.debug("[mcp][deferred] action=build_tools_list total=#{result.size} " \
+                  "deferred=#{deferred_count} full=#{result.size - deferred_count}")
+        result
       end
 
       def resolve_schemas(tool_names, tool_classes)
-        tool_names.filter_map do |name|
+        log.debug("[mcp][deferred] action=resolve_schemas requested=#{tool_names.size}")
+        result = tool_names.filter_map do |name|
           tc = tool_classes.find { |klass| klass.tool_name == name }
           next unless tc
 
           tc.to_h
         end
+        log.debug("[mcp][deferred] action=resolve_schemas.complete resolved=#{result.size}")
+        result
       end
     end
   end

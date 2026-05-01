@@ -32,7 +32,6 @@ module Legion
             text_response(record.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_relationship.call')
-            log.warn("UpdateRelationship#call failed: #{e.message}")
             error_response("Failed to update relationship: #{e.message}")
           end
 
@@ -42,11 +41,10 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_relationship.data_connected?')
-            log.warn("UpdateRelationship#data_connected? failed: #{e.message}")
             false
           end
 
-          def relationship_model? = Legion::Data::Model.const_defined?(:Relationship)
+          def relationship_model? = Legion::Data::Model.const_defined?(:Relationship, false)
 
           def text_response(data)
             ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump(data) }])

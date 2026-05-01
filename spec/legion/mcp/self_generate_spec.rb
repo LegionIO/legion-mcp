@@ -2,14 +2,14 @@
 
 require 'spec_helper'
 require 'legion/mcp/observer'
-require 'legion/mcp/pattern_store'
+require 'legion/mcp/patterns/store'
 require 'legion/mcp/gap_detector'
 require 'legion/mcp/self_generate'
 
 RSpec.describe Legion::MCP::SelfGenerate do
   before do
     Legion::MCP::Observer.reset!
-    Legion::MCP::PatternStore.reset!
+    Legion::MCP::Patterns::Store.reset!
     described_class.reset!
   end
 

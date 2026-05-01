@@ -2,7 +2,6 @@
 
 require 'concurrent-ruby'
 require 'digest'
-require_relative 'logging_support'
 
 module Legion
   module MCP
@@ -50,24 +49,28 @@ module Legion
       end
 
       def record_intent_with_result(intent:, tool_name:, success:, request_id: nil)
+        log.debug("[mcp][observer] action=record_intent_with_result tool=#{tool_name} success=#{success}")
         record_intent(intent, tool_name)
         return unless success
-        return unless defined?(Legion::MCP::PatternStore)
+        return unless defined?(Legion::MCP::Patterns::Store)
 
         normalized  = intent.to_s.strip.downcase.gsub(/\s+/, ' ')
         intent_hash = Digest::SHA256.hexdigest(normalized)
+        candidate_key = Digest::SHA256.hexdigest("#{normalized}:#{tool_name}")
 
-        promotion = Legion::MCP::PatternStore.record_candidate(
-          intent_hash: intent_hash,
-          tool_chain:  [tool_name],
-          intent_text: intent,
-          request_id:  request_id
+        promotion = Legion::MCP::Patterns::Store.record_candidate(
+          intent_hash:   intent_hash,
+          candidate_key: candidate_key,
+          tool_chain:    [tool_name],
+          intent_text:   intent,
+          request_id:    request_id
         )
 
         return unless promotion&.dig(:promote)
 
-        Legion::MCP::PatternStore.promote_candidate(
+        Legion::MCP::Patterns::Store.promote_candidate(
           intent_hash:   promotion[:intent_hash],
+          candidate_key: candidate_key,
           tool_chain:    promotion[:tool_chain],
           intent_text:   promotion[:intent_text],
           intent_vector: try_embed(normalized),
@@ -170,7 +173,6 @@ module Legion
         embedder.call(text)
       rescue StandardError => e
         handle_exception(e, level: :debug, operation: 'legion.mcp.observer.try_embed')
-        LoggingSupport.debug('observer.embed.failed', error: e.message)
         nil
       end
     end

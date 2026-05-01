@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
-
 module Legion
   module MCP
     module StructuralIndex
@@ -12,11 +10,15 @@ module Legion
       module_function
 
       def build
-        {
+        log.debug('[mcp][structural_index] action=build')
+        result = {
           extensions:   scan_extensions,
           tools:        scan_tools,
           generated_at: Time.now.iso8601
         }
+        log.debug('[mcp][structural_index] action=build.complete ' \
+                  "extensions=#{result[:extensions].size} tools=#{result[:tools].size}")
+        result
       end
 
       def scan_extensions
@@ -32,7 +34,6 @@ module Legion
           build_extension_entry(ext)
         rescue StandardError => e
           handle_exception(e, level: :debug, operation: 'legion.mcp.structural_index.scan_extensions')
-          log.debug("StructuralIndex: skipping #{ext}: #{e.message}")
           nil
         end
       end
@@ -98,6 +99,7 @@ module Legion
 
       def save_cache(index = nil)
         index ||= build
+        log.debug("[mcp][structural_index] action=save_cache path=#{CACHE_PATH}")
         dir = File.dirname(CACHE_PATH)
         FileUtils.mkdir_p(dir) unless File.directory?(dir)
         File.write(CACHE_PATH, Legion::JSON.dump(index))

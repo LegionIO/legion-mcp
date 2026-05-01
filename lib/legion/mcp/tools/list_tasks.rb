@@ -29,7 +29,6 @@ module Legion
             text_response(dataset.limit(limit).all.map(&:values))
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_tasks.call')
-            log.warn("ListTasks#call failed: #{e.message}")
             error_response("Failed to list tasks: #{e.message}")
           end
 
@@ -39,7 +38,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_tasks.data_connected?')
-            log.warn("ListTasks#data_connected? failed: #{e.message}")
             false
           end
 

@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'legion/mcp/pattern_store'
+require 'legion/mcp/patterns/store'
 
-RSpec.describe Legion::MCP::PatternStore do
+RSpec.describe Legion::MCP::Patterns::Store do
   let(:logger) { spy('logger') }
 
   before do
     described_class.reset!
-    allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+    allow(described_class).to receive(:log).and_return(logger)
   end
 
   describe '.store and .lookup' do
@@ -214,6 +214,36 @@ RSpec.describe Legion::MCP::PatternStore do
     it 'does not archive patterns above threshold' do
       described_class.decay_all(factor: 0.998)
       expect(described_class.lookup('decay_test')).not_to be_nil
+    end
+
+    it 'persists confidence changes even when no patterns are archived' do
+      allow(described_class).to receive(:sync_all_to_persistence).and_call_original
+      described_class.decay_all(factor: 0.998)
+
+      expect(described_class).to have_received(:sync_all_to_persistence)
+    end
+
+    it 'evicts L1 cache entry when a pattern is archived' do
+      allow(described_class).to receive(:evict_l1)
+      described_class.decay_all(factor: 0.01)
+
+      expect(described_class).to have_received(:evict_l1).with('decay_test')
+    end
+
+    it 'does not evict L1 cache when no patterns are archived' do
+      allow(described_class).to receive(:evict_l1)
+      described_class.decay_all(factor: 0.998)
+
+      expect(described_class).not_to have_received(:evict_l1)
+    end
+
+    it 'reflects decayed confidence after reload' do
+      original = described_class.lookup('decay_test')[:confidence]
+      described_class.decay_all(factor: 0.95)
+      pattern = described_class.lookup('decay_test')
+
+      expect(pattern[:confidence]).to be_within(0.001).of(original * 0.95)
+      expect(pattern[:confidence]).to be < original
     end
   end
 

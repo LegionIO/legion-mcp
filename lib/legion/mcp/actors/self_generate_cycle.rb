@@ -14,14 +14,13 @@ module Legion
         def generate_task?  = false
 
         def time
-          if defined?(Legion::Settings) && !Legion::Settings[:codegen].nil?
-            Legion::Settings.dig(:codegen, :self_generate, :cycle_interval) || 300
-          else
+          if Legion::Settings[:codegen].nil?
             300
+          else
+            Legion::Settings.dig(:codegen, :self_generate, :cycle_interval) || 300
           end
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.actors.self_generate_cycle.time')
-          log.warn(e.message)
           300
         end
 
@@ -29,7 +28,6 @@ module Legion
           SelfGenerate.enabled?
         rescue StandardError => e
           handle_exception(e, level: :warn, operation: 'legion.mcp.actors.self_generate_cycle.enabled?')
-          log.warn(e.message)
           false
         end
 

@@ -30,7 +30,6 @@ module Legion
             text_response({ skills: skills, count: skills.size })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_list.call')
-            log.warn("SkillList#call failed: #{e.message}")
             error_response("Failed to list skills: #{e.message}")
           end
 
@@ -81,7 +80,6 @@ module Legion
                           })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_describe.call')
-            log.warn("SkillDescribe#call failed: #{e.message}")
             error_response("Failed to describe skill: #{e.message}")
           end
 
@@ -141,7 +139,6 @@ module Legion
             invoke_skill(name, conv_id, initial_message)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_invoke.call')
-            log.warn("SkillInvoke#call failed: #{e.message}")
             error_response("Failed to invoke skill: #{e.message}")
           end
 
@@ -167,6 +164,8 @@ module Legion
             text_response({ invoked: true, skill: name, conversation_id: conv_id,
                             content: result.message[:content] })
           rescue StandardError => e
+            handle_exception(e, level: :warn, handled: false,
+                             operation: 'legion.mcp.tools.skill_invoke.invoke_skill')
             Legion::LLM::ConversationStore.clear_skill_state(conv_id) if defined?(Legion::LLM::ConversationStore)
             raise e
           end
@@ -210,7 +209,6 @@ module Legion
             end
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.skill_cancel.call')
-            log.warn("SkillCancel#call failed: #{e.message}")
             error_response("Failed to cancel skill: #{e.message}")
           end
 

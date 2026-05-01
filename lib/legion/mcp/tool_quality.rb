@@ -3,12 +3,15 @@
 module Legion
   module MCP
     module ToolQuality
+      extend Legion::Logging::Helper
+
       MIN_DESCRIPTION_LENGTH = 20
       MIN_PARAM_DESCRIPTION_LENGTH = 5
 
       module_function
 
       def audit_all
+        log.debug("[mcp][tool_quality] action=audit_all tools=#{Server.tool_registry.size}")
         Server.tool_registry.map { |tc| audit_tool(tc) }
       end
 

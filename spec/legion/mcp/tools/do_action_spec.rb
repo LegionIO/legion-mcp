@@ -20,7 +20,9 @@ RSpec.describe Legion::MCP::Tools::DoAction do
 
   describe '.call' do
     before do
-      allow(Legion::MCP::LoggingSupport).to receive(:log).and_return(logger)
+      allow(Legion::MCP::Tools::DoAction).to receive(:log).and_return(logger)
+      allow(Legion::MCP::TierRouter).to receive(:log).and_return(logger) if defined?(Legion::MCP::TierRouter)
+      allow(Legion::MCP::Patterns::Store).to receive(:log).and_return(logger) if defined?(Legion::MCP::Patterns::Store)
     end
 
     context 'when no matching tool is found' do
@@ -201,7 +203,7 @@ RSpec.describe Legion::MCP::Tools::DoAction do
     describe 'Tier 0 routing' do
       before do
         require 'legion/mcp/tier_router'
-        Legion::MCP::PatternStore.reset!
+        Legion::MCP::Patterns::Store.reset!
         Legion::MCP::ContextGuard.reset!
       end
 
@@ -238,7 +240,7 @@ RSpec.describe Legion::MCP::Tools::DoAction do
 
       before do
         require 'legion/mcp/tier_router'
-        Legion::MCP::PatternStore.reset!
+        Legion::MCP::Patterns::Store.reset!
         Legion::MCP::ContextGuard.reset!
       end
 
@@ -281,7 +283,7 @@ RSpec.describe Legion::MCP::Tools::DoAction do
 
       before do
         require 'legion/mcp/tier_router'
-        Legion::MCP::PatternStore.reset!
+        Legion::MCP::Patterns::Store.reset!
         Legion::MCP::ContextGuard.reset!
       end
 

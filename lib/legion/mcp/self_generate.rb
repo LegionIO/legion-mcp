@@ -14,13 +14,11 @@ module Legion
       module_function
 
       def enabled?
-        return false unless defined?(Legion::Settings)
-
         Legion::Settings.dig(:codegen, :self_generate, :enabled) == true
       end
 
       def run_cycle
-        log.info('Starting legion.mcp.self_generate.run_cycle')
+        log.debug("[mcp][self_generate] action=run_cycle enabled=#{enabled?} in_cooldown=#{in_cooldown?}")
         return { success: false, reason: :disabled } unless enabled?
         return { success: false, reason: :cooldown } if in_cooldown?
 
@@ -58,6 +56,8 @@ module Legion
       def publish_gap(gap)
         return false unless defined?(Legion::Transport::Messages::Dynamic)
 
+        log.debug("[mcp][self_generate] action=publish_gap gap_id=#{gap[:id]} type=#{gap[:type]}")
+
         Legion::Transport::Messages::Dynamic.new(
           function: 'codegen.gap.detected',
           data:     {
@@ -73,12 +73,11 @@ module Legion
         true
       rescue StandardError => e
         handle_exception(e, level: :warn, operation: 'legion.mcp.self_generate.publish_gap')
-        log.warn("SelfGenerate#publish_gap failed: #{e.message}")
         false
       end
 
       def status
-        log.info('Starting legion.mcp.self_generate.status')
+        log.debug("[mcp][self_generate] action=status enabled=#{enabled?}")
         {
           last_cycle_at:      last_cycle_at,
           total_cycles:       cycle_count,
@@ -125,13 +124,11 @@ module Legion
       # private helpers
 
       def max_gaps_per_cycle
-        val = Legion::Settings.dig(:codegen, :self_generate, :max_gaps_per_cycle) if defined?(Legion::Settings)
-        val || MAX_GAPS_PER_CYCLE
+        Legion::Settings.dig(:codegen, :self_generate, :max_gaps_per_cycle) || MAX_GAPS_PER_CYCLE
       end
 
       def cooldown_seconds
-        val = Legion::Settings.dig(:codegen, :self_generate, :cooldown_seconds) if defined?(Legion::Settings)
-        val || COOLDOWN_SECONDS
+        Legion::Settings.dig(:codegen, :self_generate, :cooldown_seconds) || COOLDOWN_SECONDS
       end
 
       def record_cycle(published_count)

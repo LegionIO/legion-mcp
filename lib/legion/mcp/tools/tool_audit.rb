@@ -35,7 +35,6 @@ module Legion
             text_response(result)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.tool_audit.call')
-            log.warn("ToolAudit#call failed: #{e.message}")
             error_response("Failed: #{e.message}")
           end
 

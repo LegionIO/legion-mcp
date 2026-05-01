@@ -29,7 +29,6 @@ module Legion
             text_response({ deleted: true, id: id })
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_relationship.call')
-            log.warn("DeleteRelationship#call failed: #{e.message}")
             error_response("Failed to delete relationship: #{e.message}")
           end
 
@@ -39,11 +38,10 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.delete_relationship.data_connected?')
-            log.warn("DeleteRelationship#data_connected? failed: #{e.message}")
             false
           end
 
-          def relationship_model? = Legion::Data::Model.const_defined?(:Relationship)
+          def relationship_model? = Legion::Data::Model.const_defined?(:Relationship, false)
 
           def text_response(data)
             ::MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump(data) }])

@@ -42,7 +42,6 @@ module Legion
             text_response(record.values)
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_schedule.call')
-            log.warn("UpdateSchedule#call failed: #{e.message}")
             error_response("Failed to update schedule: #{e.message}")
           end
 
@@ -52,7 +51,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.update_schedule.data_connected?')
-            log.warn("UpdateSchedule#data_connected? failed: #{e.message}")
             false
           end
 

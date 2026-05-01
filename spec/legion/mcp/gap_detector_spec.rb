@@ -2,13 +2,13 @@
 
 require 'spec_helper'
 require 'legion/mcp/observer'
-require 'legion/mcp/pattern_store'
+require 'legion/mcp/patterns/store'
 require 'legion/mcp/gap_detector'
 
 RSpec.describe Legion::MCP::GapDetector do
   before do
     Legion::MCP::Observer.reset!
-    Legion::MCP::PatternStore.reset!
+    Legion::MCP::Patterns::Store.reset!
   end
 
   # ---------------------------------------------------------------------------
@@ -25,10 +25,10 @@ RSpec.describe Legion::MCP::GapDetector do
 
     it 'deduplicates by id across detection methods' do
       # Seed a stale candidate that has count >= 2
-      Legion::MCP::PatternStore.record_candidate(
+      Legion::MCP::Patterns::Store.record_candidate(
         intent_hash: 'aabbccdd1234', tool_chain: ['http.get'], intent_text: 'ping service', threshold: 999
       )
-      Legion::MCP::PatternStore.record_candidate(
+      Legion::MCP::Patterns::Store.record_candidate(
         intent_hash: 'aabbccdd1234', tool_chain: ['http.get'], intent_text: 'ping service', threshold: 999
       )
       gaps = described_class.detect_gaps
@@ -173,7 +173,7 @@ RSpec.describe Legion::MCP::GapDetector do
   # ---------------------------------------------------------------------------
   describe '.detect_stale_candidates' do
     it 'returns empty when PatternStore not defined' do
-      hide_const('Legion::MCP::PatternStore')
+      hide_const('Legion::MCP::Patterns::Store')
       expect(described_class.detect_stale_candidates).to eq([])
     end
 
@@ -185,7 +185,7 @@ RSpec.describe Legion::MCP::GapDetector do
       hash = Digest::SHA256.hexdigest('find me something')
       # record_candidate won't promote at a high threshold
       2.times do
-        Legion::MCP::PatternStore.record_candidate(
+        Legion::MCP::Patterns::Store.record_candidate(
           intent_hash: hash, tool_chain: ['search.runner'], intent_text: 'find me something', threshold: 999
         )
       end
@@ -196,7 +196,7 @@ RSpec.describe Legion::MCP::GapDetector do
 
     it 'ignores candidates with count < 2' do
       hash = Digest::SHA256.hexdigest('lonely intent')
-      Legion::MCP::PatternStore.record_candidate(
+      Legion::MCP::Patterns::Store.record_candidate(
         intent_hash: hash, tool_chain: ['some.runner'], intent_text: 'lonely intent', threshold: 999
       )
       expect(described_class.detect_stale_candidates).to be_empty
@@ -205,7 +205,7 @@ RSpec.describe Legion::MCP::GapDetector do
     it 'includes intent_text, tool_chain, observation_count in gap' do
       hash = Digest::SHA256.hexdigest('stale candidate text')
       3.times do
-        Legion::MCP::PatternStore.record_candidate(
+        Legion::MCP::Patterns::Store.record_candidate(
           intent_hash: hash, tool_chain: ['test.runner'], intent_text: 'stale candidate text', threshold: 999
         )
       end
@@ -218,7 +218,7 @@ RSpec.describe Legion::MCP::GapDetector do
     it 'includes id starting with "stale:"' do
       hash = Digest::SHA256.hexdigest('another stale')
       2.times do
-        Legion::MCP::PatternStore.record_candidate(
+        Legion::MCP::Patterns::Store.record_candidate(
           intent_hash: hash, tool_chain: ['x.runner'], intent_text: 'another stale', threshold: 999
         )
       end

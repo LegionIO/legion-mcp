@@ -28,7 +28,6 @@ module Legion
             text_response(dataset.limit(limit).all.map(&:values))
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_schedules.call')
-            log.warn("ListSchedules#call failed: #{e.message}")
             error_response("Failed to list schedules: #{e.message}")
           end
 
@@ -38,7 +37,6 @@ module Legion
             Legion::Settings[:data][:connected]
           rescue StandardError => e
             handle_exception(e, level: :warn, operation: 'legion.mcp.tools.list_schedules.data_connected?')
-            log.warn("ListSchedules#data_connected? failed: #{e.message}")
             false
           end
 
