@@ -1,5 +1,18 @@
 # legion-mcp Changelog
 
+## [0.9.2] - 2026-10-30
+
+### Security
+- Require MCP SDK `>= 1.2.0, < 2.0` to exclude versions affected by OAuth discovery SSRF advisory GHSA-4m5j-jjfc-97gx.
+
+### Fixed
+- Forward the complete SDK tool-call context through tracing, including authentication, cancellation, and request-envelope keywords.
+- Declare the Base64 dependency required by the SDK OAuth client on Ruby versions where it is no longer bundled.
+- Return the protocol `tools/list` result object rather than an unwrapped array with the supported SDK.
+
+### Changed
+- Exercise the supported SDK with the real Legion logging helper in the test suite instead of a no-op replacement.
+
 ## [0.9.1] - 2026-04-30
 
 ### Fixed

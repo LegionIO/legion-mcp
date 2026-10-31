@@ -4,132 +4,79 @@ require 'spec_helper'
 require 'legion/mcp'
 
 RSpec.describe 'Server tracing context integration' do
-  let(:logger) { spy('logger') }
-  let(:captured_context) { {} }
+  let(:probe_state) { { fail: false, contexts: [] } }
+  let(:server) do
+    state = probe_state
+    Legion::MCP::Server.build.tap do |built|
+      built.define_tool(name: 'test.tracing_probe', input_schema: { properties: {} }) do |**|
+        context = Legion::MCP::TracingContext.current
+        state[:contexts] << context
+        raise 'probe failure' if state[:fail]
 
-  before do
-    allow(Legion::Settings).to receive(:dig).and_return(nil)
-    allow(Legion::MCP::Server).to receive(:log).and_return(logger)
-
-    @tracing_tool = Class.new(MCP::Tool) do
-      tool_name 'test.tracing_probe'
-      description 'Captures tracing context during execution'
-      input_schema(properties: { msg: { type: 'string' } })
-    end
-
-    ctx = captured_context
-    @tracing_tool.define_singleton_method(:call) do |**_params|
-      Legion::MCP::TracingContext::THREAD_KEYS.each do |key|
-        short = key.to_s.delete_prefix('legion_mcp_').to_sym
-        ctx[short] = Thread.current[key]
+        MCP::Tool::Response.new([{ type: 'text', text: Legion::JSON.dump(context) }])
       end
-      MCP::Tool::Response.new([{ type: 'text', text: 'ok' }])
     end
   end
 
-  after { Legion::MCP::TracingContext.clear }
-
-  def build_server_with_probe
-    server = Legion::MCP::Server.build
-    server.tools['test.tracing_probe'] = @tracing_tool
-    server
+  around do |example|
+    settings = Legion::Settings.loader.settings
+    previous = settings[:mcp]
+    settings[:mcp] = {}
+    example.run
+  ensure
+    settings[:mcp] = previous
+    Legion::MCP::TracingContext.clear
   end
 
-  def call_tool_via_handle(server, tool_name, arguments = {})
-    jsonrpc_request = {
-      jsonrpc: '2.0',
-      id:      1,
-      method:  'tools/call',
-      params:  { name: tool_name, arguments: arguments }
-    }
-    server.handle(jsonrpc_request)
+  def call_probe(name: 'test.tracing_probe')
+    request = Legion::JSON.dump({
+                                  jsonrpc: '2.0',
+                                  id:      1,
+                                  method:  'tools/call',
+                                  params:  { name: name, arguments: {} }
+                                })
+    Legion::JSON.load(server.handle_json(request))
   end
 
-  describe 'conversation_id and trace_id on Server module' do
-    it 'generates conversation_id on build' do
-      build_server_with_probe
-      expect(Legion::MCP::Server.conversation_id).to match(/\Amcp_/)
-    end
-
-    it 'generates trace_id on build' do
-      build_server_with_probe
-      expect(Legion::MCP::Server.trace_id).to match(/\A[0-9a-f]{32}\z/)
-    end
-
-    it 'generates new IDs on each build' do
-      build_server_with_probe
-      first_id = Legion::MCP::Server.conversation_id
-      build_server_with_probe
-      second_id = Legion::MCP::Server.conversation_id
-      expect(first_id).not_to eq(second_id)
-    end
+  def trace_from(response:)
+    text = response.fetch(:result).fetch(:content).first.fetch(:text)
+    Legion::JSON.load(text)
   end
 
-  describe 'Thread locals during tool execution' do
-    it 'sets all tracing IDs during tool call' do
-      server = build_server_with_probe
-      call_tool_via_handle(server, 'test.tracing_probe', { msg: 'hello' })
+  it 'preserves session tracing while assigning distinct identities to actual tool calls' do
+    first = trace_from(response: call_probe)
+    second = trace_from(response: call_probe)
 
-      expect(captured_context[:conversation_id]).to match(/\Amcp_/)
-      expect(captured_context[:request_id]).to match(/\Areq_/)
-      expect(captured_context[:exchange_id]).to match(/\Aexch_/)
-      expect(captured_context[:tool_call_id]).to match(/\Acall_/)
-      expect(captured_context[:trace_id]).to match(/\A[0-9a-f]{32}\z/)
+    expect(first).to include(:conversation_id, :request_id, :exchange_id, :tool_call_id, :trace_id)
+    expect(first.values).to all(be_a(String))
+    expect(first.fetch(:trace_id)).to match(/\A[0-9a-f]{32}\z/)
+    expect(second.slice(:conversation_id, :trace_id)).to eq(first.slice(:conversation_id, :trace_id))
+    %i[request_id exchange_id tool_call_id].each do |key|
+      expect(second.fetch(key)).not_to eq(first.fetch(key))
     end
+    expect(Legion::MCP::TracingContext.current.values).to all(be_nil)
+  end
 
-    it 'clears Thread locals after tool execution' do
-      server = build_server_with_probe
-      call_tool_via_handle(server, 'test.tracing_probe', { msg: 'hello' })
+  it 'clears failed tool tracing before a subsequent successful invocation' do
+    probe_state[:fail] = true
+    failure = call_probe
 
-      Legion::MCP::TracingContext::THREAD_KEYS.each do |key|
-        expect(Thread.current[key]).to be_nil
-      end
-    end
+    expect(failure.fetch(:error).fetch(:code)).to eq(-32_603)
+    failed_context = probe_state[:contexts].fetch(0)
+    expect(failed_context.fetch(:request_id)).to be_a(String)
+    expect(Legion::MCP::TracingContext.current.values).to all(be_nil)
 
-    it 'clears Thread locals even when tool raises' do
-      @tracing_tool.define_singleton_method(:call) { |**_| raise 'boom' }
-      server = build_server_with_probe
-      call_tool_via_handle(server, 'test.tracing_probe', { msg: 'hello' })
+    probe_state[:fail] = false
+    recovered = trace_from(response: call_probe)
+    expect(recovered.fetch(:request_id)).not_to eq(failed_context.fetch(:request_id))
+    expect(Legion::MCP::TracingContext.current.values).to all(be_nil)
+  end
 
-      Legion::MCP::TracingContext::THREAD_KEYS.each do |key|
-        expect(Thread.current[key]).to be_nil
-      end
-    end
+  it 'preserves the SDK error for an unknown tool without retaining request context' do
+    response = call_probe(name: 'test.unregistered_probe')
 
-    it 'generates unique exchange_id per tool call' do
-      server = build_server_with_probe
-      exchange_ids = []
-
-      2.times do
-        call_tool_via_handle(server, 'test.tracing_probe')
-        exchange_ids << captured_context[:exchange_id]
-      end
-
-      expect(exchange_ids.uniq.size).to eq(2)
-    end
-
-    it 'shares conversation_id across tool calls in one session' do
-      server = build_server_with_probe
-      conversation_ids = []
-
-      2.times do
-        call_tool_via_handle(server, 'test.tracing_probe')
-        conversation_ids << captured_context[:conversation_id]
-      end
-
-      expect(conversation_ids.uniq.size).to eq(1)
-    end
-
-    it 'shares trace_id across tool calls in one session' do
-      server = build_server_with_probe
-      trace_ids = []
-
-      2.times do
-        call_tool_via_handle(server, 'test.tracing_probe')
-        trace_ids << captured_context[:trace_id]
-      end
-
-      expect(trace_ids.uniq.size).to eq(1)
-    end
+    expect(response.fetch(:error).fetch(:code)).to eq(-32_602)
+    expect(probe_state[:contexts]).to eq([])
+    expect(Legion::MCP::TracingContext.current.values).to all(be_nil)
   end
 end

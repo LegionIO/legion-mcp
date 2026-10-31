@@ -2,7 +2,7 @@
 
 Model Context Protocol (MCP) server for the LegionIO framework. Provides semantic tool matching, observation pipeline, context compilation, tiered behavioral intelligence (Tier 0/1/2 routing), tool governance, deferred tool loading, and MCP client pooling for remote server federation.
 
-**Version**: 0.9.1
+**Version**: 0.9.2
 **License**: Apache-2.0
 **Ruby**: >= 3.4
 
@@ -17,8 +17,13 @@ gem 'legion-mcp'
 Or in a Gemfile:
 
 ```ruby
-gem 'legion-mcp', '~> 0.9'
+gem 'legion-mcp', '~> 0.9', '>= 0.9.2'
 ```
+
+The MCP SDK dependency requires `>= 1.2.0, < 2.0`. Earlier SDK versions are
+excluded because of [GHSA-4m5j-jjfc-97gx](https://github.com/modelcontextprotocol/ruby-sdk/security/advisories/GHSA-4m5j-jjfc-97gx),
+an OAuth discovery SSRF vulnerability. Upgrade the bundle rather than ignoring
+the advisory.
 
 ## Architecture
 
@@ -158,9 +163,11 @@ tools = Legion::MCP::Client::Pool.all_tools
 
 ```ruby
 require 'legion/mcp'
+require 'mcp/server/transports/stdio_transport'
 
-server = Legion::MCP.server
-server.start
+# Keep structured logs off the JSON-RPC stdout stream.
+Legion::Logging.setup(log_stdout: false)
+MCP::Server::Transports::StdioTransport.new(Legion::MCP.server).open
 ```
 
 ### Within LegionIO
@@ -245,7 +252,8 @@ All configuration is optional and read via `Legion::Settings` when available:
 
 | Gem | Required | Purpose |
 |-----|----------|---------|
-| `mcp` (~> 0.8) | Yes | MCP server SDK |
+| `mcp` (>= 1.2.0, < 2.0) | Yes | MCP server/client SDK with patched OAuth discovery |
+| `base64` (>= 0.2) | Yes | SDK OAuth client encoding on Ruby 3.4+ |
 | `legion-data` (>= 1.4) | Yes | Sequel models, migrations |
 | `legion-json` (>= 1.2) | Yes | JSON serialization |
 | `legion-logging` (>= 1.4.3) | Yes | Structured logging via Helper |

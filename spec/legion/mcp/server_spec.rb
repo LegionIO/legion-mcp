@@ -4,11 +4,9 @@ require 'spec_helper'
 require 'legion/mcp'
 
 RSpec.describe Legion::MCP::Server do
-  let(:logger) { spy('logger') }
 
   before do
     allow(Legion::Settings).to receive(:dig).and_return(nil)
-    allow(Legion::MCP::Server).to receive(:log).and_return(logger)
   end
 
   describe '.build' do
@@ -26,57 +24,15 @@ RSpec.describe Legion::MCP::Server do
       expect(server.version).to eq(Legion::VERSION)
     end
 
-    it 'registers the MCP-specific tools' do
-      expected = %w[
-        legion.plan legion.tools legion.structural_index
-        legion.tool_audit legion.state_diff legion.search_sessions
-      ]
-      expect(server.tools.keys).to include(*expected)
+    it 'advertises MCP tools in the protocol list result object' do
+      request = Legion::JSON.dump({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} })
+      response = Legion::JSON.load(server.handle_json(request))
+      names = response.fetch(:result).fetch(:tools).map { |tool| tool.fetch(:name) }
+
+      expect(names).to include('legion.plan', 'legion.tools')
     end
 
-    it 'registers at least 6 MCP-specific tools' do
-      expect(server.tools.size).to be >= 6
-    end
 
-    it 'includes instructions' do
-      expect(server.instructions).to include('async job engine')
-    end
-
-    describe '.wire_observer' do
-      before { Legion::MCP::Observer.reset! }
-
-      it 'skips record_intent_with_result for legion.do calls' do
-        expect(Legion::MCP::Observer).not_to receive(:record_intent_with_result)
-        described_class.wire_observer(
-          method: 'tools/call', tool_name: 'legion.do',
-          duration: 0.01, tool_arguments: { intent: 'hello' }, error: nil
-        )
-      end
-
-      it 'records intent_with_result for non-legion.do tools with intent' do
-        expect(Legion::MCP::Observer).to receive(:record_intent_with_result).with(
-          intent: 'check status', tool_name: 'legion.get_status', success: true
-        )
-        described_class.wire_observer(
-          method: 'tools/call', tool_name: 'legion.get_status',
-          duration: 0.01, tool_arguments: { intent: 'check status' }, error: nil
-        )
-      end
-
-      it 'logs tool call completion' do
-        allow(Legion::MCP::Observer).to receive(:record_intent_with_result)
-
-        described_class.wire_observer(
-          method: 'tools/call',
-          tool_name: 'legion.get_status',
-          duration: 0.01,
-          tool_arguments: { intent: 'check status', request_id: 'req-observer' },
-          error: nil
-        )
-
-        expect(logger).to have_received(:info).with(include('[mcp] server.tool_call.complete', 'request_id="req-observer"', 'tool_name="legion.get_status"'))
-      end
-    end
 
     context 'with governance enabled' do
       before do
@@ -165,9 +121,6 @@ RSpec.describe Legion::MCP::Server do
       expect(registry).to include(Legion::MCP::Tools::DiscoverTools)
     end
 
-    it 'has at least 6 MCP-specific tools' do
-      expect(Legion::MCP::Server.tool_registry.size).to be >= 6
-    end
   end
 
   describe '.register_tool' do

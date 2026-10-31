@@ -274,7 +274,7 @@ module Legion
             tool_list = DeferredRegistry.build_tools_list(build_filtered_tool_list)
             deferred = tool_list.count { |e| !e.key?(:inputSchema) && !e.key?(:input_schema) }
             mcp_log :info, 'server.tools.list', total: tool_list.size, deferred_only: deferred
-            tool_list
+            { tools: tool_list }
           }
         end
 
@@ -286,7 +286,7 @@ module Legion
         def build_tracing_module
           server_mod = self
           Module.new do
-            define_method(:call_tool) do |request, session: nil, related_request_id: nil|
+            define_method(:call_tool) do |request, **options|
               request_id   = TracingContext.generate_request_id(request&.dig(:_meta, :progressToken))
               exchange_id  = TracingContext.generate_exchange_id
               tool_call_id = TracingContext.generate_tool_call_id
@@ -300,7 +300,7 @@ module Legion
               )
 
               start_time = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
-              result = super(request, session: session, related_request_id: related_request_id)
+              result = super(request, **options)
               elapsed = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(1)
 
               server_mod.send(:emit_server_audit,
