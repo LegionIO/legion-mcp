@@ -21,10 +21,13 @@ RSpec.describe 'Server tracing context integration' do
   around do |example|
     settings = Legion::Settings.loader.settings
     previous = settings[:mcp]
-    settings[:mcp] = {}
-    example.run
+    begin
+      settings[:mcp] = {}
+      example.run
+    ensure
+      settings[:mcp] = previous
+    end
   ensure
-    settings[:mcp] = previous
     Legion::MCP::TracingContext.clear
   end
 
