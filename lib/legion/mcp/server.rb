@@ -52,7 +52,6 @@ module Legion
           @tool_registry_lock.synchronize do
             @tool_registry = Concurrent::Array.new(MCP_SPECIFIC_TOOLS)
             load_extension_tools
-            DeferredRegistry.reset_cache! if defined?(DeferredRegistry) && DeferredRegistry.respond_to?(:reset_cache!)
             reset_caches!
           end
           log.debug("[mcp][server] action=rebuild_tool_registry.complete registry_size=#{tool_registry.size}")

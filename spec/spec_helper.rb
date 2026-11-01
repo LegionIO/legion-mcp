@@ -8,11 +8,19 @@ end
 
 require 'legion/logging'
 require 'legion/settings'
-Legion::Settings.instance_variable_set(:@loader, Legion::Settings::Loader.new)
+Legion::Settings.loader = Legion::Settings::Loader.new
 require 'legion/mcp'
 Legion::Settings[:logging][:level] = :error
 Legion::Logging.setup(level: :error, extended: false, log_stdout: false, trace_size: 0)
 RSpec.configure do |config|
+  config.around do |example|
+    original_settings = Legion::Settings[:mcp]
+    Legion::Settings.loader.settings[:mcp] = Legion::MCP::Settings.defaults[:mcp]
+    example.run
+  ensure
+    Legion::Settings.loader.settings[:mcp] = original_settings
+  end
+
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
   end

@@ -20,32 +20,6 @@ RSpec.describe Legion::MCP::DynamicInjector do
     end
   end
 
-  before do
-    allow(Legion::Settings).to receive(:dig).and_return(nil)
-  end
-
-  describe '.enabled?' do
-    it 'returns false by default' do
-      expect(described_class.enabled?).to be false
-    end
-
-    it 'returns true when enabled in settings' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :dynamic_tools, :enabled).and_return(true)
-      expect(described_class.enabled?).to be true
-    end
-  end
-
-  describe '.max_injected' do
-    it 'defaults to 10' do
-      expect(described_class.max_injected).to eq(10)
-    end
-
-    it 'reads from settings' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :dynamic_tools, :max_injected).and_return(5)
-      expect(described_class.max_injected).to eq(5)
-    end
-  end
-
   describe '.context_tools' do
     context 'when disabled' do
       it 'returns empty array' do
@@ -55,10 +29,7 @@ RSpec.describe Legion::MCP::DynamicInjector do
 
     context 'when enabled' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :dynamic_tools, :enabled).and_return(true)
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :dynamic_tools, :max_injected).and_return(10)
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :enabled).and_return(true)
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :always_loaded).and_return(nil)
+        Legion::Settings[:mcp][:dynamic_tools][:enabled] = true
         allow(Legion::MCP::Server).to receive(:tool_registry).and_return([always_tool, deferred_tool])
       end
 

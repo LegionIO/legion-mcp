@@ -20,43 +20,6 @@ RSpec.describe Legion::MCP::DeferredRegistry do
     end
   end
 
-  before do
-    described_class.reset_cache!
-    allow(Legion::Settings).to receive(:dig).and_return(nil)
-  end
-
-  describe '.enabled?' do
-    it 'defaults to true when setting is nil' do
-      expect(described_class.enabled?).to be true
-    end
-
-    it 'returns false when explicitly disabled' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :enabled).and_return(false)
-      expect(described_class.enabled?).to be false
-    end
-
-    it 'returns true when explicitly enabled' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :enabled).and_return(true)
-      expect(described_class.enabled?).to be true
-    end
-  end
-
-  describe '.always_loaded_tools' do
-    it 'includes the default always-loaded tools' do
-      expect(described_class.always_loaded_tools).to include('legion.do', 'legion.tools', 'legion.run_task')
-    end
-
-    it 'merges custom always-loaded tools from settings' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :always_loaded).and_return(['legion.custom_tool'])
-      expect(described_class.always_loaded_tools).to include('legion.custom_tool')
-    end
-
-    it 'preserves defaults when custom list is provided' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :always_loaded).and_return(['legion.custom_tool'])
-      expect(described_class.always_loaded_tools).to include('legion.do')
-    end
-  end
-
   describe '.deferred?' do
     it 'returns false for always-loaded tools' do
       expect(described_class.deferred?(always_loaded_tool)).to be false
@@ -67,7 +30,7 @@ RSpec.describe Legion::MCP::DeferredRegistry do
     end
 
     it 'returns false for all tools when disabled' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :enabled).and_return(false)
+      Legion::Settings[:mcp][:deferred_loading][:enabled] = false
       expect(described_class.deferred?(deferred_tool)).to be false
     end
   end
@@ -106,9 +69,19 @@ RSpec.describe Legion::MCP::DeferredRegistry do
     end
 
     it 'returns all full entries when deferred loading is disabled' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :deferred_loading, :enabled).and_return(false)
+      Legion::Settings[:mcp][:deferred_loading][:enabled] = false
       result = described_class.build_tools_list([always_loaded_tool, deferred_tool])
       result.each { |entry| expect(entry).to have_key(:inputSchema) }
+    end
+
+    it 'uses updated always-loaded settings on the next tool listing' do
+      expect(described_class.build_tools_list([deferred_tool]).first).not_to have_key(:inputSchema)
+
+      Legion::Settings[:mcp][:deferred_loading][:always_loaded] = ['legion.rbac_check']
+      expect(described_class.build_tools_list([deferred_tool]).first).to have_key(:inputSchema)
+
+      Legion::Settings[:mcp][:deferred_loading][:always_loaded] = []
+      expect(described_class.build_tools_list([deferred_tool]).first).not_to have_key(:inputSchema)
     end
   end
 

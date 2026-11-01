@@ -205,7 +205,7 @@ server = Legion::MCP.server_for(token: jwt_token)
 
 ## Configuration
 
-All configuration is optional and read via `Legion::Settings` when available:
+Configuration lives in the required `Legion::Settings` tree. Loading `legion/mcp` registers defaults under `:mcp` and `:codegen` without replacing user configuration. Deferred-loading and role-permission changes are read from the live tree; explicitly setting a role or its `tools` value to `false` denies that role all tools.
 
 ```json
 {

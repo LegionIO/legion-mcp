@@ -77,13 +77,18 @@ module Legion
       end
 
       def role_allowlist(role)
-        roles = Legion::Settings.dig(:mcp, :roles)
+        roles = Legion::Settings[:mcp][:roles]
         return ['*'] unless roles.is_a?(Hash)
 
-        role_config = roles[role.to_sym] || roles[role.to_s]
+        role_config = roles[role.to_sym]
+        role_config = roles[role.to_s] if role_config.nil?
+        return [] if role_config == false
+
         return ['*'] unless role_config.is_a?(Hash)
 
-        Array(role_config[:tools] || role_config['tools'])
+        tools = role_config[:tools]
+        tools = role_config['tools'] if tools.nil?
+        tools == false ? [] : Array(tools)
       end
 
       def audit_invocation(tool_name:, identity:, params:, result:)

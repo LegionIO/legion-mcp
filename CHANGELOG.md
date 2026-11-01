@@ -9,6 +9,8 @@
 - Forward the complete SDK tool-call context through tracing, including authentication, cancellation, and request-envelope keywords.
 - Declare the Base64 dependency required by the SDK OAuth client on Ruby versions where it is no longer bundled.
 - Return the protocol `tools/list` result object rather than an unwrapped array with the supported SDK.
+- Register MCP and code-generation defaults in their canonical Settings namespaces; read deferred-loading configuration live instead of caching it across configuration changes.
+- Preserve explicit `false` role and tool permissions as denials rather than falling through to unrestricted tools.
 
 ### Changed
 - Exercise the supported SDK with the real Legion logging helper in the test suite instead of a no-op replacement.

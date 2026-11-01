@@ -25,25 +25,18 @@ module Legion
 
       module_function
 
-      def reset_cache!
-        @always_loaded_cache = nil
-      end
-
       def enabled?
-        setting = Legion::Settings.dig(:mcp, :deferred_loading, :enabled)
-        setting.nil? || setting
+        Legion::Settings[:mcp][:deferred_loading][:enabled] != false
       end
 
       def always_loaded_tools
-        return @always_loaded_cache if @always_loaded_cache
-
         base = ALWAYS_LOADED.dup
         if Legion::Settings::Extensions.respond_to?(:filter_tools)
           always_entries = Legion::Settings::Extensions.filter_tools(deferred: false)
           base |= always_entries.map { |e| Legion::MCP::ToolAdapter.sanitize_tool_name(e[:name]) } if always_entries.is_a?(Array)
         end
-        custom = Legion::Settings.dig(:mcp, :deferred_loading, :always_loaded)
-        @always_loaded_cache = custom.is_a?(Array) ? (base | custom) : base
+        custom = Legion::Settings[:mcp][:deferred_loading][:always_loaded]
+        custom.is_a?(Array) ? (base | custom) : base
       end
 
       def deferred?(tool_class)
@@ -63,8 +56,9 @@ module Legion
 
       def build_tools_list(tool_classes)
         deferred_count = 0
+        always = always_loaded_tools if enabled?
         result = tool_classes.map do |tc|
-          if deferred?(tc)
+          if always && !always.include?(tc.tool_name)
             deferred_count += 1
             deferred_entry(tc)
           else
