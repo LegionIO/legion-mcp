@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'legion/settings'
+
 module Legion
   module MCP
     module Settings
@@ -7,14 +9,17 @@ module Legion
 
       def defaults
         {
-          servers:         {},
-          overrides:       {},
-          tool_cache_ttl:  300,
-          connect_timeout: 10,
-          call_timeout:    30,
-          codegen:         { self_generate: self_generate_defaults },
-          mcp:             { auto_expose_runners: false, deferred_loading: deferred_loading_defaults,
-                             dynamic_tools: dynamic_tools_defaults }
+          mcp:     {
+            servers:             {},
+            overrides:           {},
+            tool_cache_ttl:      300,
+            connect_timeout:     10,
+            call_timeout:        30,
+            auto_expose_runners: false,
+            deferred_loading:    deferred_loading_defaults,
+            dynamic_tools:       dynamic_tools_defaults
+          },
+          codegen: { self_generate: self_generate_defaults }
         }
       end
 
@@ -83,4 +88,8 @@ module Legion
       end
     end
   end
+end
+
+Legion::MCP::Settings.defaults.each do |component, defaults|
+  Legion::Settings.register_library(component, defaults)
 end

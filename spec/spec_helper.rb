@@ -6,34 +6,21 @@ SimpleCov.start do
   enable_coverage :branch
 end
 
-unless defined?(Legion::Logging)
-  module Legion
-    module Logging
-      module Helper
-        def log
-          Legion::Logging
-        end
-
-        def handle_exception(_error, **_opts)
-          nil
-        end
-      end
-
-      class << self
-        def debug(_msg = nil); end
-        def info(_msg = nil); end
-        def warn(_msg = nil); end
-        def error(_msg = nil); end
-      end
-    end
-  end
-end
 require 'legion/logging'
 require 'legion/settings'
+Legion::Settings.loader = Legion::Settings::Loader.new
 require 'legion/mcp'
 Legion::Settings[:logging][:level] = :error
 Legion::Logging.setup(level: :error, extended: false, log_stdout: false, trace_size: 0)
 RSpec.configure do |config|
+  config.around do |example|
+    original_settings = Legion::Settings[:mcp]
+    Legion::Settings.loader.settings[:mcp] = Legion::MCP::Settings.defaults[:mcp]
+    example.run
+  ensure
+    Legion::Settings.loader.settings[:mcp] = original_settings
+  end
+
   config.expect_with :rspec do |expectations|
     expectations.include_chain_clauses_in_custom_matcher_descriptions = true
   end

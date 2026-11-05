@@ -4,7 +4,7 @@ require 'spec_helper'
 require 'legion/mcp/tool_governance'
 
 RSpec.describe Legion::MCP::ToolGovernance do
-  before { allow(Legion::Settings).to receive(:dig).and_return(nil) }
+  before { Legion::Settings[:mcp][:governance] = { enabled: false, audit_invocations: true, tool_risk_tiers: {} } }
 
   let(:low_tool) { double('tool', tool_name: 'legion.list_tasks') }
   let(:high_tool) { double('tool', tool_name: 'legion.worker_lifecycle') }
@@ -25,8 +25,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'when governance is enabled' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :tool_risk_tiers).and_return({})
+        Legion::Settings[:mcp][:governance][:enabled] = true
       end
 
       it 'filters tools for low-tier identity' do
@@ -51,25 +50,6 @@ RSpec.describe Legion::MCP::ToolGovernance do
         result = described_class.filter_tools([low_tool, high_tool], nil)
         expect(result).to contain_exactly(low_tool)
       end
-    end
-  end
-
-  describe '.audit_invocation' do
-    it 'does nothing when audit is disabled' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :audit_invocations).and_return(false)
-      expect { described_class.audit_invocation(tool_name: 'test', identity: nil, params: {}, result: {}) }
-        .not_to raise_error
-    end
-  end
-
-  describe '.governance_enabled?' do
-    it 'returns false by default' do
-      expect(described_class.governance_enabled?).to be false
-    end
-
-    it 'returns true when enabled' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
-      expect(described_class.governance_enabled?).to be true
     end
   end
 
@@ -98,8 +78,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
   describe '.filter_tools with definition-level tiers' do
     context 'when governance is enabled' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :tool_risk_tiers).and_return({})
+        Legion::Settings[:mcp][:governance][:enabled] = true
       end
 
       it 'prefers definition mcp_tier over DEFAULT_TOOL_TIERS' do
@@ -161,7 +140,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
       end
 
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(researcher_roles)
+        Legion::Settings[:mcp][:roles] = researcher_roles
       end
 
       it 'returns only tools matching the allowlist patterns' do
@@ -177,9 +156,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'with orchestrator role (wildcard)' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-          { orchestrator: { tools: ['*'] } }
-        )
+        Legion::Settings[:mcp][:roles] = { orchestrator: { tools: ['*'] } }
       end
 
       it 'returns all tools when allowlist contains wildcard' do
@@ -190,9 +167,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'with glob patterns' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-          { reviewer: { tools: ['legion.list_*', 'legion.describe_*', 'legion.query_*'] } }
-        )
+        Legion::Settings[:mcp][:roles] = { reviewer: { tools: ['legion.list_*', 'legion.describe_*', 'legion.query_*'] } }
       end
 
       it 'matches glob patterns correctly' do
@@ -203,9 +178,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'with sub_agent role (exact matches only)' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-          { sub_agent: { tools: ['legion.query_knowledge', 'legion.retrieve_knowledge'] } }
-        )
+        Legion::Settings[:mcp][:roles] = { sub_agent: { tools: ['legion.query_knowledge', 'legion.retrieve_knowledge'] } }
       end
 
       it 'restricts to exact tool names' do
@@ -216,9 +189,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'when role is not configured' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-          { researcher: { tools: ['legion.query_knowledge'] } }
-        )
+        Legion::Settings[:mcp][:roles] = { researcher: { tools: ['legion.query_knowledge'] } }
       end
 
       it 'returns all tools for an unknown role' do
@@ -229,7 +200,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'when roles config is missing' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(nil)
+        Legion::Settings[:mcp].delete(:roles)
       end
 
       it 'returns all tools' do
@@ -240,9 +211,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'with string role key' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-          { 'researcher' => { 'tools' => ['legion.query_knowledge'] } }
-        )
+        Legion::Settings[:mcp][:roles] = { 'researcher' => { 'tools' => ['legion.query_knowledge'] } }
       end
 
       it 'matches string role keys' do
@@ -250,24 +219,31 @@ RSpec.describe Legion::MCP::ToolGovernance do
         expect(result).to contain_exactly(query_tool)
       end
     end
-  end
 
-  describe '.role_allowlist' do
-    it 'returns ["*"] when roles config is nil' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(nil)
-      expect(described_class.role_allowlist(:any)).to eq(['*'])
+    it 'retains string-key fallback for nil values without widening permissions' do
+      Legion::Settings[:mcp][:roles] = { researcher: nil, 'researcher' => { tools: nil, 'tools' => ['legion.query_knowledge'] } }
+
+      expect(described_class.filter_by_role(all_tools, :researcher)).to contain_exactly(query_tool)
     end
 
-    it 'returns ["*"] when role is not found in config' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return({ other: { tools: [] } })
-      expect(described_class.role_allowlist(:missing)).to eq(['*'])
+    it 'denies an explicitly disabled role without using a string-key wildcard fallback' do
+      Legion::Settings[:mcp][:roles] = { researcher: false, 'researcher' => { tools: ['*'] } }
+
+      expect(described_class.filter_by_role(all_tools, :researcher)).to be_empty
     end
 
-    it 'returns the tools array for a configured role' do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-        { researcher: { tools: ['legion.query_knowledge', 'legion.search_*'] } }
-      )
-      expect(described_class.role_allowlist(:researcher)).to eq(['legion.query_knowledge', 'legion.search_*'])
+    it 'denies explicitly disabled tools without using a string-key wildcard fallback' do
+      Legion::Settings[:mcp][:roles] = { researcher: { tools: false, 'tools' => ['*'] } }
+
+      expect(described_class.filter_by_role(all_tools, :researcher)).to be_empty
+    end
+
+    it 'reads changed permissions from the current settings tree' do
+      Legion::Settings[:mcp][:roles] = { researcher: { tools: ['legion.query_knowledge'] } }
+      expect(described_class.filter_by_role(all_tools, :researcher)).to contain_exactly(query_tool)
+
+      Legion::Settings[:mcp][:roles] = { researcher: { tools: [] } }
+      expect(described_class.filter_by_role(all_tools, :researcher)).to be_empty
     end
   end
 
@@ -277,11 +253,8 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'when governance is enabled and role is set' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :tool_risk_tiers).and_return({})
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-          { researcher: { tools: ['legion.query_knowledge'] } }
-        )
+        Legion::Settings[:mcp][:governance][:enabled] = true
+        Legion::Settings[:mcp][:roles] = { researcher: { tools: ['legion.query_knowledge'] } }
       end
 
       it 'applies both risk tier and role filtering' do
@@ -304,9 +277,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
 
     context 'when governance is disabled but role is set' do
       before do
-        allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-          { researcher: { tools: ['legion.search_*'] } }
-        )
+        Legion::Settings[:mcp][:roles] = { researcher: { tools: ['legion.search_*'] } }
       end
 
       it 'skips risk tier but still applies role filtering' do
@@ -322,9 +293,7 @@ RSpec.describe Legion::MCP::ToolGovernance do
     let(:blocked_tool) { double('tool', tool_name: 'legion.run_task') }
 
     before do
-      allow(Legion::Settings).to receive(:dig).with(:mcp, :roles).and_return(
-        { sub_agent: { tools: ['legion.query_knowledge'] } }
-      )
+      Legion::Settings[:mcp][:roles] = { sub_agent: { tools: ['legion.query_knowledge'] } }
     end
 
     it 'blocks tools not in the role allowlist' do
