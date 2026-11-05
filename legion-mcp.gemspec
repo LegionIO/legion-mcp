@@ -32,5 +32,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'legion-json', '>= 1.2.0'
   spec.add_dependency 'legion-logging', '>= 1.4.3'
   spec.add_dependency 'legion-settings', '>= 1.4.5'
-  spec.add_dependency 'mcp', '~> 1.2'
+  spec.add_dependency 'mcp', '~> 1.9'
 end
