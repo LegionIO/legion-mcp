@@ -42,13 +42,15 @@ RSpec.describe 'Server live authorization' do
     previous_settings = Legion::Settings.loader.settings[:mcp]
     previous_instrumentation = MCP.configuration.instrumentation_callback
     previous_tracing = Legion::MCP::TracingContext::THREAD_KEYS.to_h { |key| [key, Thread.current[key]] }
-    Legion::Settings.loader.settings[:mcp] = settings
-    example.run
-  ensure
-    previous.each { |name, value| server_module.instance_variable_set(name, value) }
-    Legion::Settings.loader.settings[:mcp] = previous_settings
-    MCP.configuration.instrumentation_callback = previous_instrumentation
-    previous_tracing.each { |key, value| Thread.current[key] = value }
+    begin
+      Legion::Settings.loader.settings[:mcp] = settings
+      example.run
+    ensure
+      previous.each { |name, value| server_module.instance_variable_set(name, value) }
+      Legion::Settings.loader.settings[:mcp] = previous_settings
+      MCP.configuration.instrumentation_callback = previous_instrumentation
+      previous_tracing.each { |key, value| Thread.current[key] = value }
+    end
   end
 
   before do

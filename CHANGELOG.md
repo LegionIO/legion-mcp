@@ -7,6 +7,8 @@
 - Keep identity and tracing context scoped to each server for tool listings, schema discovery, and invocation audits.
 
 ### Fixed
+- Expose the flat core-library `Settings.default` payload and merge MCP and code-generation settings explicitly through the framework's `merge_settings` API.
+- Declare authentication, governance, role, tier-guard, cold-start, and self-generation interval settings so configured MCP installations pass framework validation.
 - Preserve default deferred-loading behavior when optional MCP configuration or its deferred-loading section is null.
 - Include the real input schema and required arguments in deferred tool descriptors for MCP client compatibility.
 - Configure an explicit log-file destination before loading the standalone stdio server so diagnostics cannot corrupt JSON-RPC stdout.

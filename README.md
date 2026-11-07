@@ -214,7 +214,7 @@ requests as well as removing tools from the catalog.
 
 ## Configuration
 
-Configuration lives in the required `Legion::Settings` tree. Loading `legion/mcp` registers defaults under `:mcp` and `:codegen` without replacing user configuration. Deferred-loading and role-permission changes are read from the live tree; explicitly setting a role or its `tools` value to `false` denies that role all tools.
+Configuration lives in the required `Legion::Settings` tree. `Legion::MCP::Settings.default` is the flat MCP payload, not a hash wrapped in `:mcp`. Loading `legion/mcp` calls `Legion::Settings.merge_settings(:mcp, Legion::MCP::Settings.default)` and separately merges `Legion::MCP::Settings.codegen` under `:codegen`, following the core-library framework pattern without replacing user configuration. Deferred-loading and role-permission changes are read from the live tree; explicitly setting a role or its `tools` value to `false` denies that role all tools.
 
 Null or missing optional MCP/deferred-loading configuration uses the default
 deferral policy; `deferred_loading.enabled: false` still disables deferral.
@@ -269,7 +269,7 @@ required arguments. Deferred entries may omit optional metadata; use
 |-----|----------|---------|
 | `mcp` (>= 1.9.0, < 2.0) | Yes | MCP server/client SDK with patched OAuth discovery |
 | `base64` (>= 0.2) | Yes | SDK OAuth client encoding on Ruby 3.4+ |
-| `legion-data` (>= 1.4) | Yes | Sequel models, migrations |
+| `legion-data` (>= 1.4.19) | Yes | Sequel models, migrations |
 | `legion-json` (>= 1.2) | Yes | JSON serialization |
 | `legion-logging` (>= 1.4.3) | Yes | Structured logging via Helper |
 | `legion-settings` (>= 1.4.5) | Yes | Configuration + Settings::Extensions |

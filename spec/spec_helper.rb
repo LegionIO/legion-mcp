@@ -15,7 +15,7 @@ Legion::Logging.setup(level: :error, extended: false, log_stdout: false, trace_s
 RSpec.configure do |config|
   config.around do |example|
     original_settings = Legion::Settings[:mcp]
-    Legion::Settings.loader.settings[:mcp] = Legion::MCP::Settings.defaults[:mcp]
+    Legion::Settings.loader.settings[:mcp] = Legion::MCP::Settings.default
     example.run
   ensure
     Legion::Settings.loader.settings[:mcp] = original_settings

@@ -14,6 +14,6 @@ RSpec.describe Legion::MCP::Settings do
       description 'Configured tool'
       input_schema(properties: {})
     end
-    expect(Legion::MCP::DeferredRegistry.build_tools_list([tool]).first).to have_key(:inputSchema)
+    expect(Legion::MCP::DeferredRegistry.deferred?(tool)).to be false
   end
 end
