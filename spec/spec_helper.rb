@@ -8,7 +8,6 @@ end
 
 require 'legion/logging'
 require 'legion/settings'
-Legion::Settings.loader = Legion::Settings::Loader.new
 require 'legion/mcp'
 Legion::Settings[:logging][:level] = :error
 Legion::Logging.setup(level: :error, extended: false, log_stdout: false, trace_size: 0)
@@ -32,14 +31,6 @@ RSpec.configure do |config|
   config.shared_context_metadata_behavior = :apply_to_host_groups
   config.order = :random
   Kernel.srand config.seed
-end
-
-# Stub LegionIO framework classes that tools reference
-# These are guarded with defined?() in production code
-unless defined?(Legion::VERSION)
-  module Legion
-    VERSION = '0.0.0-test'
-  end
 end
 
 unless defined?(Legion::Ingress)
