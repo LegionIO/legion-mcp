@@ -83,7 +83,13 @@ module Legion
         end
 
         def build(identity: nil)
-          prepare_build(identity)
+          identity = identity&.dup&.freeze
+          context = {
+            identity:        identity,
+            conversation_id: TracingContext.generate_conversation_id,
+            trace_id:        TracingContext.generate_trace_id
+          }.freeze
+          prepare_build(context: context)
           tools = ToolGovernance.filter_tools(tool_registry.dup, identity)
 
           server = ::MCP::Server.new(
@@ -91,11 +97,12 @@ module Legion
             version:            defined?(Legion::VERSION) ? Legion::VERSION : Legion::MCP::VERSION,
             instructions:       instructions,
             tools:              tools,
+            server_context:     context,
             resources:          Resources::ExtensionInfo.static_resources,
             resource_templates: Resources::ExtensionInfo.resource_templates
           )
 
-          configure_server(server)
+          configure_server(server, context: context)
 
           mcp_log :info, 'server.build.complete',
                   identity: Utils.summarize_identity(identity),
@@ -149,8 +156,8 @@ module Legion
           Observer.record_intent_with_result(**observer_args)
         end
 
-        def build_filtered_tool_list(keywords: [])
-          governed = ToolGovernance.filter_tools(tool_registry, @current_identity)
+        def build_filtered_tool_list(keywords: [], identity: @current_identity)
+          governed = ToolGovernance.filter_tools(tool_registry, identity)
           tool_names = governed.map { |tc| tc.respond_to?(:tool_name) ? tc.tool_name : tc.name }
           ranked     = UsageFilter.ranked_tools(tool_names, keywords: keywords)
           result = ranked.filter_map do |name|
@@ -160,35 +167,35 @@ module Legion
           end
           log.debug("[mcp][server] action=build_filtered_tool_list tools_before=#{tool_registry.size} " \
                     "governed=#{governed.size} tools_after=#{result.size} " \
-                    "identity=#{Utils.summarize_identity(@current_identity)} keywords=#{keywords.size}")
+                    "identity=#{Utils.summarize_identity(identity)} keywords=#{keywords.size}")
           result
         end
 
         private
 
-        def prepare_build(identity)
+        def prepare_build(context:)
           run_function_discovery
           rebuild_tool_registry
-          @current_identity = identity
-          @conversation_id = TracingContext.generate_conversation_id
-          @trace_id = TracingContext.generate_trace_id
+          @current_identity = context[:identity]
+          @conversation_id = context[:conversation_id]
+          @trace_id = context[:trace_id]
 
           mcp_log :info, 'server.build.start',
-                  identity:        Utils.summarize_identity(identity),
+                  identity:        Utils.summarize_identity(context[:identity]),
                   registry_size:   tool_registry.size,
                   governance:      ToolGovernance.governance_enabled?,
-                  conversation_id: @conversation_id
+                  conversation_id: context[:conversation_id]
         end
 
-        def configure_server(server)
+        def configure_server(server, context:)
           if defined?(Observer)
             ::MCP.configure do |c|
               c.instrumentation_callback = ->(idata) { Server.wire_observer(idata) }
             end
           end
 
-          install_deferred_tools_list_handler(server)
-          install_tracing_tool_call_handler(server)
+          install_deferred_tools_list_handler(server, identity: context[:identity])
+          install_tracing_tool_call_handler(server, context: context)
           register_mcp_tools_in_settings_extensions
 
           Patterns::Store.hydrate_from_l2 if defined?(Patterns::Store)
@@ -265,24 +272,23 @@ module Legion
           Legion::LLM::OverrideConfidence.hydrate_from_apollo if Legion::LLM::OverrideConfidence.respond_to?(:hydrate_from_apollo)
         end
 
-        def install_deferred_tools_list_handler(server)
+        def install_deferred_tools_list_handler(server, identity:)
           handlers = server.instance_variable_get(:@handlers)
           return unless handlers
 
           handlers[::MCP::Methods::TOOLS_LIST] = lambda { |_request|
-            tool_list = DeferredRegistry.build_tools_list(build_filtered_tool_list)
-            deferred = tool_list.count { |e| !e.key?(:inputSchema) && !e.key?(:input_schema) }
-            mcp_log :info, 'server.tools.list', total: tool_list.size, deferred_only: deferred
+            tool_list = DeferredRegistry.build_tools_list(build_filtered_tool_list(identity: identity))
+            mcp_log :info, 'server.tools.list', total: tool_list.size
             { tools: tool_list }
           }
         end
 
-        def install_tracing_tool_call_handler(server)
-          tracing_mod = build_tracing_module
+        def install_tracing_tool_call_handler(server, context:)
+          tracing_mod = build_tracing_module(context: context)
           server.singleton_class.prepend(tracing_mod)
         end
 
-        def build_tracing_module
+        def build_tracing_module(context:)
           server_mod = self
           Module.new do
             define_method(:call_tool) do |request, **options|
@@ -291,19 +297,25 @@ module Legion
               tool_call_id = TracingContext.generate_tool_call_id
 
               TracingContext.set(
-                conversation_id: server_mod.conversation_id,
+                conversation_id: context[:conversation_id],
                 request_id:      request_id,
                 exchange_id:     exchange_id,
                 tool_call_id:    tool_call_id,
-                trace_id:        server_mod.trace_id
+                trace_id:        context[:trace_id]
               )
 
               start_time = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
-              result = super(request, **options)
+              tool = tools[request&.dig(:name)]
+              result = if tool && ToolGovernance.filter_tools([tool], context[:identity]).empty?
+                         add_instrumentation_data(tool_name: request[:name], tool_arguments: request[:arguments], error: :permission_denied)
+                         error_tool_response("Permission denied for tool: #{request[:name]}")
+                       else
+                         super(request, **options)
+                       end
               elapsed = ((::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - start_time) * 1000).round(1)
 
               server_mod.send(:emit_server_audit,
-                              params: request, result: result, request_id: request_id,
+                              context: context, params: request, result: result, request_id: request_id,
                               exchange_id: exchange_id, tool_call_id: tool_call_id, duration_ms: elapsed)
 
               result
@@ -313,14 +325,14 @@ module Legion
           end
         end
 
-        def emit_server_audit(params:, result:, request_id:, exchange_id:, tool_call_id:, duration_ms:) # rubocop:disable Metrics/ParameterLists
+        def emit_server_audit(context:, params:, result:, request_id:, exchange_id:, tool_call_id:, duration_ms:) # rubocop:disable Metrics/ParameterLists
           return unless defined?(Legion::MCP::Audit)
 
           tool_name = params&.dig(:name)
           status = result.is_a?(Hash) && result[:isError] ? :error : :success
 
           Legion::MCP::Audit.emit_tool_call(
-            conversation_id: @conversation_id,
+            conversation_id: context[:conversation_id],
             request_id:      request_id,
             exchange_id:     exchange_id,
             tool_call_id:    tool_call_id,
@@ -329,9 +341,9 @@ module Legion
             result:          Utils.summarize_result(result),
             status:          status,
             duration_ms:     duration_ms,
-            caller:          @current_identity,
+            caller:          context[:identity],
             source:          { type: :mcp_server },
-            trace_id:        @trace_id,
+            trace_id:        context[:trace_id],
             timestamp:       Time.now.utc.iso8601
           )
         rescue StandardError => e

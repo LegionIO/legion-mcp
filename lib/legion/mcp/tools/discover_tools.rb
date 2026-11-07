@@ -33,10 +33,10 @@ module Legion
         class << self
           include Legion::Logging::Helper
 
-          def call(category: nil, intent: nil, tool_names: nil, schema: nil)
+          def call(category: nil, intent: nil, tool_names: nil, schema: nil, server_context: nil)
             log.info('Starting legion.mcp.tools.discover_tools.call')
             if tool_names && schema
-              resolve_schemas(tool_names)
+              resolve_schemas(tool_names, identity: server_context&.[](:identity))
             elsif category
               lookup_category(category)
             elsif intent
@@ -52,8 +52,8 @@ module Legion
 
           private
 
-          def resolve_schemas(tool_names)
-            governed = ToolGovernance.filter_tools(Server.tool_registry, Server.current_identity)
+          def resolve_schemas(tool_names, identity:)
+            governed = ToolGovernance.filter_tools(Server.tool_registry, identity)
             schemas = DeferredRegistry.resolve_schemas(tool_names, governed)
             if schemas.empty?
               error_response("No tools found matching: #{tool_names.join(', ')}")
