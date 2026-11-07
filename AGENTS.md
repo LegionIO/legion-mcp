@@ -185,6 +185,7 @@ when required, and run these **full-repository** gates from the checkout root on
 bundle install
 bundle exec rspec --format json --out tmp/rspec_results.json --format progress --out tmp/rspec_progress.txt
 bundle exec rubocop -A
+bundle exec rubocop
 ```
 
 Do not substitute targeted specs or file-scoped lint. Inspect failed examples when needed;

@@ -335,6 +335,7 @@ From this repository:
 bundle install
 bundle exec rspec --format json --out tmp/rspec_results.json --format progress --out tmp/rspec_progress.txt
 bundle exec rubocop -A
+bundle exec rubocop
 ```
 
 Useful source entry points:
