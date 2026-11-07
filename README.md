@@ -2,7 +2,7 @@
 
 Model Context Protocol (MCP) server for the LegionIO framework. Provides semantic tool matching, observation pipeline, context compilation, tiered behavioral intelligence (Tier 0/1/2 routing), tool governance, deferred tool loading, and MCP client pooling for remote server federation.
 
-**Version**: 0.9.2
+**Version**: 0.9.3
 **License**: Apache-2.0
 **Ruby**: >= 3.4
 
@@ -17,11 +17,11 @@ gem 'legion-mcp'
 Or in a Gemfile:
 
 ```ruby
-gem 'legion-mcp', '~> 0.9', '>= 0.9.2'
+gem 'legion-mcp', '~> 0.9', '>= 0.9.3'
 ```
 
-The MCP SDK dependency requires `>= 1.2.0, < 2.0`. Earlier SDK versions are
-excluded because of [GHSA-4m5j-jjfc-97gx](https://github.com/modelcontextprotocol/ruby-sdk/security/advisories/GHSA-4m5j-jjfc-97gx),
+The MCP SDK dependency requires `>= 1.9.0, < 2.0`. This range also excludes
+versions affected by [GHSA-4m5j-jjfc-97gx](https://github.com/modelcontextprotocol/ruby-sdk/security/advisories/GHSA-4m5j-jjfc-97gx),
 an OAuth discovery SSRF vulnerability. Upgrade the bundle rather than ignoring
 the advisory.
 
@@ -162,13 +162,18 @@ tools = Legion::MCP::Client::Pool.all_tools
 ### Standalone MCP server
 
 ```ruby
+require 'legion/logging'
+
+# Reserve stdout for JSON-RPC before loading MCP.
+Legion::Logging.setup(log_file: File.expand_path('~/.legionio/logs/mcp.log'), log_stdout: false)
+
 require 'legion/mcp'
 require 'mcp/server/transports/stdio_transport'
-
-# Keep structured logs off the JSON-RPC stdout stream.
-Legion::Logging.setup(log_stdout: false)
 MCP::Server::Transports::StdioTransport.new(Legion::MCP.server).open
 ```
+
+An explicit log-file destination is required: `log_stdout: false` alone falls
+back to stdout and corrupts the JSON-RPC stream.
 
 ### Within LegionIO
 
@@ -203,9 +208,19 @@ server = Legion::MCP.server_for(token: jwt_token)
 # Returns governance-filtered tool set based on JWT claims
 ```
 
+Each server retains its own identity. Role and risk-tier policy is checked
+again before every invocation, so revocation blocks direct `tools/call`
+requests as well as removing tools from the catalog.
+
 ## Configuration
 
 Configuration lives in the required `Legion::Settings` tree. Loading `legion/mcp` registers defaults under `:mcp` and `:codegen` without replacing user configuration. Deferred-loading and role-permission changes are read from the live tree; explicitly setting a role or its `tools` value to `false` denies that role all tools.
+
+Null or missing optional MCP/deferred-loading configuration uses the default
+deferral policy; `deferred_loading.enabled: false` still disables deferral.
+Every `tools/list` entry includes the tool's actual `inputSchema`, including
+required arguments. Deferred entries may omit optional metadata; use
+`legion.tools` with `tool_names` and `schema: true` for full definitions.
 
 ```json
 {
@@ -252,12 +267,12 @@ Configuration lives in the required `Legion::Settings` tree. Loading `legion/mcp
 
 | Gem | Required | Purpose |
 |-----|----------|---------|
-| `mcp` (>= 1.2.0, < 2.0) | Yes | MCP server/client SDK with patched OAuth discovery |
+| `mcp` (>= 1.9.0, < 2.0) | Yes | MCP server/client SDK with patched OAuth discovery |
 | `base64` (>= 0.2) | Yes | SDK OAuth client encoding on Ruby 3.4+ |
 | `legion-data` (>= 1.4) | Yes | Sequel models, migrations |
 | `legion-json` (>= 1.2) | Yes | JSON serialization |
 | `legion-logging` (>= 1.4.3) | Yes | Structured logging via Helper |
-| `legion-settings` (>= 1.4.0) | Yes | Configuration + Settings::Extensions |
+| `legion-settings` (>= 1.4.5) | Yes | Configuration + Settings::Extensions |
 | `legion-cache` | Optional | L1 pattern cache (memcached/redis) |
 | `legion-llm` | Optional | Embeddings for semantic matching, Tier 1/2 LLM |
 

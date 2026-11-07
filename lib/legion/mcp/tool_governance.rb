@@ -77,7 +77,7 @@ module Legion
       end
 
       def role_allowlist(role)
-        roles = Legion::Settings[:mcp][:roles]
+        roles = Legion::Settings.dig(:mcp, :roles)
         return ['*'] unless roles.is_a?(Hash)
 
         role_config = roles[role.to_sym]

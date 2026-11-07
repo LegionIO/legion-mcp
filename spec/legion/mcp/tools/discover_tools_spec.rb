@@ -177,21 +177,22 @@ RSpec.describe Legion::MCP::Tools::DiscoverTools do
 
       before do
         allow(Legion::MCP::Server).to receive(:tool_registry).and_return([low_tool, high_tool])
-        allow(Legion::MCP::Server).to receive(:current_identity).and_return({ risk_tier: :low })
         allow(Legion::Settings).to receive(:dig).and_return(nil)
         allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :enabled).and_return(true)
         allow(Legion::Settings).to receive(:dig).with(:mcp, :governance, :tool_risk_tiers).and_return({})
       end
 
       it 'only resolves schemas for governance-allowed tools' do
-        response = described_class.call(tool_names: ['legion.list_tasks'], schema: true)
+        response = described_class.call(tool_names: ['legion.list_tasks'], schema: true,
+                                        server_context: { identity: { risk_tier: :low } })
         expect(response.error?).to be false
         data = Legion::JSON.load(response.content.first[:text])
         expect(data[:schemas].first[:name]).to eq('legion.list_tasks')
       end
 
       it 'excludes high-tier tools from schema resolution for low-tier identity' do
-        response = described_class.call(tool_names: ['legion.worker_lifecycle'], schema: true)
+        response = described_class.call(tool_names: ['legion.worker_lifecycle'], schema: true,
+                                        server_context: { identity: { risk_tier: :low } })
         expect(response.error?).to be true
         data = Legion::JSON.load(response.content.first[:text])
         expect(data[:error]).to include('legion.worker_lifecycle')

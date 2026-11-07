@@ -1,5 +1,16 @@
 # legion-mcp Changelog
 
+## [0.9.3] - 2026-11-06
+
+### Security
+- Recheck live role and risk-tier policy before each tool invocation so revoked tools cannot execute through an existing server.
+- Keep identity and tracing context scoped to each server for tool listings, schema discovery, and invocation audits.
+
+### Fixed
+- Preserve default deferred-loading behavior when optional MCP configuration or its deferred-loading section is null.
+- Include the real input schema and required arguments in deferred tool descriptors for MCP client compatibility.
+- Configure an explicit log-file destination before loading the standalone stdio server so diagnostics cannot corrupt JSON-RPC stdout.
+
 ## [0.9.2] - 2026-10-30
 
 ### Security
