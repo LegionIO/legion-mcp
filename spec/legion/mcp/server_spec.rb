@@ -21,7 +21,7 @@ RSpec.describe Legion::MCP::Server do
     end
 
     it 'registers the correct version' do
-      expect(server.version).to eq(Legion::VERSION)
+      expect(server.version).to eq(Legion::MCP::VERSION)
     end
 
     it 'advertises MCP tools in the protocol list result object' do

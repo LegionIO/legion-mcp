@@ -7,19 +7,36 @@ module Legion
     module Settings
       module_function
 
-      def defaults
+      def default
         {
-          mcp:     {
-            servers:             {},
-            overrides:           {},
-            tool_cache_ttl:      300,
-            connect_timeout:     10,
-            call_timeout:        30,
-            auto_expose_runners: false,
-            deferred_loading:    deferred_loading_defaults,
-            dynamic_tools:       dynamic_tools_defaults
-          },
-          codegen: { self_generate: self_generate_defaults }
+          servers:             {},
+          overrides:           {},
+          tool_cache_ttl:      300,
+          connect_timeout:     10,
+          call_timeout:        30,
+          auto_expose_runners: false,
+          auth:                auth_defaults,
+          governance:          { enabled: false, audit_invocations: true, tool_risk_tiers: {} },
+          roles:               {},
+          deferred_loading:    deferred_loading_defaults,
+          dynamic_tools:       dynamic_tools_defaults,
+          tier0:               { guards: { max_stale_seconds: 3600, rapid_fire_threshold: 5, rapid_fire_window_seconds: 600 } },
+          cold_start:          { patterns_path: nil }
+        }
+      end
+
+      def codegen
+        { self_generate: self_generate_defaults }
+      end
+
+      def auth_defaults
+        {
+          enabled:          false,
+          require_auth:     false,
+          jwt_secret:       nil,
+          jwt_algorithm:    'HS256',
+          jwt_issuer:       'legion',
+          allowed_api_keys: []
         }
       end
 
@@ -34,6 +51,7 @@ module Legion
       def self_generate_defaults
         {
           enabled:            false,
+          cycle_interval:     300,
           cooldown_seconds:   300,
           max_gaps_per_cycle: 5,
           tier:               self_generate_tier_defaults,
@@ -90,6 +108,5 @@ module Legion
   end
 end
 
-Legion::MCP::Settings.defaults.each do |component, defaults|
-  Legion::Settings.register_library(component, defaults)
-end
+Legion::Settings.merge_settings(:mcp, Legion::MCP::Settings.default)
+Legion::Settings.merge_settings(:codegen, Legion::MCP::Settings.codegen)
